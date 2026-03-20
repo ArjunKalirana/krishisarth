@@ -1,5 +1,7 @@
 import { store } from '../state/store.js';
 
+let _navbarMounted = false;
+
 /**
  * Navbar Component
  * Renders the primary navigation system with mobile responsiveness.
@@ -91,9 +93,12 @@ export function renderNavbar() {
     }
 
     // Hash change listener for re-render (Internal Navigation)
-    window.addEventListener('hashchange', () => {
-        const newHash = window.location.hash || '#dashboard';
-        store.setState('activePage', newHash);
-        renderNavbar();
-    });
+    if (!_navbarMounted) {
+        window.addEventListener('hashchange', () => {
+            const newHash = window.location.hash || '#dashboard';
+            store.setState('activePage', newHash);
+            renderNavbar();
+        });
+        _navbarMounted = true;
+    }
 }

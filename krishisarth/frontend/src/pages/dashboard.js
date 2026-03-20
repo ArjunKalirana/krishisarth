@@ -74,7 +74,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             
             // Map to store for reactive updates
             const sensorMap = {};
-            data.zones.forEach(z => sensorMap[z.id] = z.latest_readings);
+            data.zones.forEach(z => sensorMap[z.id] = { moisture: z.moisture_pct, temp_c: z.temp_c, ec_ds_m: z.ec_ds_m });
             store.setState('sensorData', sensorMap);
 
         }
@@ -120,7 +120,7 @@ function renderGrid(data) {
     
     // Simplification for brevity in template
     data.zones.forEach(z => {
-        const moisture = z.latest_readings.moisture || 0;
+        const moisture = z.moisture_pct || 0;
         const card = createSensorCard({
             title: z.name,
             icon: "sprout",

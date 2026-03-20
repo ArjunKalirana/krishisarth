@@ -18,8 +18,7 @@ class TelemetryWS {
         if (!farmId) return;
         this.farmId = farmId;
         
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const url = `${protocol}//${window.location.host}/api/v1/ws/farms/${farmId}`;
+        const url = `ws://localhost:8000/v1/ws/farms/${farmId}`;
         
         console.log(`WS: Connecting to ${url}...`);
         this.ws = new WebSocket(url);

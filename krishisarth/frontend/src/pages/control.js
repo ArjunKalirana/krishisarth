@@ -1,6 +1,8 @@
 import { createZoneCard } from '../components/zone-card.js';
 import { injectFertigation } from '../api/control.js';
 import { showToast } from '../components/toast.js';
+import { api } from '../api/client.js';
+import { store } from '../state/store.js';
 
 /**
  * Connected Control Page
@@ -35,12 +37,24 @@ export function renderControl() {
     const zoneGrid = document.createElement('div');
     zoneGrid.className = "lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6";
     
-    // Placeholder initial load (would normally come from sync)
-    const zones = [
-        { id: 'zone_1', n: "North Tomato Plot", l: "2h ago", m: 42 },
-        { id: 'zone_2', n: "East Pepper Block", l: "18h ago", m: 18 }
-    ];
-    zones.forEach(z => zoneGrid.appendChild(createZoneCard({ id: z.id, name: z.n, lastIrrig: z.l, moisture: z.m })));
+    // Load real zones from the API
+    const farm = store.getState('currentFarm');
+    if (farm?.id) {
+        api(`/farms/${farm.id}/`).then(res => {
+            const zones = res?.data?.zones || [];
+            zones.forEach(z => {
+                zoneGrid.appendChild(createZoneCard({
+                    id: z.id,           // real UUID from database
+                    name: z.name,
+                    lastIrrig: 'N/A',
+                    moisture: 0,
+                    initialState: false,
+                }));
+            });
+        }).catch(err => {
+            zoneGrid.innerHTML = `<p class="text-red-500">Failed to load zones: ${err.message}</p>`;
+        });
+    }
     layout.appendChild(zoneGrid);
 
     // SIDEBAR: Fertigation

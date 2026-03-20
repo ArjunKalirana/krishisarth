@@ -1,49 +1,50 @@
 import { api, setToken, clearToken } from './client.js';
 import { store } from '../state/store.js';
 
-/**
- * Auth Service
- * High-level farmer session management.
- */
-
 export async function login(email, password) {
-    try {
-        console.log("AUTH: Attempting login for", email);
-        const response = await api('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password })
-        });
+    const response = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    });
 
-        // Backend returns: { success: true, data: { access_token, ... } }
-        const authData = response.data;
-        console.log("AUTH: Login successful. Received data:", authData);
+    if (!response?.success) throw new Error('LOGIN_FAILED');
 
-        // 1. Store tokens in state (which now persists to storage)
-        setToken(authData.access_token);
-        store.setState('refreshToken', authData.refresh_token);
+    const d = response.data;
 
-        // 2. Update global state with farmer info
-        console.log("AUTH: Setting currentFarmer state...");
-        store.setState('currentFarmer', authData);
-        console.log("AUTH: Farmer state set to:", store.getState('currentFarmer'));
-        
-        return response;
-    } catch (err) {
-        console.error("AUTH: Login failed:", err);
-        throw err;
-    }
+    // Access token → memory only (via client.js)
+    setToken(d.access_token);
+
+    // Refresh token → sessionStorage directly (never through store)
+    sessionStorage.setItem('ks_refresh_token', d.refresh_token);
+
+    // Store ONLY safe farmer info — no tokens
+    store.setState('currentFarmer', {
+        farmer_id: d.farmer_id,
+        name:      d.name,
+        email:     d.email,
+    });
+
+    return response;
 }
 
 export async function register(name, email, password, phone) {
-    return await api('/auth/register', {
+    const response = await api('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password, phone })
+        body: JSON.stringify({ name, email, password, phone }),
     });
+
+    if (!response?.success) throw new Error('REGISTER_FAILED');
+
+    const d = response.data;
+    setToken(d.access_token);
+    sessionStorage.setItem('ks_refresh_token', d.refresh_token);
+    store.setState('currentFarmer', { farmer_id: d.farmer_id, name: d.name, email: d.email });
+    return response;
 }
 
 export function logout() {
     clearToken();
     store.setState('currentFarmer', null);
-    store.setState('accessToken', null);
-    window.location.hash = "#login";
+    store.setState('currentFarm', null);
+    window.location.hash = '#login';
 }

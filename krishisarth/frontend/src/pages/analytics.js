@@ -48,7 +48,13 @@ export function renderAnalytics() {
         if (!farmId) return;
 
         try {
-            const data = await getAnalytics(farmId, range, new Date().toISOString());
+            const to = new Date();
+            const from = new Date(to);
+            const days = range === '7_DAYS' ? 7 : range === '30_DAYS' ? 30 : 90;
+            from.setDate(from.getDate() - days);
+            const toStr = to.toISOString().split('T')[0];
+            const fromStr = from.toISOString().split('T')[0];
+            const data = await getAnalytics(farmId, fromStr, toStr);
             const content = container.querySelector('#analytics-content');
             
             content.innerHTML = `

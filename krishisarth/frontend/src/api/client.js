@@ -1,114 +1,92 @@
 /**
- * KrishiSarth Secure API Client
- * Features: In-memory only tokens, silent refresh, automatic retry.
+ * KrishiSarth API Client
+ * Access token: in-memory ONLY — never written to any storage.
+ * Refresh token: sessionStorage (survives page reload, cleared on tab close).
  */
-import { store } from '../state/store.js';
 
-const BASE_URL = 'http://localhost:8001/v1';
+const BASE_URL = 'http://localhost:8000/v1';
 
-/**
- * Update the in-memory and persistent access token.
- */
+let _accessToken = null;
+let _refreshing   = false;
+let _refreshQueue = [];
+
 export function setToken(token) {
-    if (token) {
-        localStorage.setItem('ks_access_token', token);
-    } else {
-        localStorage.removeItem('ks_access_token');
-    }
+    _accessToken = token;
 }
 
-/**
- * Clear the session.
- */
+export function getToken() {
+    return _accessToken;
+}
+
 export function clearToken() {
-    localStorage.removeItem('ks_access_token');
-    localStorage.removeItem('ks_refresh_token');
+    _accessToken = null;
+    sessionStorage.removeItem('ks_refresh_token');
     sessionStorage.removeItem('ks_farmer');
 }
 
-/**
- * Standardized API call with automatic 401 handling.
- */
 export async function api(path, options = {}) {
     try {
-        const response = await fetchWithAuth(path, options);
+        const response = await _fetchWithAuth(path, options);
 
         if (response.status === 401) {
-            console.warn("API: 401 detected. Attempting silent refresh...");
-            const refreshed = await refreshAccessToken();
-            
+            const refreshed = await _refreshAccessToken();
             if (refreshed) {
-                // Retry once with new token
-                return await api(path, options);
-            } else {
-                // Refresh failed, force logout
-                clearToken();
-                window.location.hash = "#login";
-                return;
+                const retry = await _fetchWithAuth(path, options);
+                const retryData = await retry.json();
+                if (!retry.ok) throw new Error(retryData.error?.code || 'API_ERROR');
+                return retryData;
             }
+            clearToken();
+            window.location.hash = '#login';
+            return null;
         }
 
         const data = await response.json();
-
-        if (!response.ok) {
-            // Standard KrishiSarth error envelope: { success: false, error: { code, message } }
-            throw new Error(data.error?.code || 'API_ERROR');
-        }
-
+        if (!response.ok) throw new Error(data.error?.code || 'API_ERROR');
         return data;
     } catch (err) {
-        console.error(`API Error [${path}]:`, err.message);
+        console.error(`[API] ${path}:`, err.message);
         throw err;
     }
 }
 
-/**
- * Internal fetch with Bearer token injection.
- */
-async function fetchWithAuth(path, options) {
-    const url = `${BASE_URL}${path}`;
-    const token = localStorage.getItem('ks_access_token');
-    const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include' // Required for HttpOnly refresh cookie
-    });
+async function _fetchWithAuth(path, options) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
+    return fetch(`${BASE_URL}${path}`, { ...options, headers, credentials: 'include' });
 }
 
-/**
- * Silent Refresh Logic
- */
-async function refreshAccessToken() {
-    try {
-        const refreshToken = store.getState('refreshToken');
-        if (!refreshToken) return false;
+async function _refreshAccessToken() {
+    if (_refreshing) {
+        return new Promise(resolve => _refreshQueue.push(resolve));
+    }
+    const refreshToken = sessionStorage.getItem('ks_refresh_token');
+    if (!refreshToken) return false;
 
-        console.log("API: Refreshing tokens...");
-        const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    _refreshing = true;
+    try {
+        const res = await fetch(`${BASE_URL}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: refreshToken }),
-            credentials: 'include'
+            credentials: 'include',
         });
-
-        if (response.ok) {
-            const result = await response.json();
-            // Backend returns: { success: true, data: { access_token, ... } }
-            setToken(result.data.access_token);
-            store.setState('refreshToken', result.data.refresh_token);
+        if (res.ok) {
+            const body = await res.json();
+            setToken(body.data.access_token);
+            sessionStorage.setItem('ks_refresh_token', body.data.refresh_token);
+            _refreshQueue.forEach(r => r(true));
+            _refreshQueue = [];
             return true;
         }
+        _refreshQueue.forEach(r => r(false));
+        _refreshQueue = [];
         return false;
-    } catch (err) {
+    } catch {
+        _refreshQueue.forEach(r => r(false));
+        _refreshQueue = [];
         return false;
+    } finally {
+        _refreshing = false;
     }
 }

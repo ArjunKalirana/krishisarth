@@ -7,15 +7,13 @@ import { api } from './client.js';
 
 export async function getAnalytics(farmId, from, to, zoneId = null) {
     let url = `/farms/${farmId}/analytics/`;
-    const params = new URLSearchParams({ from, to });
+    const params = new URLSearchParams({ from_date: from, to_date: to });
     if (zoneId) params.append('zone_id', zoneId);
     
     return await api(`${url}?${params.toString()}`);
 }
 
 export function exportCSV(farmId, from, to) {
-    // Need absolute URL for direct browser access
-    const BASE_URL = 'http://localhost:8001/v1';
-    const url = `${BASE_URL}/farms/${farmId}/analytics/export/?from=${from}&to=${to}`;
-    window.location.href = url;
+    const url = `http://localhost:8000/v1/farms/${farmId}/analytics/export/?from_date=${from}&to_date=${to}`;
+    window.open(url, '_blank');
 }

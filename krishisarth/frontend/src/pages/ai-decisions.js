@@ -1,5 +1,6 @@
 import { getDecisions, runDecision } from '../api/ai.js';
 import { store } from '../state/store.js';
+import { api } from '../api/client.js';
 import { formatDate, roundTo } from '../utils/format.js';
 
 /**
@@ -42,7 +43,22 @@ async function loadAIData(zoneId, targetEl, triggerBtn) {
     targetEl.innerHTML = `<div class="lg:col-span-12 py-20 flex justify-center"><div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>`;
 
     try {
-        const res = await getDecisions(zoneId === 'all' ? 'farm_wide' : zoneId);
+        const farm = store.getState('currentFarm');
+        let realZoneId = null;
+        if (farm?.id) {
+            try {
+                const farmRes = await api(`/farms/${farm.id}/`);
+                const zones = farmRes?.data?.zones || [];
+                if (zones.length > 0) realZoneId = zones[0].id;
+            } catch { /* no zones */ }
+        }
+
+        if (!realZoneId) {
+            targetEl.innerHTML = '<div class="ks-card p-10 text-center text-gray-400 font-bold">No zones available. Please create a zone first.</div>';
+            return;
+        }
+
+        const res = await getDecisions(realZoneId);
         const decisions = res.data || [];
         const latest = decisions[0] || {};
         
@@ -79,8 +95,8 @@ async function loadAIData(zoneId, targetEl, triggerBtn) {
             triggerBtn.disabled = true;
             triggerBtn.innerHTML = '<i class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></i> CALCULATING...';
             try {
-                await runDecision(zoneId);
-                loadAIData(zoneId, targetEl, triggerBtn);
+                await runDecision(realZoneId);
+                loadAIData(realZoneId, targetEl, triggerBtn);
             } catch (err) {
                 console.error("AI_EXEC_FAIL:", err.message);
                 if (err.message === '503') alert("AI engine in fallback mode — using scheduled irrigation");
