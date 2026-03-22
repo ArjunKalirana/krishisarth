@@ -1,0 +1,29 @@
+# Python cache — never needed in image
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Test files — not needed at runtime
+tests/
+test_conn.py
+test_email.py
+pytest.ini
+requirements-dev.txt
+
+# Local environment files — NEVER bake secrets into a Docker image
+.env
+.env.*
+.env.local
+.env.production
+.env.staging
+
+# Local dev tools
+.vscode/
+.idea/
+.git/
+.gitignore
+
+# Logs
+*.log

@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 
 # Set the sqlalchemy.url from our internal settings
 # Railway provides DATABASE_URL as "postgres://..." but SQLAlchemy 2.x
-# requires "postgresql://...". Fix the scheme before Alembic uses it.
+# requires "postgresql://...". Normalise the scheme here.
 _db_url = settings.DATABASE_URL
 if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
