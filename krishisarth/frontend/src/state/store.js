@@ -16,6 +16,7 @@ class Store {
             currentFarmer: _safeParse(sessionStorage.getItem('ks_farmer')),
             currentFarm:   _safeParse(sessionStorage.getItem('ks_current_farm')),
             activeZones:      [],
+            activeZoneStates: {},  // { [zone_id]: { isOn: bool, duration: number } }
             unreadAlertCount: 0,
             sensorData:       {},
             activePage:       window.location.hash || '#dashboard',

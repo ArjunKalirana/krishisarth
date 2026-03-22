@@ -44,20 +44,48 @@ export function drawLineChart(options) {
  * Draws a CSS-based bar chart
  * @param {Array} data [{ label, value, highlight }]
  */
-export function drawBarChart(data) {
-    const maxVal = Math.max(...data.map(d => d.value)) * 1.2;
-    
+export function drawBarChart(data = []) {
+    if (!data || data.length === 0) return '<p style="color:#9ca3af;font-size:12px;">No data</p>';
+
+    const max     = Math.max(...data.map(d => d.value || 0), 1);
+    const barW    = Math.floor(100 / data.length);
+
     return `
-        <div class="flex items-end justify-between h-48 gap-2 pt-8">
-            ${data.map(d => `
-                <div class="flex-1 flex flex-col items-center group">
-                    <span class="text-[10px] font-black text-gray-400 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">${d.value}L</span>
-                    <div class="w-full bg-primary/20 rounded-t-md relative transition-all duration-500 hover:bg-primary/40 ${d.highlight ? 'bg-primary ring-4 ring-primary/10' : ''}" 
-                         style="height: ${(d.value / maxVal) * 100}%">
-                    </div>
-                    <span class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-tighter">${d.label}</span>
-                </div>
+        <div style="display:flex; align-items:flex-end; gap:4px; height:180px; 
+                    padding:0 8px; position:relative;">
+            <!-- Y-axis grid lines -->
+            ${[25,50,75,100].map(pct => `
+                <div style="position:absolute; left:8px; right:8px;
+                            bottom:${pct * 1.5 + 24}px;
+                            border-top:1px dashed #e5e7eb; z-index:0;"></div>
             `).join('')}
+            ${data.map((d, i) => {
+                const heightPct = max > 0 ? ((d.value || 0) / max) * 100 : 0;
+                const heightPx  = Math.max(heightPct * 1.5, d.value > 0 ? 4 : 0);
+                const isToday   = i === data.length - 1;
+                return `
+                    <div style="flex:1; display:flex; flex-direction:column;
+                                align-items:center; justify-content:flex-end;
+                                height:100%; position:relative; z-index:1;">
+                        ${d.value > 0 ? `
+                            <span style="font-size:10px; font-weight:700; color:#6b7280;
+                                         margin-bottom:3px;">${d.value}L</span>
+                        ` : ''}
+                        <div style="
+                            width:75%;
+                            height:${heightPx}px;
+                            background:${isToday ? '#1a7a4a' : 'rgba(26,122,74,0.4)'};
+                            border-radius:6px 6px 0 0;
+                            min-height:${d.value > 0 ? '4' : '0'}px;
+                            transition: height 0.3s ease;
+                        "></div>
+                        <span style="font-size:10px; font-weight:600; color:#9ca3af;
+                                     margin-top:4px; text-transform:uppercase;">
+                            ${d.label || ''}
+                        </span>
+                    </div>
+                `;
+            }).join('')}
         </div>
     `;
 }

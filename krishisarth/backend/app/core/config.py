@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/v1"
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 
-    # Required
+    # Required — must be set via environment variables in Railway
     DATABASE_URL: str
     INFLUXDB_URL: str
     INFLUXDB_TOKEN: str
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     JWT_REFRESH_EXPIRE_DAYS: int = 30
 
     # Optional — backend starts fine without these
+    PORT: int = 8000                              # Injected by Railway at runtime
     MQTT_BROKER_HOST: Optional[str] = "localhost"
     MQTT_BROKER_PORT: int = 1883
     AWS_S3_BUCKET: Optional[str] = None
@@ -27,7 +28,12 @@ class Settings(BaseSettings):
     OPENWEATHER_API_KEY: Optional[str] = None
     GROQ_KEY: Optional[str] = None
 
+    # CORS — add your Vercel URL here OR override via CORS_ORIGINS env var
+    # as a comma-separated string: "https://a.vercel.app,http://localhost:3000"
     CORS_ORIGINS: list[str] = [
+        # Production frontend — replace with your actual Vercel deployment URL
+        "https://krishisarth.vercel.app",
+        # Local development
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5500",

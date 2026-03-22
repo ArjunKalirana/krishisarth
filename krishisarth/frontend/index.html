@@ -90,6 +90,13 @@
             }
         }
     </script>
+
+    <script>
+        (function () {
+            // Production backend on Railway
+            window.__KS_API_URL__ = 'https://krishisarth-backend-production.up.railway.app/v1';
+        })();
+    </script>
 </head>
 <body class="antialiased">
     <div id="navbar-root" class="sticky top-0 z-50"></div>

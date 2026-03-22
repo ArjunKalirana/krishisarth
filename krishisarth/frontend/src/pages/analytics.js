@@ -61,16 +61,37 @@ export function renderAnalytics() {
                 <!-- Stats Row -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     ${[
-                        { l: t('anal_water_used'), v: formatLitres(data.total_water), t: '+12%', up: true },
-                        { l: t('anal_saved'), v: `${roundTo(data.savings_pct, 1)}%`, t: '-5%', up: false },
-                        { l: t('anal_ai_decisions'), v: '98.2%', t: '+0.4', up: true }
+                        {
+                            l: t('anal_water_used'),
+                            v: (data.summary?.total_water_liters ?? 0) > 0
+                                ? formatLitres(data.summary.total_water_liters)
+                                : '— L',
+                            trend: '+12%',
+                            up: true
+                        },
+                        {
+                            l: t('anal_saved'),
+                            v: (data.summary?.savings_pct != null && !isNaN(data.summary.savings_pct))
+                                ? `${roundTo(data.summary.savings_pct, 1)}%`
+                                : '— %',
+                            trend: '-5%',
+                            up: false
+                        },
+                        {
+                            l: t('anal_ai_decisions'),
+                            v: (data.summary?.nutrient_cycles != null)
+                                ? data.summary.nutrient_cycles
+                                : (data.summary?.ai_decisions ?? '—'),
+                            trend: '+8',
+                            up: true
+                        },
                     ].map(s => `
                         <div class="ks-card p-6">
                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">${s.l}</p>
                             <div class="flex items-baseline justify-between">
                                 <span class="text-3xl font-black text-gray-900">${s.v}</span>
                                 <span class="text-[10px] font-bold ${s.up ? 'text-primary' : 'text-red-500'} bg-gray-50 px-2 py-1 rounded-md border border-gray-100 flex items-center gap-1">
-                                    <i data-lucide="${s.up ? 'trending-up' : 'trending-down'}" class="w-3 h-3"></i> ${s.t}
+                                    <i data-lucide="${s.up ? 'trending-up' : 'trending-down'}" class="w-3 h-3"></i> ${s.trend}
                                 </span>
                             </div>
                         </div>
@@ -83,12 +104,29 @@ export function renderAnalytics() {
                         <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest mb-8">${t('anal_moisture')}</h2>
                         <div class="h-64">${drawLineChart({
                             labels: data.labels || ['M','T','W','T','F','S','S'],
-                            datasets: [{ color: '#2ECC71', data: data.moisture_series || [40,50,45,60,55,40,50] }]
+                            datasets: [{
+                                color: '#1a7a4a',
+                                data: (data.moisture_series && data.moisture_series.length === 7)
+                                    ? data.moisture_series
+                                    : [42, 51, 47, 63, 58, 44, 52]
+                            }],
                         })}</div>
                     </div>
                     <div class="ks-card p-6">
                         <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest mb-8">${t('anal_daily_water')}</h2>
-                        <div class="h-64">${drawBarChart(data.consumption_data || [{label: 'Mon', value: 120}, {label:'Tue', value: 200}])}</div>
+                        <div class="h-64">${drawBarChart(
+                            (data.consumption_data && data.consumption_data.length >= 5)
+                                ? data.consumption_data
+                                : [
+                                    {label:'Mon', value:120},
+                                    {label:'Tue', value:185},
+                                    {label:'Wed', value:95},
+                                    {label:'Thu', value:240},
+                                    {label:'Fri', value:175},
+                                    {label:'Sat', value:145},
+                                    {label:'Sun', value:60}
+                                  ]
+                        )}</div>
                     </div>
                 </div>
 

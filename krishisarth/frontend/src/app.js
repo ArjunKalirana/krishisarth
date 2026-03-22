@@ -12,7 +12,7 @@ import { renderRegister }    from './pages/register.js';
 import { renderFarm3D }      from './pages/farm-3d.js';
 import { initAIAssistant }   from './components/ai-assistant.js';
 
-const BACKEND = 'http://localhost:8000/v1';
+const BACKEND = window.__KS_API_URL__ || 'http://localhost:8000/v1';
 
 async function initApp() {
     console.log('[KrishiSarth] Booting…');
@@ -77,8 +77,11 @@ async function initApp() {
                 // FIX: API returns res.data.farms array, not res.data directly
                 const farms = res?.data?.farms ?? [];
                 if (farms.length > 0) {
+                    console.log('[ROUTER] Farm bootstrapped:', farms[0].name, farms[0].id);
                     store.setState('currentFarm', farms[0]);
                     telemetryWS.connect(farms[0].id);
+                } else {
+                    console.warn('[ROUTER] No farms found for this farmer — run seed.py');
                 }
             } catch (err) {
                 console.warn('[ROUTER] Farm bootstrap failed:', err.message);

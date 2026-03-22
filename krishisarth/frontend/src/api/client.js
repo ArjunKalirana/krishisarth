@@ -4,7 +4,7 @@
  * Refresh token: sessionStorage (survives page reload, cleared on tab close).
  */
 
-const BASE_URL = 'http://localhost:8000/v1';
+const BASE_URL = window.__KS_API_URL__ || 'http://localhost:8000/v1';
 
 let _accessToken = null;
 let _refreshing   = false;

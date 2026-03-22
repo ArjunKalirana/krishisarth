@@ -1,6 +1,6 @@
 # KrishiSarth — TODO & Milestone Tracker
 
-Last updated: March 2025
+Last updated: March 2026
 
 ---
 
@@ -233,4 +233,4 @@ Target: Working demo with 1 farm, 6 zones, live dashboard, AI decisions
 
 ---
 
-*KrishiSarth TODO — updated as milestones progress*
+*KrishiSarth TODO — updated as milestones progress (2026)*

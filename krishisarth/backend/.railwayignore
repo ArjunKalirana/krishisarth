@@ -1,0 +1,12 @@
+# Do not upload these to Railway — they are not needed at runtime
+tests/
+scripts/
+test_conn.py
+test_email.py
+pytest.ini
+*.pyc
+__pycache__/
+.env
+.env.*
+*.egg-info/
+.pytest_cache/

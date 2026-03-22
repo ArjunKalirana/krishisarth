@@ -47,40 +47,44 @@ def get_zone_ai_decisions(
         ]
     }
 
+from app.db.redis import get_redis
+from app.db.influxdb import get_influx_client
+
 @router.post("/{zone_id}/ai-decisions/run", response_model=dict)
 async def trigger_ai_inference(
     zone_id: str,
     db: Session = Depends(get_db),
-    current_farmer = Depends(deps.get_current_farmer),
-    _ = Depends(deps.verify_zone_owner)
+    redis=Depends(get_redis),
+    influx_client=Depends(get_influx_client),
+    current_farmer=Depends(deps.get_current_farmer),
+    _=Depends(deps.verify_zone_owner),
 ) -> Any:
-    """Manually initiate a real-time AI inference cycle for the specified zone."""
+    """Manually trigger an AI inference cycle for the specified zone."""
+    import logging
+    logger = logging.getLogger(__name__)
     try:
-        decision = await ai_service.run_inference(zone_id, db)
+        decision = await ai_service.run_inference(
+            zone_id=zone_id,
+            db=db,
+            influx_client=influx_client,
+            redis=redis,
+        )
         return {
-            "success": True, 
+            "success": True,
             "data": {
-                "id": str(decision.id),
-                "type": decision.decision_type,
-                "reasoning": decision.reasoning,
+                "id":         str(decision.id),
+                "type":       decision.decision_type,
+                "reasoning":  decision.reasoning,
                 "confidence": decision.confidence,
-                "snapshot": decision.input_snapshot
+                "snapshot":   decision.input_snapshot,
+                "created_at": decision.created_at,
             }
         }
     except Exception as e:
-        logger_name = f"{__name__}.inference"
-        import logging
-        logging.getLogger(logger_name).error(f"Inference Failure: {str(e)}")
-        
-        # Mapping for safety-critical ModelLoadError
-        if "ModelLoadError" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="AI_ENGINE_UNAVAILABLE"
-            )
+        logger.error(f"AI inference failed for zone {zone_id}: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="INFERENCE_EXECUTION_FAILED"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI_ENGINE_UNAVAILABLE"
         )
 
 @router.post("/chat", response_model=dict)

@@ -621,5 +621,5 @@ The following are hard prohibitions. If you are about to do any of these, stop a
 
 ---
 
-*KrishiSarth PROJECT_RULES.md — last updated March 2025*
+*KrishiSarth PROJECT_RULES.md — last updated March 2026*
 *This file must be kept in sync with PROJECT_SPEC.md. If a rule contradicts the spec, the spec wins — update this file to match.*

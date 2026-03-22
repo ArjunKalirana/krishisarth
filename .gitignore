@@ -28,6 +28,7 @@ pythonv/
 pyvenv/
 .env
 .env.*
+.env.staging
 !.env.example
 
 # Node / JS
@@ -57,6 +58,8 @@ tmp/
 # OS / System
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
 desktop.ini
 
 # Docker

@@ -2,7 +2,7 @@
 
 Version: 1.0.0  
 Status: Active Development  
-Last updated: March 2025
+Last updated: March 2026
 
 ---
 
@@ -243,4 +243,4 @@ EC2 (API + workers) → RDS PostgreSQL → ElastiCache Redis
 
 ---
 
-*KrishiSarth Project Specification v1.0.0*
+*KrishiSarth Project Specification v1.0.0 (2026)*
