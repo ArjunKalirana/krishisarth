@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # as a comma-separated string: "https://a.vercel.app,http://localhost:3000"
     CORS_ORIGINS: list[str] = [
         # Production frontend
-        "https://krishisarth.vercel.app",
+        "https://kishisarth.vercel.app",
         # Local development
         "http://localhost:5173",
         "http://127.0.0.1:5173",
