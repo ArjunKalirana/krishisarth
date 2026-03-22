@@ -20,8 +20,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the sqlalchemy.url from our internal settings
-# Railway provides DATABASE_URL as "postgres://..." but SQLAlchemy 2.x
-# requires "postgresql://...". Normalise the scheme here.
+# Railway provides DATABASE_URL starting with "postgres://" (legacy Heroku
+# format). SQLAlchemy 2.x requires "postgresql://". Fix at runtime.
 _db_url = settings.DATABASE_URL
 if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)

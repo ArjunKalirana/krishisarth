@@ -3,14 +3,14 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
 # Create persistent database engine with pooling
-# Railway provides DATABASE_URL as "postgres://..." but SQLAlchemy 2.x
-# requires "postgresql://...". Fix the scheme transparently at runtime.
-_db_url = settings.DATABASE_URL
-if _db_url.startswith("postgres://"):
-    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+# Railway provides DATABASE_URL as "postgres://..." — SQLAlchemy 2.x needs
+# "postgresql://...". Normalise before creating the engine.
+_pg_url = settings.DATABASE_URL
+if _pg_url.startswith("postgres://"):
+    _pg_url = _pg_url.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(
-    _db_url,
+    _pg_url,
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10
