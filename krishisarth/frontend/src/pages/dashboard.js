@@ -46,41 +46,75 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
         return;
     }
 
-    const cacheKey = `dashboard_cache_${farmId}`;
-    const cached = localStorage.getItem(cacheKey);
+    const cacheKey = `ks_dash_cache:${farmId}`;
+    const tsKey = `ks_dash_cache_ts:${farmId}`;
 
-    if (cached) {
-        console.log("DASHBOARD: Loading from localStorage...");
-        const data = JSON.parse(cached);
-        mainEl.innerHTML = renderHeader(data) + renderGrid(data);
-        alertEl.innerHTML = renderBanner('amber', `${t('dash_cached')} · ${new Date(data.timestamp).toLocaleTimeString()}`);
-    }
+    const attachListeners = (data) => {
+        const refreshBtn = mainEl.querySelector('#dash-refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.onclick = async () => {
+                refreshBtn.querySelector('i').classList.add('animate-spin');
+                localStorage.removeItem(cacheKey);
+                localStorage.removeItem(tsKey);
+                await loadDashboardData(farmId, mainEl, alertEl);
+            };
+        }
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    const renderFromCache = (isError) => {
+        const cached = localStorage.getItem(cacheKey);
+        const tsStr = localStorage.getItem(tsKey);
+        if (cached && tsStr) {
+            const data = JSON.parse(cached);
+            const ts = parseInt(tsStr, 10);
+            const ageMins = Math.floor((Date.now() - ts) / 60000);
+            
+            mainEl.innerHTML = renderHeader(data) + renderGrid(data);
+            attachListeners(data);
+            
+            if (isError) {
+                if (ageMins < 5) {
+                    alertEl.innerHTML = renderBanner('amber', `⚠ Offline mode — showing data from ${ageMins} minutes ago`);
+                } else {
+                    alertEl.innerHTML = renderBanner('amber', `Data may be outdated`);
+                }
+            } else {
+                alertEl.innerHTML = "";
+            }
+            return true;
+        }
+        return false;
+    };
+
+    renderFromCache(false);
 
     try {
         const response = await getDashboard(farmId);
         
         if (response && response.success) {
             const data = response.data;
-            data.timestamp = new Date().toISOString();
-            
-            // Persist for offline access
             localStorage.setItem(cacheKey, JSON.stringify(data));
+            localStorage.setItem(tsKey, Date.now().toString());
             
-            // Render fresh data
-            alertEl.innerHTML = data.data_source === 'cache' 
-                ? renderBanner('amber', "Historical data synced from node archive")
-                : ""; // Clear banner if fresh
-
+            alertEl.innerHTML = ""; 
+            store.setState('currentFarmDashboard', data);
+            
             mainEl.innerHTML = renderHeader(data) + renderGrid(data);
+            attachListeners(data);
             
-            // Map to store for reactive updates
             const sensorMap = {};
             data.zones.forEach(z => sensorMap[z.id] = { moisture: z.moisture_pct, temp_c: z.temp_c, ec_ds_m: z.ec_ds_m });
             store.setState('sensorData', sensorMap);
-
+        } else {
+            if (!renderFromCache(true)) {
+                alertEl.innerHTML = renderBanner('red', t('dash_conn_lost'));
+            }
         }
     } catch (err) {
-        alertEl.innerHTML = renderBanner('red', t('dash_conn_lost'));
+        if (!renderFromCache(true)) {
+            alertEl.innerHTML = renderBanner('red', t('dash_conn_lost'));
+        }
     }
 }
 
@@ -105,9 +139,14 @@ function renderHeader(data) {
                     </div>
                 </div>
                 <div class="flex items-center gap-6">
-                    <div class="text-right">
-                        <p class="text-xs font-bold text-white/60 uppercase tracking-widest">${t('dash_status')}</p>
-                        <span class="font-black text-sm uppercase">${data.summary.status || 'ACTIVE'}</span>
+                    <div class="flex items-center gap-3 text-right">
+                        <button id="dash-refresh-btn" class="p-2 rounded border border-white/20 hover:bg-white/10 transition-colors" title="Refresh Live Data">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
+                        </button>
+                        <div>
+                            <p class="text-xs font-bold text-white/60 uppercase tracking-widest">${t('dash_status')}</p>
+                            <span class="font-black text-sm uppercase">${data.summary.status || 'ACTIVE'}</span>
+                        </div>
                     </div>
                 </div>
             </div>

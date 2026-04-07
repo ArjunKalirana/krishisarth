@@ -6,12 +6,19 @@ import { getDashboard } from './farms.js';
  * WebSocket client with exponential backoff and gap-filling.
  */
 
+export let wsStatus = 'disconnected';
+
 class TelemetryWS {
     constructor() {
         this.ws = null;
         this.farmId = null;
-        this.reconnectAttempts = 0;
-        this.maxReconnectDelay = 30000; // 30s
+        this.delay = 1000;
+        this.reconnectTimer = null;
+    }
+
+    _setStatus(status) {
+        wsStatus = status;
+        document.dispatchEvent(new CustomEvent('ws-status', { detail: status }));
     }
 
     connect(farmId) {
@@ -21,12 +28,19 @@ class TelemetryWS {
         const url = `ws://localhost:8000/v1/ws/farms/${farmId}`;
         
         console.log(`WS: Connecting to ${url}...`);
+        this._setStatus('connecting');
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
             console.log("WS: Connectivity ESTABLISHED");
-            this.reconnectAttempts = 0;
-            this.updateNavbarStatus(true);
+            this.delay = 1000; // Reset backoff delay
+            this._setStatus('connected');
+            
+            // Re-subscribe payload
+            const farm = store.getState('currentFarm');
+            if (farm?.id) {
+                this.ws.send(JSON.stringify({ type: 'subscribe', farm_id: farm.id }));
+            }
             
             // Gap-fill: Fetch fresh REST snapshot on reconnect
             this.syncState();
@@ -43,13 +57,13 @@ class TelemetryWS {
 
         this.ws.onclose = () => {
             console.warn("WS: Connectivity LOST");
-            this.updateNavbarStatus(false);
+            this._setStatus('disconnected');
             this.scheduleReconnect();
         };
 
         this.ws.onerror = (err) => {
             console.error("WS: Transport error", err);
-            this.ws.close();
+            // close will fire automatically and handle reconnect
         };
     }
 
@@ -82,32 +96,24 @@ class TelemetryWS {
     }
 
     scheduleReconnect() {
-        const delay = Math.min(Math.pow(2, this.reconnectAttempts) * 1000, this.maxReconnectDelay);
-        console.log(`WS: Reconnecting in ${delay/1000}s (Attempt ${this.reconnectAttempts + 1})`);
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         
-        setTimeout(() => {
-            this.reconnectAttempts++;
+        console.log(`WS: Reconnecting in ${this.delay/1000}s`);
+        this.reconnectTimer = setTimeout(() => {
             this.connect(this.farmId);
-        }, delay);
-    }
-
-    updateNavbarStatus(isOnline) {
-        const liveBadge = document.querySelector('.pulse-dot');
-        if (liveBadge) {
-            if (isOnline) {
-                liveBadge.classList.replace('bg-amber-500', 'bg-primary-light');
-                liveBadge.title = "Live: Synchronized";
-            } else {
-                liveBadge.classList.replace('bg-primary-light', 'bg-amber-500');
-                liveBadge.title = "Offline: Attempting Reconnect...";
-            }
-        }
+        }, this.delay);
+        
+        this.delay = Math.min(this.delay * 2, 30000); // cap at 30s
     }
 
     disconnect() {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         if (this.ws) {
+            // Nullify reconnect logic first before closing explicitly
+            this.ws.onclose = null;
             this.ws.close();
             this.ws = null;
+            this._setStatus('disconnected');
         }
     }
 }

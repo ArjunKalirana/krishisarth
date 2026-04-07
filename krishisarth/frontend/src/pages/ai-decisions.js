@@ -34,6 +34,15 @@ export function renderAIDecisions() {
     // Initial Load
     _loadAI(mainGrid, container.querySelector('#run-ai-btn'));
 
+    // 3. Digital Twin Performance Section
+    const twinPerSection = document.createElement('div');
+    twinPerSection.id = "twin-performance-section";
+    twinPerSection.className = "mt-12 w-full"; // Added w-full for correct spanning
+    container.appendChild(twinPerSection);
+    
+    // Load Twin Data
+    _loadTwinPerformance(twinPerSection);
+
     return container;
 }
 
@@ -256,5 +265,146 @@ function _decisionCard(d) {
             </span>
         </div>
     `;
+}
+
+// ── Digital Twin Performance ──────────────────────────────────────────────────
+async function _loadTwinPerformance(container) {
+    const farm = store.getState('currentFarm');
+    if (!farm?.id) return;
+    
+    let status = null;
+    try {
+        const res = await api(`/farms/${farm.id}/twin/status`);
+        status = res?.data;
+    } catch(e) {
+        console.error("Twin API error", e);
+        return;
+    }
+
+    const history = JSON.parse(localStorage.getItem('ks_twin_history') || '[]').reverse().slice(0, 10);
+    
+    // Sparkline coordinates
+    const sx = 400, sy = 60;
+    let points = "";
+    if (history.length > 0) {
+        points = history.map((h, i) => {
+            const x = (i / Math.max(1, history.length - 1)) * sx;
+            let err = h.actual_moisture ? Math.abs(h.predicted_moisture - h.actual_moisture) / 100 : status.mae_score;
+            // Cap at 0.3 for the visual scale
+            const y = sy - (Math.min(err, 0.3) / 0.3) * sy;
+            return `${x},${y}`;
+        }).join(" ");
+    } else {
+        points = `0,${sy - (status.mae_score/0.3)*sy} ${sx},${sy - (status.mae_score/0.3)*sy}`;
+    }
+    const safePath = points.includes("NaN") ? "" : points;
+
+    // Threshold line Y at MAE = 0.1
+    const targetY = sy - (0.1 / 0.3) * sy;
+
+    const timeAgo = status.last_calibrated_at ? Math.round((new Date() - new Date(status.last_calibrated_at))/(1000*60*60)) : 0;
+    const trustColor = status.trust_level === 'HIGH' ? '#22c55e' : (status.trust_level === 'MEDIUM' ? '#f59e0b' : '#ef4444');
+    const trustBg = status.trust_level === 'HIGH' ? '#dcfce7' : (status.trust_level === 'MEDIUM' ? '#fef3c7' : '#fee2e2');
+
+    container.innerHTML = `
+        <div class="mt-12">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-6">Digital Twin Performance</h2>
+            
+            <!-- Overall Status Card -->
+            <div class="ks-card p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6" style="border-left: 4px solid #00c3ff;">
+                <div class="flex items-center gap-6">
+                    <div class="flex flex-col text-center md:text-left">
+                        <span class="text-sm font-bold text-gray-400 uppercase tracking-widest">Calibration MAE</span>
+                        <div class="text-5xl font-black text-gray-800" style="font-family: 'JetBrains Mono', monospace;">${status.mae_score.toFixed(3)}</div>
+                    </div>
+                    
+                    <div class="w-px h-16 bg-gray-200 hidden md:block"></div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded border" style="background: ${trustBg}; border-color: ${trustColor}40; color: ${trustColor};">
+                            <div class="w-2 h-2 rounded-full" style="background: ${trustColor};"></div>
+                            <span class="font-black text-xs uppercase tracking-widest">${status.trust_level} TRUST</span>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400">Last calibrated: ${timeAgo} hours ago</span>
+                        <span class="text-xs font-bold text-gray-400">Simulations Run: <span class="text-gray-900 font-black">${status.total_simulations_run}</span></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center md:items-end gap-2 w-full md:w-1/3">
+                    <div class="w-full relative bg-gray-50 rounded p-4 border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Calibration Accuracy Over Time</span>
+                        <svg width="100%" height="60" viewBox="0 0 ${sx} ${sy}" preserveAspectRatio="none">
+                            <line x1="0" y1="${targetY}" x2="${sx}" y2="${targetY}" stroke="#ef4444" stroke-dasharray="4" stroke-width="1.5" opacity="0.5" />
+                            <polyline points="${safePath}" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <button id="recalibrate-btn" class="mt-2 text-sm font-bold tracking-widest uppercase bg-transparent border-2 border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900 px-6 py-2 rounded-lg transition-colors">
+                        Recalibrate Twin
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="ks-card overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-900">Recent Simulations</h3>
+                    <span class="text-xs font-bold text-gray-400">Last 10 executions</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-black text-gray-400 tracking-widest">
+                                <th class="p-4">Zone</th>
+                                <th class="p-4">Time</th>
+                                <th class="p-4">Type</th>
+                                <th class="p-4">Predicted</th>
+                                <th class="p-4">Actual</th>
+                                <th class="p-4">Error (|Δ|)</th>
+                                <th class="p-4">Efficiency</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium">
+                            ${history.length === 0 ? `<tr><td colspan="7" class="p-8 text-center text-gray-400 font-bold">No simulations recorded yet. Use the 3D Twin preview.</td></tr>` : ''}
+                            ${history.map(row => {
+                                const diff = row.actual_moisture ? Math.abs(row.predicted_moisture - row.actual_moisture) : null;
+                                let errStyle = "color: #9ca3af;";
+                                if (diff !== null) {
+                                    if (diff < 5) errStyle = "color: #22c55e; font-weight: 800;";
+                                    else if (diff < 15) errStyle = "color: #f59e0b; font-weight: 800;";
+                                    else errStyle = "color: #ef4444; font-weight: 800;";
+                                }
+                                
+                                return `
+                                <tr class="border-b last:border-0 border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                    <td class="p-4 font-bold text-gray-900 uppercase text-xs tracking-widest">${row.zone_name}</td>
+                                    <td class="p-4 text-gray-500 font-mono text-xs">${new Date(row.timestamp).toLocaleTimeString()}</td>
+                                    <td class="p-4"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-black uppercase tracking-widest">${row.type}</span></td>
+                                    <td class="p-4 font-mono font-bold">${row.predicted_moisture.toFixed(1)}%</td>
+                                    <td class="p-4 font-mono">${row.actual_moisture ? row.actual_moisture.toFixed(1) + '%' : '⏳ Pending'}</td>
+                                    <td class="p-4 font-mono" style="${errStyle}">${diff !== null ? diff.toFixed(1) : '—'}</td>
+                                    <td class="p-4 font-mono text-gray-500">${(row.efficiency_score * 100).toFixed(0)}%</td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.querySelector('#recalibrate-btn').addEventListener('click', async (e) => {
+        const btn = e.target;
+        btn.innerHTML = '<span class="animate-pulse">Calibrating...</span>';
+        btn.disabled = true;
+        try {
+            await api(`/farms/${farm.id}/twin/calibrate`, { method: 'POST' });
+            btn.innerHTML = 'Calibration complete ✓';
+            setTimeout(() => _loadTwinPerformance(container), 1500); // Reload entire section to show new MAE
+        } catch(err) {
+            btn.innerHTML = 'Error ' + err.message;
+            btn.disabled = false;
+        }
+    });
 }
 

@@ -6,31 +6,42 @@
 
 const BASE_URL = window.__KS_API_URL__ || 'http://localhost:8000/v1';
 
-let _accessToken = null;
+// Modified for 6A robust API client structure
 let _refreshing   = false;
 let _refreshQueue = [];
 
 export function setToken(token) {
-    _accessToken = token;
+    localStorage.setItem('ks_token', token);
 }
 
 export function getToken() {
-    return _accessToken;
+    return localStorage.getItem('ks_token');
 }
 
 export function clearToken() {
-    _accessToken = null;
-    sessionStorage.removeItem('ks_refresh_token');
+    localStorage.removeItem('ks_token');
+    localStorage.removeItem('ks_refresh');
     sessionStorage.removeItem('ks_farmer');
 }
 
-export async function api(path, options = {}) {
+import { showToast } from '../components/toast.js';
+
+export async function api(path, options = {}, attempt = 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    options.signal = controller.signal;
+
     try {
         const response = await _fetchWithAuth(path, options);
+        clearTimeout(timeoutId);
 
         if (response.status === 401) {
             const refreshed = await _refreshAccessToken();
             if (refreshed) {
+                const retryController = new AbortController();
+                setTimeout(() => retryController.abort(), 15000);
+                options.signal = retryController.signal;
+                
                 const retry = await _fetchWithAuth(path, options);
                 const retryData = await retry.json();
                 if (!retry.ok) throw new Error(retryData.error?.code || 'API_ERROR');
@@ -45,14 +56,34 @@ export async function api(path, options = {}) {
         if (!response.ok) throw new Error(data.error?.code || 'API_ERROR');
         return data;
     } catch (err) {
+        clearTimeout(timeoutId);
         console.error(`[API] ${path}:`, err.message);
+        
+        // Network Error Catch & Retry logic
+        if (err.name === 'TypeError' || err.name === 'AbortError') {
+             if (attempt === 1) {
+                  showToast('Network error — retrying...', 'error');
+                  return new Promise((resolve, reject) => {
+                       setTimeout(async () => {
+                           try {
+                               const out = await api(path, options, 2);
+                               resolve(out);
+                           } catch(e) {
+                               reject(e);
+                           }
+                       }, 2000);
+                  });
+             }
+        }
+        
         throw err;
     }
 }
 
 async function _fetchWithAuth(path, options) {
     const headers = { 'Content-Type': 'application/json', ...options.headers };
-    if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
+    const ksToken = getToken();
+    if (ksToken) headers['Authorization'] = `Bearer ${ksToken}`;
     
     // Fix: Strip trailing slashes to prevent 307 redirects to HTTP which cause Mixed Content
     const cleanPath = path.replace(/\/+(\?|$)/, '$1');
@@ -63,7 +94,7 @@ async function _refreshAccessToken() {
     if (_refreshing) {
         return new Promise(resolve => _refreshQueue.push(resolve));
     }
-    const refreshToken = sessionStorage.getItem('ks_refresh_token');
+    const refreshToken = localStorage.getItem('ks_refresh');
     if (!refreshToken) return false;
 
     _refreshing = true;
@@ -76,8 +107,8 @@ async function _refreshAccessToken() {
         });
         if (res.ok) {
             const body = await res.json();
-            setToken(body.data.access_token);
-            sessionStorage.setItem('ks_refresh_token', body.data.refresh_token);
+            setToken(body.data.access_token || body.access_token);
+            localStorage.setItem('ks_refresh', body.data.refresh_token || body.refresh_token);
             _refreshQueue.forEach(r => r(true));
             _refreshQueue = [];
             return true;

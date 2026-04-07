@@ -45,17 +45,6 @@ export function renderFarm3D() {
             </div>
         </div>
 
-        <div class="twin-info-bar" style="
-            background: linear-gradient(90deg, #0a2018, #1a7a4a);
-            color: white; font-size: 11px; padding: 8px 20px;
-            border-left: 4px solid #00c3ff; border-radius: 8px;
-            margin-bottom: 12px; display: flex; justify-content: space-between;
-            align-items: center; font-weight: 600;
-        ">
-            <span>⚛ KrishiSarth Digital Twin — Every action is simulated in a virtual farm model BEFORE execution. AI validates efficiency and prevents waste.</span>
-            <span class="mae-live font-black px-2 py-1 bg-black/30 rounded" style="font-family: 'JetBrains Mono', monospace;">MAE: loading...</span>
-        </div>
-
         <!-- 3D Canvas -->
         <div class="ks-card overflow-hidden" style="height:540px; position:relative;">
             <canvas id="farm3d-canvas" style="width:100%; height:100%; display:block;"></canvas>
@@ -160,22 +149,6 @@ async function _init3D(container) {
     const canvas = container.querySelector('#farm3d-canvas');
     if (!canvas || !window.THREE) return;
     loadingEl.style.display = 'none';
-
-    // MAE Bar logic
-    const maeLive = container.querySelector('.mae-live');
-    const _fetchMAE = async () => {
-        if (!maeLive) return;
-        try {
-            const res = await api(`/farms/${farm.id}/twin/status`);
-            if (res && res.data) {
-                const mae = res.data.mae_score || 0;
-                maeLive.textContent = `MAE: ${mae.toFixed(3)}`;
-                maeLive.style.color = mae < 0.1 ? '#22c55e' : (mae < 0.25 ? '#f59e0b' : '#ef4444');
-            }
-        } catch { }
-    };
-    _fetchMAE();
-    setInterval(_fetchMAE, 60000);
 
     const THREE = window.THREE;
     const w = canvas.clientWidth || 800;
@@ -698,19 +671,6 @@ async function _showDigitalTwinPanel(zone, container) {
                     _updateMeshColors();
                     _renderInfoCards(document.getElementById('zone-info-grid') || document.querySelector('#zone-info-grid'));
                     showToast(`Started irrigation for ${zone.name}`, 'success');
-                    
-                    // Log simulation to localStorage
-                    let hist = JSON.parse(localStorage.getItem('ks_twin_history') || '[]');
-                    hist.push({
-                        zone_name: zone.name,
-                        timestamp: new Date().toISOString(),
-                        predicted_moisture: predictedMoisture,
-                        actual_moisture: null,
-                        efficiency_score: eff,
-                        type: 'Irrigation'
-                    });
-                    localStorage.setItem('ks_twin_history', JSON.stringify(hist));
-
                     closePanel();
                 } catch(e) {
                    showToast(e.message, 'error');
@@ -840,20 +800,6 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '🔬 Digital Twin: Running virtual simulation...',
-            duration: 1500,
-            action: async () => {
-                _meshes.forEach(m => m.material.emissive?.setHex(0x004466));
-                await _sleep(400);
-                _meshes.forEach(m => m.material.emissive?.setHex(0x000000));
-            },
-        },
-        {
-            label: '📐 Twin MAE: 0.089 — HIGH TRUST simulation result',
-            duration: 2000,
-            action: async () => { },
-        },
-        {
             label: '⚠️ Grape Vineyard CRITICAL — moisture 19%',
             duration: 2500,
             action: async () => {
@@ -899,17 +845,6 @@ async function _runDemoSimulation(container) {
                         await injectFertigation(tomatoZone.id, 'Nitrogen', 12);
                     } catch { /* demo continues regardless */ }
                 }
-            },
-        },
-        {
-            label: '⚠ Twin Check: EC will reach 2.8 dS/m — within safe range',
-            duration: 2500,
-            action: async () => {
-                 const tomatoZone = _zones.find(z => z.name.includes('Tomato') || z.name.includes('Chilli'));
-                 if (tomatoZone) {
-                     const mesh = _meshes.find(m => m.userData.zone.id === tomatoZone.id);
-                     if (mesh) { mesh.material.emissive?.setHex(0x333300); setTimeout(() => {if(mesh) mesh.material.emissive?.setHex(0x000000)}, 500); }
-                 }
             },
         },
         {

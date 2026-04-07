@@ -218,6 +218,22 @@ const TRANSLATIONS = {
     assistant_s3:         "My soil moisture is 18% — is that critical?",
     assistant_s4:         "Explain the latest AI decision",
     assistant_context:    "You are KrishiSarth, an expert AI assistant for Indian farmers. You help with irrigation, soil health, crop management, and smart farming. You have access to farm sensor data. Be concise, practical, and use simple language. When giving advice, consider Indian farming conditions.",
+    
+    // Digital Twin
+    twin_panel_title: "Digital Twin Simulation",
+    twin_mae_label: "Model Accuracy (MAE)",
+    twin_trust_high: "HIGH TRUST",
+    twin_trust_medium: "MEDIUM TRUST",
+    twin_trust_low: "LOW TRUST",
+    twin_simulate_btn: "Run Simulation",
+    twin_execute_btn: "Execute Irrigation",
+    twin_predicted_moisture: "Predicted Moisture",
+    twin_water_volume: "Water Volume",
+    twin_efficiency: "Efficiency Score",
+    twin_warning_ec: "⚠ Risk of salt stress — EC too high",
+    twin_preview_active: "Digital Twin Active",
+    twin_history_title: "Simulation History",
+    twin_calibrate_btn: "Recalibrate Twin",
   },
 
   hi: {
@@ -411,6 +427,21 @@ const TRANSLATIONS = {
     assistant_s3:         "मेरी मिट्टी की नमी 18% है — क्या यह गंभीर है?",
     assistant_s4:         "नवीनतम AI निर्णय समझाएं",
     assistant_context:    "आप KrishiSarth हैं, भारतीय किसानों के लिए एक विशेषज्ञ AI सहायक। सिंचाई, मिट्टी स्वास्थ्य, फसल प्रबंधन और स्मार्ट खेती में मदद करें। सरल हिंदी में उत्तर दें।",
+
+    twin_panel_title: "डिजिटल ट्विन सिमुलेशन",
+    twin_mae_label: "मॉडल सटीकता (MAE)",
+    twin_trust_high: "उच्च विश्वास",
+    twin_trust_medium: "मध्यम विश्वास",
+    twin_trust_low: "कम विश्वास",
+    twin_simulate_btn: "सिमुलेशन चलाएं",
+    twin_execute_btn: "सिंचाई निष्पादित करें",
+    twin_predicted_moisture: "अनुमानित नमी",
+    twin_water_volume: "पानी की मात्रा",
+    twin_efficiency: "दक्षता स्कोर",
+    twin_warning_ec: "⚠ नमक तनाव का जोखिम — EC बहुत अधिक है",
+    twin_preview_active: "डिजिटल ट्विन सक्रिय",
+    twin_history_title: "सिमुलेशन इतिहास",
+    twin_calibrate_btn: "ट्विन को फिर से कैलिब्रेट करें",
   },
 
   mr: {
@@ -604,6 +635,21 @@ const TRANSLATIONS = {
     assistant_s3:         "माझी माती ओलावा 18% आहे — हे गंभीर आहे का?",
     assistant_s4:         "नवीनतम AI निर्णय समजावून सांगा",
     assistant_context:    "तुम्ही KrishiSarth आहात, भारतीय शेतकऱ्यांसाठी तज्ञ AI सहाय्यक. सिंचन, माती आरोग्य, पीक व्यवस्थापन आणि स्मार्ट शेतीत मदत करा. साध्या मराठीत उत्तर द्या.",
+
+    twin_panel_title: "डिजिटल ट्विन सिम्युलेशन",
+    twin_mae_label: "मॉडेल अचूकता (MAE)",
+    twin_trust_high: "उच्च विश्वास",
+    twin_trust_medium: "मध्यम विश्वास",
+    twin_trust_low: "कमी विश्वास",
+    twin_simulate_btn: "सिम्युलेशन चालवा",
+    twin_execute_btn: "सिंचन कार्यान्वित करा",
+    twin_predicted_moisture: "अंदाजित ओलावा",
+    twin_water_volume: "पाण्याचे प्रमाण",
+    twin_efficiency: "कार्यक्षमता स्कोर",
+    twin_warning_ec: "⚠ मिठाच्या ताणाचा धोका — EC खूप जास्त आहे",
+    twin_preview_active: "डिजिटल ट्विन सक्रिय",
+    twin_history_title: "सिम्युलेशन इतिहास",
+    twin_calibrate_btn: "ट्विन पुन्हा कॅलिब्रेट करा",
   }
 };
 

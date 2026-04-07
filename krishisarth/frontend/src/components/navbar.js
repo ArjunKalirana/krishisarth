@@ -29,7 +29,7 @@ export function renderNavbar() {
                     <span class="text-xl font-bold tracking-tight text-gray-900">
                         Krishi<span class="text-primary">Sarth</span>
                     </span>
-                    <div class="pulse-dot ml-1" title="Live System Connection"></div>
+                    <div id="ws-status-dot" class="pulse-dot ml-1 bg-amber-500" title="Connecting..."></div>
                 </a>
 
                 <!-- Desktop Navigation -->
@@ -276,6 +276,24 @@ export function renderNavbar() {
             store.setState('activePage', window.location.hash || '#dashboard');
             renderNavbar();
         });
+        
+        document.addEventListener('ws-status', (e) => {
+            const dot = document.getElementById('ws-status-dot');
+            if (!dot) return;
+            const status = e.detail;
+            dot.classList.remove('bg-amber-500', 'bg-primary-light', 'bg-red-500');
+            if (status === 'connected') {
+                dot.classList.add('bg-primary-light');
+                dot.title = "Live: Synchronized";
+            } else if (status === 'connecting') {
+                dot.classList.add('bg-amber-500');
+                dot.title = "Offline: Connecting...";
+            } else {
+                dot.classList.add('bg-red-500');
+                dot.title = "Offline: Disconnected";
+            }
+        });
+
         _navbarMounted = true;
     }
 }
