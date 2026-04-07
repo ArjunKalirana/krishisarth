@@ -493,6 +493,11 @@ async function _runDemoSimulation(container) {
                 if (dryZone) {
                     dryZone.pump_running = true;
                     _startParticles(dryZone.id, 'water');
+                    
+                    // Flash mesh blue
+                    const mesh = _meshes.find(m => m.userData.zone.id === dryZone.id);
+                    if (mesh) { mesh.material.emissive?.setHex(0x004488); }
+                    
                     _updateMeshColors();
                     _renderInfoCards(infoGrid);
                 }
@@ -505,6 +510,11 @@ async function _runDemoSimulation(container) {
                 const tomatoZone = _zones.find(z => z.name.includes('Tomato') || z.name.includes('Chilli'));
                 if (tomatoZone) {
                     _startParticles(tomatoZone.id, 'fert');
+                    
+                    // Flash mesh neon green
+                    const mesh = _meshes.find(m => m.userData.zone.id === tomatoZone.id);
+                    if (mesh) { mesh.material.emissive?.setHex(0x116611); }
+                    
                     // Try real API call — ignore error in demo
                     try {
                         await injectFertigation(tomatoZone.id, 'Nitrogen', 12);
@@ -524,17 +534,27 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '📊 Moisture levels updating in real time...',
-            duration: 2000,
+            label: '📊 Moisture & EC levels updating in real time...',
+            duration: 2500,
             action: async () => {
-                // Simulate moisture rising in irrigated zone
+                // Remove emissive highlights
+                _meshes.forEach(m => m.material.emissive?.setHex(0x000000));
+                
+                // Simulate moisture drastically rising
                 const dryZone = _zones.find(z => z.pump_running);
                 if (dryZone) {
-                    dryZone.moisture_pct = Math.min(dryZone.moisture_pct + 18, 65);
+                    dryZone.moisture_pct = 75; // Big jump!
                     dryZone.moisture_status = 'ok';
-                    _updateMeshColors();
-                    _renderInfoCards(infoGrid);
                 }
+                
+                // Simulate EC jump due to fertigation
+                const tomatoZone = _zones.find(z => z.name.includes('Tomato') || z.name.includes('Chilli'));
+                if (tomatoZone) {
+                    tomatoZone.ec_ds_m = (tomatoZone.ec_ds_m || 1.2) + 0.8;
+                }
+                
+                _updateMeshColors();
+                _renderInfoCards(infoGrid);
             },
         },
         {
@@ -564,7 +584,7 @@ async function _runDemoSimulation(container) {
 
 // ── Particle systems ──────────────────────────────────────────────────────────
 function _buildParticleSystem(THREE, x, z, baseH) {
-    const count    = 60;
+    const count    = 250; // Dense attractive particles
     const geo      = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
 
@@ -575,7 +595,7 @@ function _buildParticleSystem(THREE, x, z, baseH) {
     }
 
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat  = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.18, transparent: true, opacity: 0 });
+    const mat  = new THREE.PointsMaterial({ color: 0x00c3ff, size: 0.30, transparent: true, opacity: 0 });
     const mesh = new THREE.Points(geo, mat);
     mesh.userData.startY = 0.3 + baseH + 3;
     return { mesh, geo };
@@ -585,9 +605,9 @@ function _startParticles(zoneId, type) {
     const p = _particles.find(p => p.zone_id === zoneId);
     if (!p) return;
     p.type = type;
-    p.mesh.material.opacity    = 0.85;
-    p.mesh.material.color.setHex(type === 'water' ? 0x60a5fa : 0x86efac);
-    p.mesh.material.size       = type === 'water' ? 0.18 : 0.22;
+    p.mesh.material.opacity    = 0.95;
+    p.mesh.material.color.setHex(type === 'water' ? 0x00c3ff : 0x39ff14);
+    p.mesh.material.size       = type === 'water' ? 0.28 : 0.40;
     p.startY = type === 'water' ? p.mesh.userData.startY : 0.5;
 }
 

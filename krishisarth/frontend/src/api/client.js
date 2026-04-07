@@ -53,7 +53,10 @@ export async function api(path, options = {}) {
 async function _fetchWithAuth(path, options) {
     const headers = { 'Content-Type': 'application/json', ...options.headers };
     if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
-    return fetch(`${BASE_URL}${path}`, { ...options, headers, credentials: 'include' });
+    
+    // Fix: Strip trailing slashes to prevent 307 redirects to HTTP which cause Mixed Content
+    const cleanPath = path.replace(/\/+(\?|$)/, '$1');
+    return fetch(`${BASE_URL}${cleanPath}`, { ...options, headers, credentials: 'include' });
 }
 
 async function _refreshAccessToken() {
