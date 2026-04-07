@@ -95,7 +95,14 @@ export function renderControl() {
 
         injectBtn.onclick = async () => {
             const farm = store.getState('currentFarm');
-            const zoneId = farm?.id ? 'zone_1' : null; // Fallback or real zone
+            let zoneId = null;
+            try {
+                if (farm?.id) {
+                    const dashRes = await api(`/farms/${farm.id}/dashboard`);
+                    zoneId = dashRes?.data?.zones?.[0]?.id;
+                }
+            } catch (e) {}
+
             if (!zoneId) {
                 showToast(t('ctrl_no_zones'), 'error');
                 return;
