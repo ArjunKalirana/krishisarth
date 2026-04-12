@@ -81,10 +81,18 @@ ZONES = [
 ]
 
 def run():
-    db = SessionLocal()
-    now = datetime.now(timezone.utc)
-
     print("=== KrishiSarth Demo Seeder ===\n")
+    try:
+        db = SessionLocal()
+        # Test connection
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        print(f"❌ FATAL: Could not connect to PostgreSQL database.")
+        print(f"   Error: {e}")
+        print("   TIP: If running locally, ensure Docker Desktop is started.")
+        sys.exit(1)
+
+    now = datetime.now(timezone.utc)
 
     # ── 1. Farmer ──────────────────────────────────────────────────────────────
     farmer = db.query(Farmer).filter(Farmer.email == DEMO_EMAIL).first()
@@ -246,15 +254,24 @@ def run():
     db.commit()
     print("PostgreSQL historical data: DONE")
 
-    # ── 6. InfluxDB time-series data (30 days × 96 readings/day) ─────────────
-    print("\nWriting InfluxDB sensor time series (30 days)...")
-    client = InfluxDBClient(
-        url=settings.INFLUXDB_URL,
-        token=settings.INFLUXDB_TOKEN,
-        org=settings.INFLUXDB_ORG,
-    )
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    batch = []
+    try:
+        client = InfluxDBClient(
+            url=settings.INFLUXDB_URL,
+            token=settings.INFLUXDB_TOKEN,
+            org=settings.INFLUXDB_ORG,
+            timeout=5000 # 5 seconds
+        )
+        # Test connection
+        client.ready()
+    except Exception as e:
+        print("\n⚠️ WARNING: InfluxDB is unavailable. Skipping time-series seeding.")
+        print(f"   {e}")
+        print("   Note: Dashboard will still work using live simulation fallback logic.")
+        client = None
+
+    if client:
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        batch = []
 
     for zone, z_cfg in zone_objects:
         zone_id    = str(zone.id)
@@ -314,18 +331,21 @@ def run():
         )
 
     # Flush remaining
-    if batch:
-        write_api.write(bucket=settings.INFLUXDB_BUCKET,
-                        org=settings.INFLUXDB_ORG, record=batch)
+    if client:
+        if batch:
+            write_api.write(bucket=settings.INFLUXDB_BUCKET,
+                            org=settings.INFLUXDB_ORG, record=batch)
 
-    client.close()
-    print("\nInfluxDB time series: DONE")
+        client.close()
+        print("\nInfluxDB time series: DONE")
+    else:
+        print("\nInfluxDB time series: SKIPPED")
     print(f"""
 ╔══════════════════════════════════════════════════╗
 ║        DEMO ACCOUNT READY                       ║
 ╠══════════════════════════════════════════════════╣
-║  Email:    demo@krishisarth.com                 ║
-║  Password: Demo@2025                            ║
+║  Email:    demo@gmail.com                       ║
+║  Password: Demo@123                             ║
 ║  Farm:     Sharma Smart Farm (Nashik)           ║
 ║  Zones:    6 (2 dry, 1 wet, 3 optimal)         ║
 ║  History:  30 days sensor + decision data       ║

@@ -51,6 +51,11 @@ seed-demo:
 	@echo "Seeding judge's demo account..."
 	cd backend && python scripts/seed_demo.py
 
+# Prepare EVERYTHING for the stage demo in one command
+demo-ready:
+	@echo "Pre-stage automation in progress..."
+	cd backend && python scripts/start_demo.py
+
 # Placeholder for production deployment configuration
 deploy:
 	@echo "Configure Render deployment first — see PROJECT_SPEC.md Section 10"

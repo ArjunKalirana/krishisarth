@@ -5,6 +5,7 @@ import { createSensorCard } from '../components/sensor-card.js';
 import { createTankRing } from '../components/tank-ring.js';
 import { countUp } from '../utils/dom.js';
 import { showToast } from '../components/toast.js';
+import { api } from '../api/client.js';
 
 /**
  * Dynamic Dashboard Page
@@ -46,6 +47,15 @@ export function renderDashboard() {
     mainContent.innerHTML = renderSkeleton();
     container.appendChild(mainContent);
 
+    // 1.5. Demo Status Check (No-auth endpoint)
+    if (userEmail === 'demo@gmail.com') {
+        api('/demo/status').then(res => {
+            if (res && res.seeded && !res.simulation_running) {
+                showToast('Simulation is currently stopped on the server.', 'warning');
+            }
+        }).catch(() => {});
+    }
+
     // 2. Load Data (Cache then Network)
     loadDashboardData(farmId, mainContent, topBar);
 
@@ -85,20 +95,20 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
         }
         
         // Demo Actions (Event Delegation)
-        const crisisBtn = container.querySelector('#demo-crisis-btn');
+        const crisisBtn = document.querySelector('#demo-crisis-btn');
         if (crisisBtn) {
             crisisBtn.onclick = async () => {
                 try {
-                    await fetch(`${window.__KS_API_URL__}/demo/crisis?zone_name=Wheat%20Block`, { method: 'POST' });
+                    await api(`/demo/crisis?zone_name=${encodeURIComponent('Wheat Block')}`, { method: 'POST' });
                     showToast('Crisis injected in Wheat Block!', 'warning');
                 } catch (e) { showToast('Action failed', 'error'); }
             };
         }
-        const resetBtn = container.querySelector('#demo-reset-btn');
+        const resetBtn = document.querySelector('#demo-reset-btn');
         if (resetBtn) {
             resetBtn.onclick = async () => {
                 try {
-                    await fetch(`${window.__KS_API_URL__}/demo/reset`, { method: 'POST' });
+                    await api('/demo/reset', { method: 'POST' });
                     showToast('Simulation reset to healthy values', 'success');
                 } catch (e) { showToast('Action failed', 'error'); }
             };
@@ -111,7 +121,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
                 rescueBtn.disabled = true;
                 rescueBtn.innerHTML = '<i class="w-5 h-5 animate-spin"></i> Initializing...';
                 try {
-                    await fetch(`${window.__KS_API_URL__}/demo/history`, { method: 'POST' });
+                    await api('/demo/history', { method: 'POST' });
                     showToast('Farm data generated!', 'success');
                     setTimeout(() => window.location.reload(), 2000);
                 } catch (e) {

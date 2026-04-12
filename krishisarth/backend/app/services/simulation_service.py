@@ -48,6 +48,7 @@ class SimulationEngine:
             await asyncio.sleep(10) # Tick every 10 seconds
 
     async def _simulate_tick(self):
+        logger.debug(f"Simulation tick running — {len(self.zone_states)} zones in state")
         db = SessionLocal()
         write_api = get_write_api()
         try:
@@ -82,10 +83,24 @@ class SimulationEngine:
                     zid = str(zone.id)
                     # Get or init state
                     if zid not in self.zone_states:
+                        zone_moisture_map = {
+                            "wheat block": 18.0,        # critical dry
+                            "grape vineyard": 21.0,     # dry
+                            "chilli patch": 35.0,       # below optimal
+                            "onion field": 44.0,        # moderate
+                            "tomato greenhouse a": 58.0, # healthy
+                            "pomegranate orchard": 72.0, # wet
+                        }
+                        zone_name_lower = zone.name.lower()
+                        default_moisture = next(
+                            (v for k, v in zone_moisture_map.items() if k in zone_name_lower),
+                            random.uniform(35, 65)  # fallback
+                        )
                         self.zone_states[zid] = {
-                            "moisture": random.uniform(45, 65),
-                            "temp": random.uniform(24, 32),
-                            "ec": random.uniform(1.2, 1.8)
+                            "moisture": default_moisture,
+                            "temp": random.uniform(28, 34),
+                            "ec": random.uniform(1.1, 1.6),
+                            "irrigating": False
                         }
                     
                     state = self.zone_states[zid]
@@ -106,10 +121,12 @@ class SimulationEngine:
                         state["temp"] = max(24.0, state["temp"] - random.uniform(0.2, 0.5))
                     else:
                         # Natural evaporation / Evapotranspiration
-                        # Wheat Block has a specialized "fast-dry" override for the demo
-                        drift = random.uniform(1.0, 2.0) if "Wheat Block" in zone.name else random.uniform(0.3, 0.8)
-                        state["moisture"] = max(5.0, state["moisture"] - drift)
+                        state["moisture"] = max(5.0, state["moisture"] - random.uniform(0.3, 0.6))
                         
+                        # Wheat Block specialized dry-down
+                        if "wheat" in zone.name.lower() and state["moisture"] > 22:
+                            state["moisture"] -= 0.5
+
                         # Temperature thermal drift around 31°C
                         state["temp"] = round(31.0 + random.uniform(-0.5, 0.5), 1)
                         
@@ -126,10 +143,12 @@ class SimulationEngine:
                         .time(datetime.now(timezone.utc))
                     write_api.write(bucket=settings.INFLUXDB_BUCKET, record=point)
 
-                # 4. Invalidate/Update Dashboard Cache in Redis for instant UI feedback
-                # Note: The dashboard_service.get_dashboard will call InfluxDB anyway,
-                # but we can force it here if we wanted sub-second persistence.
-                # For now, we let the InfluxDB write be the truth.
+                # 4. Invalidate Dashboard Cache in Redis for instant UI feedback
+                try:
+                    cache_key = f"dashboard_cache:{str(farm.id)}"
+                    redis_client.delete(cache_key)
+                except Exception as e:
+                    logger.warning(f"Redis cache invalidation failed: {e}")
 
         finally:
             db.close()
