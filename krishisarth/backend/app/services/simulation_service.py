@@ -10,6 +10,7 @@ from app.db.redis import redis_client
 from app.db.influxdb import get_write_api
 from app.models.zone import Zone
 from app.models.farm import Farm
+from app.models.farmer import Farmer
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,13 @@ class SimulationEngine:
         db = SessionLocal()
         write_api = get_write_api()
         try:
-            farms = db.query(Farm).all()
+            # ONLY simulate farms where the farmer's name OR the farm name contains "Demo"
+            # This ensures total isolation for your hosted environment.
+            farms = db.query(Farm).join(Farmer).filter(
+                (Farmer.name.ilike('%Demo%')) | 
+                (Farm.name.ilike('%Demo%'))
+            ).all()
+            
             for farm in farms:
                 zones = db.query(Zone).filter(Zone.farm_id == farm.id).all()
                 farm_telemetry = []
