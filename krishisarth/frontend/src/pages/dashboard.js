@@ -135,16 +135,6 @@ function renderBanner(color, msg) {
     </div>`;
 }
 
-function countUp(el, target, duration=1200) {
-    let start = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-        start = Math.min(start + step, target);
-        el.textContent = Math.round(start).toLocaleString('en-IN');
-        if (start >= target) clearInterval(timer);
-    }, 16);
-}
-
 function renderHeader(data) {
     const farmerName = store.getState('currentFarmer')?.name || t('fallback_farmer') || 'Farmer';
     const hour = new Date().getHours();
