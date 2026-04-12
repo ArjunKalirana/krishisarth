@@ -124,13 +124,26 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
         if (rescueBtnHeader) {
             rescueBtnHeader.onclick = async () => {
                 rescueBtnHeader.disabled = true;
-                rescueBtnHeader.innerHTML = '<i class="w-4 h-4 animate-spin"></i> Seeding...';
+                rescueBtnHeader.innerHTML = '<i class="w-4 h-4 animate-spin"></i> Resetting Twin...';
+                
                 try {
+                    // FORCE CLEAR EVERYTHING MENTALLY
+                    console.log('[RESCUE] Nuking local state...');
+                    const token = localStorage.getItem('ks_access_token');
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    if (token) localStorage.setItem('ks_access_token', token); // Keep auth
+                    
                     await api('/demo/history', { method: 'POST' });
-                    showToast('Demo Data Reset Successfully!', 'success');
-                    setTimeout(() => window.location.reload(), 1500);
+                    showToast('Hard Reset Successful! Environment Purged.', 'success');
+                    
+                    // Force a hard reload to the landing page to re-bootstrap
+                    setTimeout(() => {
+                        window.location.hash = '#dashboard';
+                        window.location.reload();
+                    }, 1500);
                 } catch (e) {
-                    showToast('Sync failed: ' + e.message, 'error');
+                    showToast('Reset failed: ' + e.message, 'error');
                     rescueBtnHeader.disabled = false;
                     rescueBtnHeader.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Fix Demo Data';
                     if (window.lucide) window.lucide.createIcons();

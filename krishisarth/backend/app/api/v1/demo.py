@@ -40,30 +40,28 @@ async def backfill_history():
             db.commit()
             db.refresh(farmer)
 
-        # 2. Farm - Try to find existing farm first
-        farm = db.query(Farm).filter(Farm.farmer_id == farmer.id).first()
-        if not farm:
-            farm = Farm(
-                name="KrishiSarth Demo Farm",
-                soil_type="Black Cotton",
-                area_ha=5.2,
-                farmer_id=farmer.id,
-                lat=20.0059,
-                lng=73.7897
-            )
-            db.add(farm)
-            db.commit()
-            db.refresh(farm)
-            print(f"[Seeder] Created new farm: {farm.id}")
-        else:
-            print(f"[Seeder] Using existing farm for seeding: {farm.id} ({farm.name})")
+        # 2. Hard Reset - Wipe all existing farm data for this farmer to prevent "Ghost Farms"
+        print(f"[Seeder] NUKING existing data for farmer {farmer.id}...")
+        db.query(Farm).filter(Farm.farmer_id == farmer.id).delete()
+        db.commit()
         
-        # 3. Zones - Check if already seeded for THIS farm
-        existing_zones = db.query(Zone).filter(Zone.farm_id == farm.id).count()
-        if existing_zones >= 6:
-            return {"success": True, "message": f"Demo data already seeded for farm: {farm.name}", "farm_id": str(farm.id)}
+        print("[Seeder] Creating fresh KrishiSarth Demo Farm...")
+        farm = Farm(
+            name="KrishiSarth Demo Farm",
+            soil_type="Black Cotton",
+            area_ha=5.2,
+            farmer_id=farmer.id,
+            lat=20.0059,
+            lng=73.7897
+        )
+        db.add(farm)
+        db.commit()
+        db.refresh(farm)
         
-        print(f"[Seeder] Seeding zones for farm {farm.id}...")
+        print(f"[Seeder] New Farm ID: {farm.id}")
+        
+        # 3. Zones - Clear count logic as we just nuked it
+        print("[Seeder] Provisioning 6 specialized zones...")
 
         # Continue with seeding...
 
@@ -178,11 +176,22 @@ async def backfill_history():
                 .time(ts)
             write_api.write(bucket=settings.INFLUXDB_BUCKET, record=p)
 
-        return {"success": True, "message": "Demo account seeded successfully", "farm_id": str(farm.id), "zones_created": 6}
+        # 8. Force Simulation Engine to re-adopt the new IDs
+        try:
+            simulation_engine.zone_states.clear()
+            print("[Seeder] Simulation engine state CLEARED for re-adoption.")
+        except: pass
+
+        return {
+            "success": True, 
+            "message": "Nuke & Deep Seed Complete", 
+            "farm_id": str(farm.id),
+            "zones_created": len(zones)
+        }
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Seeding failed: {str(e)}")
     finally:
         db.close()
 
