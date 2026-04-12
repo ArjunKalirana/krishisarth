@@ -110,10 +110,75 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
         const refreshBtn = mainElement.querySelector('#dash-refresh-btn');
         if (refreshBtn) {
             refreshBtn.onclick = async () => {
-                refreshBtn.querySelector('i').classList.add('animate-spin');
+                const icon = refreshBtn.querySelector('i');
+                if (icon) icon.classList.add('animate-spin');
                 localStorage.removeItem(cacheKey);
                 localStorage.removeItem(tsKey);
-                await loadDashboardData(farmId, mainEl, alertEl);
+                await loadDashboardData(farmId, mainElement, alertEl);
+                if (icon) icon.classList.remove('animate-spin');
+            };
+        }
+
+        // Global Rescue Button (Header)
+        const rescueBtnHeader = mainElement.querySelector('#rescue-demo-header-btn');
+        if (rescueBtnHeader) {
+            rescueBtnHeader.onclick = async () => {
+                rescueBtnHeader.disabled = true;
+                rescueBtnHeader.innerHTML = '<i class="w-4 h-4 animate-spin"></i> Seeding...';
+                try {
+                    await api('/demo/history', { method: 'POST' });
+                    showToast('Demo Data Reset Successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } catch (e) {
+                    showToast('Sync failed: ' + e.message, 'error');
+                    rescueBtnHeader.disabled = false;
+                    rescueBtnHeader.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Fix Demo Data';
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            };
+        }
+
+        // Global Add Zone Button
+        const addBtn = mainElement.querySelector('#add-zone-btn');
+        const modal = container.querySelector('#zone-modal');
+        if (addBtn && modal) {
+            addBtn.onclick = () => {
+                modal.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons();
+            };
+            modal.querySelector('.close-modal').onclick = () => modal.classList.add('hidden');
+            
+            let selectedCrop = 'tomato';
+            modal.querySelectorAll('.modal-crop-btn').forEach(btn => {
+                btn.onclick = () => {
+                    modal.querySelectorAll('.modal-crop-btn').forEach(b => b.classList.remove('border-ks-optimal', 'bg-green-50'));
+                    btn.classList.add('border-ks-optimal', 'bg-green-50');
+                    selectedCrop = btn.dataset.crop;
+                };
+            });
+
+            modal.querySelector('#modal-save-btn').onclick = async () => {
+                const nameInput = modal.querySelector('#modal-zone-name');
+                const name = nameInput.value.trim() || `New ${selectedCrop} Plot`;
+                
+                try {
+                    const farm = store.getState('currentFarm');
+                    if (!farm) throw new Error('No active farm');
+                    
+                    modal.querySelector('#modal-save-btn').disabled = true;
+                    await api(`/farms/${farm.id}/zones`, {
+                        method: 'POST',
+                        body: JSON.stringify({ name, crop_type: selectedCrop, area_sqm: 1000 })
+                    });
+                    
+                    showToast(`Plot "${name}" registered! Syncing twin...`, 'success');
+                    modal.classList.add('hidden');
+                    setTimeout(() => window.location.reload(), 1500);
+                } catch (e) {
+                    showToast(e.message, 'error');
+                } finally {
+                    modal.querySelector('#modal-save-btn').disabled = false;
+                }
             };
         }
         
@@ -351,10 +416,20 @@ function renderHeader(data) {
                         <span data-i18n="mins_ago">${t('mins_ago') || 'minutes ago'}</span>.
                     </p>
                 </div>
-                <!-- Refresh Button -->
-                <button id="dash-refresh-btn" class="p-2 rounded-xl bg-ks-surface border border-ks-border hover:bg-ks-surface-2 transition-colors ks-card" title="Refresh Live Data">
-                    <i data-lucide="refresh-cw" class="w-5 h-5 text-ks-muted"></i>
-                </button>
+                <!-- Global Actions -->
+                <div class="flex items-center gap-2">
+                    <button id="rescue-demo-header-btn" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-105 transition-all active:scale-95" title="Force seed demo data">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>Fix Demo Data</span>
+                    </button>
+                    <button id="add-zone-btn" class="flex items-center gap-2 px-4 py-2 bg-ks-optimal text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-ks-optimal/20 hover:scale-105 transition-all active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Add Plot</span>
+                    </button>
+                    <button id="dash-refresh-btn" class="p-2 rounded-xl bg-ks-surface border border-ks-border hover:bg-ks-surface-2 transition-colors ks-card" title="Refresh Live Data">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 text-ks-muted"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Bento Grid -->

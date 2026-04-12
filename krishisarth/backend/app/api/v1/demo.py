@@ -42,20 +42,25 @@ async def backfill_history():
 
         # 2. Farm
         farm = db.query(Farm).filter(Farm.farmer_id == farmer.id, Farm.name == "KrishiSarth Demo Farm").first()
-        if farm:
+        if not farm:
+            farm = Farm(
+                name="KrishiSarth Demo Farm",
+                soil_type="Black Cotton",
+                area_ha=5.2,
+                farmer_id=farmer.id,
+                lat=20.0059,
+                lng=73.7897
+            )
+            db.add(farm)
+            db.commit()
+            db.refresh(farm)
+        
+        # 3. Zones - Check if already seeded
+        existing_zones = db.query(Zone).filter(Zone.farm_id == farm.id).count()
+        if existing_zones >= 6:
             return {"success": True, "message": "Demo data already seeded", "farm_id": str(farm.id)}
 
-        farm = Farm(
-            name="KrishiSarth Demo Farm",
-            soil_type="Black Cotton",
-            area_ha=5.2,
-            farmer_id=farmer.id,
-            lat=20.0059,
-            lng=73.7897
-        )
-        db.add(farm)
-        db.commit()
-        db.refresh(farm)
+        # Continue with seeding...
 
         # 3. Zones
         zone_configs = [
