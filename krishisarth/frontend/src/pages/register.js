@@ -11,17 +11,17 @@ export function renderRegister() {
                 <div class="text-primary flex justify-center mb-2">
                     <i data-lucide="sprout" class="w-12 h-12"></i>
                 </div>
-                <h1 class="text-3xl font-black text-gray-900 tracking-tight">
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight" data-i18n="reg_title">
                     ${t('reg_title')}
                 </h1>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1" data-i18n="reg_subtitle">
                     ${t('reg_subtitle')}
                 </p>
             </div>
 
             <form id="register-form" class="space-y-4">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="reg_name">
                         ${t('reg_name')}
                     </label>
                     <input
@@ -34,7 +34,7 @@ export function renderRegister() {
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="reg_email">
                         ${t('reg_email')}
                     </label>
                     <input
@@ -47,7 +47,7 @@ export function renderRegister() {
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="reg_phone">
                         ${t('reg_phone')}
                     </label>
                     <input
@@ -59,7 +59,7 @@ export function renderRegister() {
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="reg_password">
                         ${t('reg_password')}
                     </label>
                     <input
@@ -72,7 +72,7 @@ export function renderRegister() {
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="reg_confirm">
                         ${t('reg_confirm')}
                     </label>
                     <input
@@ -94,7 +94,7 @@ export function renderRegister() {
                 <div id="reg-success" class="hidden">
                     <p class="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tight border border-green-100 flex items-center gap-2">
                         <i data-lucide="check-circle" class="w-4 h-4"></i>
-                        ${t('reg_success')}
+                        <span data-i18n="reg_success">${t('reg_success')}</span>
                     </p>
                 </div>
 
@@ -103,14 +103,14 @@ export function renderRegister() {
                     id="reg-submit-btn"
                     class="w-full bg-primary hover:bg-primary-dark text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-primary/20 active:scale-95 flex items-center justify-center gap-2"
                 >
-                    ${t('reg_btn')}
+                    <span data-i18n="reg_btn">${t('reg_btn')}</span>
                 </button>
             </form>
 
             <div class="mt-6 pt-6 border-t border-gray-50 text-center">
                 <p class="text-xs font-medium text-gray-500">
-                    ${t('reg_login')}
-                    <a href="#login" class="text-primary font-bold hover:underline">${t('reg_login_link')}</a>
+                    <span data-i18n="reg_login">${t('reg_login')}</span>
+                    <a href="#login" class="text-primary font-bold hover:underline"><span data-i18n="reg_login_link">${t('reg_login_link')}</span></a>
                 </p>
             </div>
         </div>

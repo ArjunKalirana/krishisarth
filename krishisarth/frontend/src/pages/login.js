@@ -17,19 +17,19 @@ export function renderLogin() {
                     <i data-lucide="droplets" class="w-12 h-12"></i>
                 </div>
                 <h1 class="text-3xl font-black text-gray-900 tracking-tight">Krishi<span class="text-primary">Sarth</span></h1>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">${t('login_title')}</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1" data-i18n="login_title">${t('login_title')}</p>
             </div>
 
             <!-- Form -->
             <form id="login-form" class="space-y-5">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">${t('login_email')}</label>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="login_email">${t('login_email')}</label>
                     <input type="email" id="email" required placeholder="farmer@krishisarth.com" 
                            class="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none font-medium">
                 </div>
                 
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">${t('login_password')}</label>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1" data-i18n="login_password">${t('login_password')}</label>
                     <input type="password" id="password" required placeholder="••••••••" 
                            class="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none font-medium">
                 </div>
@@ -42,15 +42,15 @@ export function renderLogin() {
                 </div>
 
                 <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary-dark text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2">
-                    ${t('login_btn')}
+                    <span data-i18n="login_btn">${t('login_btn')}</span>
                 </button>
             </form>
 
             <!-- Footer -->
             <div class="mt-8 pt-6 border-t border-gray-50 text-center">
                 <p class="text-xs font-medium text-gray-500">
-                    ${t('login_register')}
-                    <a href="#register" class="text-primary font-bold hover:underline">${t('login_register_link')}</a>
+                    <span data-i18n="login_register">${t('login_register')}</span>
+                    <a href="#register" class="text-primary font-bold hover:underline"><span data-i18n="login_register_link">${t('login_register_link')}</span></a>
                 </p>
             </div>
         </div>

@@ -192,10 +192,10 @@ function _buildWidget() {
         </style>
     `;
 
-    // Set translated text
-    el.querySelector('#asst-title-text').textContent    = t('assistant_title');
-    el.querySelector('#asst-subtitle-text').textContent = t('assistant_subtitle');
-    el.querySelector('#assistant-input').placeholder    = t('assistant_placeholder');
+    el.querySelector('#asst-title-text').setAttribute('data-i18n', 'assistant_title');
+    el.querySelector('#asst-subtitle-text').setAttribute('data-i18n', 'assistant_subtitle');
+    el.querySelector('#assistant-input').setAttribute('data-i18n', 'assistant_placeholder');
+    el.querySelector('#assistant-input').setAttribute('data-i18n-attr', 'placeholder');
 
     const panel    = el.querySelector('#assistant-panel');
     const messages = el.querySelector('#assistant-messages');
@@ -387,20 +387,20 @@ function _showGreeting(messagesEl, suggestEl) {
 
     suggestEl.innerHTML = `
         <p style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;
-                   letter-spacing:0.05em;width:100%;margin-bottom:2px;">
+                   letter-spacing:0.05em;width:100%;margin-bottom:2px;" data-i18n="assistant_suggestions_label">
             ${t('assistant_suggestions_label')}
         </p>
         ${[
-            t('assistant_s1'),
-            t('assistant_s2'),
-            t('assistant_s3'),
-            t('assistant_s4'),
+            {k:'assistant_s1', v:t('assistant_s1')},
+            {k:'assistant_s2', v:t('assistant_s2')},
+            {k:'assistant_s3', v:t('assistant_s3')},
+            {k:'assistant_s4', v:t('assistant_s4')},
         ].map(q => `
             <button class="suggestion-chip" style="
                 font-size:11px; font-weight:600; color:#1a7a4a;
                 background:#f0fdf4; border:1px solid #bbf7d0; border-radius:99px;
                 padding:4px 12px; cursor:pointer; transition:all 0.15s; white-space:nowrap;
-            ">${q}</button>
+            "><span data-i18n="${q.k}">${q.v}</span></button>
         `).join('')}
     `;
 
@@ -548,7 +548,7 @@ function _appendThinking(container, id) {
                     "></div>
                 `).join('')}
             </div>
-            <span style="font-size:12px;color:#6b7280;font-weight:600;">${t('assistant_thinking')}</span>
+            <span style="font-size:12px;color:#6b7280;font-weight:600;" data-i18n="assistant_thinking">${t('assistant_thinking')}</span>
         </div>
         <style>
             @keyframes bounce {

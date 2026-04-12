@@ -12,9 +12,9 @@ export function renderFarm3D() {
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-wrap">
             <div>
                 <h1 class="text-3xl font-extrabold text-gray-900">
-                    ${t('farm3d_title')} <span class="brand-text">🌾</span>
+                    <span data-i18n="farm3d_title">${t('farm3d_title')}</span> <span class="brand-text">🌾</span>
                 </h1>
-                <p class="text-gray-500 font-medium mt-1">${t('farm3d_subtitle')}</p>
+                <p class="text-gray-500 font-medium mt-1" data-i18n="farm3d_subtitle">${t('farm3d_subtitle')}</p>
             </div>
 
             <!-- Legend + Simulate button -->
@@ -41,7 +41,7 @@ export function renderFarm3D() {
                     letter-spacing: 0.05em; text-transform: uppercase;
                     box-shadow: 0 4px 14px rgba(26,122,74,0.3);
                     transition: transform 0.15s, box-shadow 0.15s;
-                ">⚡ DEMO SIMULATION</button>
+                " data-magnetic>⚡ DEMO SIMULATION</button>
             </div>
         </div>
 
@@ -94,8 +94,8 @@ export function renderFarm3D() {
                 <div style="width:40px;height:40px;border:4px solid #dcfce7;
                             border-top-color:#1a7a4a;border-radius:50%;
                             animation:spin3d 0.8s linear infinite;"></div>
-                <p style="font-size:12px;color:#6b7280;font-weight:700;">
-                    Building 3D farm...
+                <p style="font-size:12px;color:#6b7280;font-weight:700;" data-i18n="farm3d_loading">
+                    ${t('farm3d_loading')}
                 </p>
             </div>
         </div>
@@ -115,7 +115,10 @@ export function renderFarm3D() {
         </style>
     `;
 
-    setTimeout(() => _init3D(container), 80);
+    setTimeout(() => {
+        _init3D(container);
+        if (window.ksReveal) window.ksReveal();
+    }, 80);
     return container;
 }
 
@@ -131,7 +134,7 @@ async function _init3D(container) {
     const simBtn    = container.querySelector('#simulate-btn');
 
     if (!farm?.id) {
-        loadingEl.innerHTML = `<p style="color:#6b7280;font-weight:700;">No farm selected</p>`;
+        loadingEl.innerHTML = `<p style="color:#6b7280;font-weight:700;" data-i18n="no_farm_selected">${t('no_farm_selected')}</p>`;
         return;
     }
 
@@ -183,8 +186,24 @@ async function _init3D(container) {
 
     // Scene
     _scene = new THREE.Scene();
-    _scene.background = new THREE.Color(0xf0f7f3);
-    _scene.fog = new THREE.Fog(0xf0f7f3, 40, 80);
+
+    function makeSkyTexture(THREE) {
+        const c = document.createElement('canvas');
+        c.width = 2; c.height = 256;
+        const ctx = c.getContext('2d');
+        const grad = ctx.createLinearGradient(0,0,0,256);
+        grad.addColorStop(0,   '#0a1f10');  // deep dark green-black zenith
+        grad.addColorStop(0.4, '#0d2e18');
+        grad.addColorStop(0.7, '#1a4020');
+        grad.addColorStop(1,   '#0c180e');  // horizon
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,2,256);
+        const tex = new THREE.CanvasTexture(c);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        return tex;
+    }
+    _scene.background = makeSkyTexture(THREE);
+    _scene.fog = new THREE.FogExp2(0x0c1a0e, 0.018);
 
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
     camera.position.set(0, 20, 26);
@@ -203,15 +222,45 @@ async function _init3D(container) {
     _scene.add(new THREE.HemisphereLight(0x87ceeb, 0x3a7d44, 0.4));
 
     // Ground
-    const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(50, 50),
-        new THREE.MeshLambertMaterial({ color: 0xb8d4a8 })
-    );
+    const groundGeo = new THREE.PlaneGeometry(80, 80, 64, 64);
+    const positions = groundGeo.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i], z = positions[i+2];
+        positions[i+1] = Math.sin(x*0.08)*0.4 + Math.cos(z*0.12)*0.3 + Math.sin(x*0.2+z*0.15)*0.15;
+    }
+    groundGeo.attributes.position.needsUpdate = true;
+    groundGeo.computeVertexNormals();
+
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x0e1f10, roughness: 0.95, wireframe: false });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.05;
     ground.receiveShadow = true;
     _scene.add(ground);
     _scene.add(new THREE.GridHelper(50, 25, 0x9e9e9e, 0xdddddd));
+
+    // Stars
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = [];
+    for (let i = 0; i < 3000; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI * 0.5; // upper half only
+        const r = 80 + Math.random() * 40;
+        starPos.push(r*Math.sin(phi)*Math.cos(theta), r*Math.cos(phi), r*Math.sin(phi)*Math.sin(theta));
+    }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0x334433, size: 0.08 });
+    const stars = new THREE.Points(starGeo, starMat);
+    _scene.add(stars);
+
+    // Moon
+    const moonGeo = new THREE.SphereGeometry(2.5, 16, 16);
+    const moonMat = new THREE.MeshBasicMaterial({ color: 0xfff8e7 });
+    const moon = new THREE.Mesh(moonGeo, moonMat);
+    moon.position.set(-40, 35, -60);
+    const moonLight = new THREE.PointLight(0xfff8e7, 0.3, 200);
+    moonLight.position.copy(moon.position);
+    _scene.add(moon, moonLight);
 
     // Fence posts
     const fenceMat = new THREE.MeshLambertMaterial({ color: 0x7d5a3c });
@@ -249,20 +298,41 @@ async function _init3D(container) {
         base.receiveShadow = true;
         _scene.add(base);
 
-        // Crop block
-        const color   = _zoneColor(zone, THREE);
-        const cropMat = new THREE.MeshLambertMaterial({
-            color, transparent: true, opacity: 0.85
-        });
-        const cropMesh = new THREE.Mesh(new THREE.BoxGeometry(6, h_, 6), cropMat);
-        cropMesh.position.set(x, 0.3 + h_ / 2, z);
-        cropMesh.castShadow = true;
-        cropMesh.userData   = {
-            zone, originalColor: color, x, z,
-            baseY: 0.3 + h_ / 2, h: h_
-        };
-        _scene.add(cropMesh);
-        _meshes.push(cropMesh);
+        function buildCropCanopy(THREE, zone, x, z, h) {
+            const group = new THREE.Group();
+            const color = new THREE.Color(_zoneColor(zone, THREE));
+            
+            // Bottom trunk/stem cylinder
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0x3d2010, roughness:0.95 });
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, h*0.3, 6), stemMat);
+            stem.position.y = h*0.15;
+            group.add(stem);
+            
+            // Main canopy — slightly irregular sphere
+            const canopyMat = new THREE.MeshStandardMaterial({
+                color, emissive: color, emissiveIntensity: 0.08,
+                roughness: 0.7, metalness: 0, transparent: true, opacity: 0.85
+            });
+            const canopy = new THREE.Mesh(new THREE.IcosahedronGeometry(h*0.55, 1), canopyMat);
+            canopy.position.y = h*0.6;
+            canopy.castShadow = true;
+            canopy.scale.set(1.4, 0.7, 1.4);
+            group.add(canopy);
+            
+            // Secondary smaller canopy
+            const canopy2 = new THREE.Mesh(new THREE.IcosahedronGeometry(h*0.35, 1), canopyMat);
+            canopy2.position.set(h*0.2, h*0.75, h*0.1);
+            canopy2.scale.set(1.2, 0.65, 1.2);
+            group.add(canopy2);
+            
+            group.position.set(x, 0.28, z);
+            group.userData = { zone, originalColor: color, x, z, baseY: 0.28, h, mainCanopy: canopy, canopy2 };
+            return group;
+        }
+
+        const cropGroup = buildCropCanopy(window.THREE, zone, x, z, h_);
+        _scene.add(cropGroup);
+        _meshes.push(cropGroup);
 
         // Label sprite
         const sprite = _makeLabel(zone.name, color);
@@ -273,12 +343,13 @@ async function _init3D(container) {
         // Particle system per zone (water/fert particles — hidden by default)
         const particles = _buildParticleSystem(THREE, x, z, h_);
         _scene.add(particles.mesh);
-        _particles.push({ mesh: particles.mesh, geo: particles.geo, zone_id: zone.id, type: null });
 
-        // Pump pipe indicator
-        if (zone.pump_running) {
-            _addPumpPipe(THREE, x, z, h_);
-        }
+        // Add persistent drip line to the central pipe header
+        const dripLine = buildDripLine(THREE, 0, 0, x, z);
+        dripLine.visible = zone.pump_running;
+        _scene.add(dripLine);
+
+        _particles.push({ mesh: particles.mesh, zone_id: zone.id, type: null, pipe: dripLine });
     });
 
     // Render zone info cards
@@ -295,19 +366,22 @@ async function _init3D(container) {
         mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
         mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(_meshes);
+        const hits = raycaster.intersectObjects(_meshes, true);
 
-        if (hovered && hovered !== hits[0]?.object) {
-            hovered.material.emissive?.setHex(0x000000);
+        const hitObject = hits.length > 0 ? (hits[0].object.parent && hits[0].object.parent.userData.zone ? hits[0].object.parent : hits[0].object) : null;
+
+        if (hovered && hovered !== hitObject) {
+            if (hovered.userData && hovered.userData.mainCanopy) hovered.userData.mainCanopy.material.emissive?.setHex(0x000000);
+            else if (hovered.material) hovered.material.emissive?.setHex(0x000000);
             hovered = null;
             tooltip.style.display = 'none';
         }
-        if (hits.length > 0) {
-            const mesh = hits[0].object;
-            if (mesh !== hovered) {
-                hovered = mesh;
-                mesh.material.emissive?.setHex(0x333333);
-                const z = mesh.userData.zone;
+        if (hitObject && hitObject.userData && hitObject.userData.zone) {
+            if (hitObject !== hovered) {
+                hovered = hitObject;
+                if (hitObject.userData.mainCanopy) hitObject.userData.mainCanopy.material.emissive?.setHex(0x333333);
+                else if (hitObject.material) hitObject.material.emissive?.setHex(0x333333);
+                const z = hitObject.userData.zone;
                 tooltip.style.display = 'block';
                 tooltip.innerHTML = `
                     <b style="font-size:14px;">${z.name}</b><br>
@@ -324,7 +398,11 @@ async function _init3D(container) {
     });
 
     canvas.addEventListener('mouseleave', () => {
-        if (hovered) { hovered.material.emissive?.setHex(0x000000); hovered = null; }
+        if (hovered) { 
+            if (hovered.userData.mainCanopy) hovered.userData.mainCanopy.material.emissive?.setHex(0x000000); 
+            else if (hovered.material) hovered.material.emissive?.setHex(0x000000);
+            hovered = null; 
+        }
         tooltip.style.display = 'none';
     });
 
@@ -334,10 +412,12 @@ async function _init3D(container) {
         mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
         mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(_meshes);
+        const hits = raycaster.intersectObjects(_meshes, true);
         if (hits.length > 0) {
-            const zone = hits[0].object.userData.zone;
-            _showDigitalTwinPanel(zone, container);
+            let zObj = hits[0].object;
+            if (!zObj.userData.zone && zObj.parent && zObj.parent.userData.zone) zObj = zObj.parent;
+            const zone = zObj.userData.zone;
+            if (zone) _showDigitalTwinPanel(zone, container);
         }
     });
 
@@ -375,57 +455,86 @@ async function _init3D(container) {
         // Pulse pumping zones + animate particles
         _meshes.forEach((m, i) => {
             const zone = m.userData.zone;
-            if (m.userData.twinPreview) {
-                // Digital Twin Preview Animation
-                const targetScaleY = m.userData.targetH / m.userData.h;
-                m.scale.y += (targetScaleY - m.scale.y) * 0.05;
-                m.position.y = 0.3 + (m.userData.h * m.scale.y) / 2;
-                m.material.color.lerp(m.userData.targetColor, 0.05);
-                
-                if (m.userData.twinRing) {
-                    m.userData.twinRing.material.opacity = 0.5 + Math.sin(frame * 0.1) * 0.5;
-                }
-            } else {
-                // Normal state
-                if (zone?.pump_running) {
-                    const pulse = Math.sin(frame * 0.1) * 0.1 + 1;
-                    m.scale.set(pulse, 1, pulse);
-                    m.position.y = 0.3 + (m.userData.h * m.scale.y) / 2;
-                    m.material.color.setHex(0x1a7a4a);
-                } else {
-                    m.scale.y += (1 - m.scale.y) * 0.1;
-                    m.scale.x += (1 - m.scale.x) * 0.1;
-                    m.scale.z += (1 - m.scale.z) * 0.1;
-                    m.position.y = 0.3 + (m.userData.h * m.scale.y) / 2;
-                    m.material.color.lerp(new window.THREE.Color(_zoneColor(zone, window.THREE)), 0.1);
-                }
+            const mainCanopy = m.userData.mainCanopy;
+            const mat = mainCanopy ? mainCanopy.material : (m.material || null);
 
-                // Critical moisture — red pulse
-                if ((zone?.moisture_pct || 0) < 20 && !zone?.pump_running) {
-                    const glow = Math.abs(Math.sin(frame * 0.05));
-                    m.material.opacity = 0.7 + glow * 0.3;
+            if (mat) {
+                if (m.userData.twinPreview) {
+                    // Digital Twin Preview Animation
+                    const targetScaleY = m.userData.targetH / m.userData.h;
+                    m.scale.y += (targetScaleY - m.scale.y) * 0.05;
+                    m.position.y = m.userData.baseY;
+                    mat.color.lerp(m.userData.targetColor, 0.05);
+                    
+                    if (m.userData.twinRing) {
+                        m.userData.twinRing.material.opacity = 0.5 + Math.sin(frame * 0.1) * 0.5;
+                    }
                 } else {
-                    m.material.opacity = 0.85;
+                    // Normal state
+                    if (zone?.pump_running) {
+                        const pulse = Math.sin(frame * 0.1) * 0.1 + 1;
+                        m.scale.set(pulse, 1, pulse);
+                        m.position.y = m.userData.baseY;
+                        mat.color.setHex(0x1a7a4a);
+                    } else {
+                        m.scale.y += (1 - m.scale.y) * 0.1;
+                        m.scale.x += (1 - m.scale.x) * 0.1;
+                        m.scale.z += (1 - m.scale.z) * 0.1;
+                        m.position.y = m.userData.baseY;
+                        mat.color.lerp(new window.THREE.Color(_zoneColor(zone, window.THREE)), 0.1);
+                    }
+
+                    // Critical moisture — red pulse
+                    if ((zone?.moisture_pct || 0) < 20 && !zone?.pump_running) {
+                        const glow = Math.abs(Math.sin(frame * 0.05));
+                        mat.opacity = 0.7 + glow * 0.3;
+                    } else {
+                        mat.opacity = 0.85;
+                    }
                 }
+            }
+
+            if (mainCanopy) {
+                mainCanopy.rotation.y += 0.003;
+                mainCanopy.scale.x = 1.4 + Math.sin(frame * 0.02 + i) * 0.04;
+                mainCanopy.scale.z = 1.4 + Math.cos(frame * 0.018 + i) * 0.04;
+                // Gentle sway
+                m.rotation.z = Math.sin(frame * 0.015 + i * 0.5) * 0.02;
             }
         });
 
         // Animate particles
         _particles.forEach(p => {
             if (!p.type) return;
-            const positions = p.geo.attributes.position.array;
-            for (let j = 1; j < positions.length; j += 3) {
+            p.mesh.children.forEach(droplet => {
                 if (p.type === 'water') {
-                    positions[j] -= 0.06;   // rain down
-                    if (positions[j] < 0.3) positions[j] = p.startY || 5;
+                    droplet.position.y -= droplet.userData.speed;
+                    if (droplet.position.y < 0.3) {
+                        droplet.position.y = droplet.userData.startY;
+                        if (Math.random() > 0.8) {
+                            spawnRipple(window.THREE, _scene, droplet.position.x, droplet.position.z);
+                        }
+                    }
                 } else if (p.type === 'fert') {
-                    positions[j] += 0.04;   // float up
-                    if (positions[j] > 5) positions[j] = 0.5;
+                    droplet.position.y += droplet.userData.speed * 0.5;
+                    if (droplet.position.y > 5) droplet.position.y = 0.5;
                 }
-            }
-            p.geo.attributes.position.needsUpdate = true;
+            });
             p.mesh.rotation.y += 0.005;
         });
+
+        // Animate ripples
+        for (let j = ripples.length - 1; j >= 0; j--) {
+            const r = ripples[j];
+            const age = (Date.now() - r.userData.born) / 600; // 0 to 1 in 600ms
+            if (age > 1) {
+                _scene.remove(r);
+                ripples.splice(j, 1);
+            } else {
+                r.scale.set(1 + age * 3, 1 + age * 3, 1);
+                r.material.opacity = 0.5 * (1 - age);
+            }
+        }
 
         _renderer.render(_scene, camera);
     };
@@ -830,7 +939,7 @@ async function _runDemoSimulation(container) {
 
     const steps = [
         {
-            label: '🤖 AI Engine analyzing all zones...',
+            label: t('sim_step_1'),
             duration: 2000,
             action: async () => {
                 // Flash all meshes briefly
@@ -840,7 +949,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '🔬 Digital Twin: Running virtual simulation...',
+            label: t('sim_step_2'),
             duration: 1500,
             action: async () => {
                 _meshes.forEach(m => m.material.emissive?.setHex(0x004466));
@@ -849,12 +958,12 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '📐 Twin MAE: 0.089 — HIGH TRUST simulation result',
+            label: t('sim_step_3'),
             duration: 2000,
             action: async () => { },
         },
         {
-            label: '⚠️ Grape Vineyard CRITICAL — moisture 19%',
+            label: t('sim_step_4'),
             duration: 2500,
             action: async () => {
                 const dry = _zones.find(z => z.moisture_pct < 30 || z.name.includes('Grape') || z.name.includes('Wheat'));
@@ -865,7 +974,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '💧 AI decision: IRRIGATE Grape Vineyard',
+            label: t('sim_step_5'),
             duration: 2500,
             action: async () => {
                 const dryZone = _zones.find(z => z.moisture_pct < 30 || z.name.includes('Grape'));
@@ -883,7 +992,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '🌿 Fertigation: Nitrogen → Tomato zone',
+            label: t('sim_step_6'),
             duration: 2500,
             action: async () => {
                 const tomatoZone = _zones.find(z => z.name.includes('Tomato') || z.name.includes('Chilli'));
@@ -902,7 +1011,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '⚠ Twin Check: EC will reach 2.8 dS/m — within safe range',
+            label: t('sim_step_7'),
             duration: 2500,
             action: async () => {
                  const tomatoZone = _zones.find(z => z.name.includes('Tomato') || z.name.includes('Chilli'));
@@ -913,7 +1022,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '✅ Pomegranate: AI skips — moisture 72% (WET)',
+            label: t('sim_step_8'),
             duration: 2000,
             action: async () => {
                 const wetZone = _zones.find(z => z.moisture_pct > 65 || z.name.includes('Pomegranate'));
@@ -924,7 +1033,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '📊 Moisture & EC levels updating in real time...',
+            label: t('sim_step_8'),
             duration: 2500,
             action: async () => {
                 // Remove emissive highlights
@@ -948,7 +1057,7 @@ async function _runDemoSimulation(container) {
             },
         },
         {
-            label: '✅ Simulation complete — all zones managed',
+            label: t('sim_step_9'),
             duration: 2000,
             action: async () => {
                 _stopAllParticles();
@@ -973,43 +1082,73 @@ async function _runDemoSimulation(container) {
 }
 
 // ── Particle systems ──────────────────────────────────────────────────────────
+const ripples = [];
+
+function buildDripLine(THREE, fromX, fromZ, toX, toZ) {
+    const dir = new THREE.Vector3(toX-fromX, 0, toZ-fromZ);
+    const len = dir.length();
+    const mid = new THREE.Vector3((fromX+toX)/2, 0.35, (fromZ+toZ)/2);
+    const pipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, len, 4),
+        new THREE.MeshStandardMaterial({ color: 0x1e4080, roughness:0.8 })
+    );
+    pipe.position.copy(mid);
+    pipe.rotation.y = Math.atan2(dir.x, dir.z);
+    pipe.rotation.z = Math.PI/2;
+    return pipe;
+}
+
+function spawnRipple(THREE, scene, x, z) {
+    const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.05, 0.12, 12),
+        new THREE.MeshBasicMaterial({ color:0x38bdf8, transparent:true, opacity:0.5, side:THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI/2;
+    ring.position.set(x, 0.31, z);
+    ring.userData.born = Date.now();
+    scene.add(ring); ripples.push(ring);
+}
+
 function _buildParticleSystem(THREE, x, z, baseH) {
-    const count    = 250; // Dense attractive particles
-    const geo      = new THREE.BufferGeometry();
-    const positions = new Float32Array(count * 3);
-
+    const count = 30; // Realistic drip droplets
+    const group = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0 });
+    const geo = new THREE.SphereGeometry(0.05, 8, 8);
     for (let i = 0; i < count; i++) {
-        positions[i * 3]     = x + (Math.random() - 0.5) * 5;
-        positions[i * 3 + 1] = 0.3 + baseH + Math.random() * 4;
-        positions[i * 3 + 2] = z + (Math.random() - 0.5) * 5;
+        const droplet = new THREE.Mesh(geo, mat.clone());
+        droplet.scale.set(1, 1.5, 1);
+        droplet.position.set(x + (Math.random() - 0.5) * 4, 0.3 + baseH + Math.random() * 4, z + (Math.random() - 0.5) * 4);
+        droplet.userData = { speed: 0.08 + Math.random() * 0.06, startY: 0.3 + baseH + 0.5 + Math.random() };
+        group.add(droplet);
     }
-
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat  = new THREE.PointsMaterial({ color: 0x00c3ff, size: 0.30, transparent: true, opacity: 0 });
-    const mesh = new THREE.Points(geo, mat);
-    mesh.userData.startY = 0.3 + baseH + 3;
-    return { mesh, geo };
+    return { mesh: group };
 }
 
 function _startParticles(zoneId, type) {
     const p = _particles.find(p => p.zone_id === zoneId);
     if (!p) return;
     p.type = type;
-    p.mesh.material.opacity    = 0.95;
-    p.mesh.material.color.setHex(type === 'water' ? 0x00c3ff : 0x39ff14);
-    p.mesh.material.size       = type === 'water' ? 0.28 : 0.40;
-    p.startY = type === 'water' ? p.mesh.userData.startY : 0.5;
+    p.mesh.children.forEach(c => {
+        c.material.opacity = 0.7;
+        c.material.color.setHex(type === 'water' ? 0x38bdf8 : 0x39ff14);
+    });
+    if (type === 'water' && p.pipe) p.pipe.visible = true;
 }
 
 function _stopParticles(zoneId) {
     const p = _particles.find(p => p.zone_id === zoneId);
     if (!p) return;
     p.type = null;
-    p.mesh.material.opacity = 0;
+    p.mesh.children.forEach(c => c.material.opacity = 0);
+    if (p.pipe) p.pipe.visible = false;
 }
 
 function _stopAllParticles() {
-    _particles.forEach(p => { p.type = null; p.mesh.material.opacity = 0; });
+    _particles.forEach(p => { 
+        p.type = null; 
+        p.mesh.children.forEach(c => c.material.opacity = 0);
+        if (p.pipe) p.pipe.visible = false;
+    });
 }
 
 // ── Color + mesh helpers ──────────────────────────────────────────────────────
@@ -1033,12 +1172,7 @@ function _updateMeshColors() {
 }
 
 function _addPumpPipe(THREE, x, z, h) {
-    const pipe = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.18, 1.8, 8),
-        new THREE.MeshLambertMaterial({ color: 0x0ea5e9 })
-    );
-    pipe.position.set(x + 3, 0.3 + h + 0.9, z + 3);
-    _scene.add(pipe);
+    // Legacy mapping replaced by global static drip lines
 }
 
 function _renderInfoCards(infoGrid) {
@@ -1047,9 +1181,9 @@ function _renderInfoCards(infoGrid) {
         const color  = z.pump_running   ? '#1a7a4a' :
                        z.moisture_status === 'dry' ? '#ef4444' :
                        z.moisture_status === 'wet' ? '#3b82f6' : '#22c55e';
-        const label  = z.pump_running   ? '💧 IRRIGATING' :
-                       z.moisture_status === 'dry' ? '🔴 DRY' :
-                       z.moisture_status === 'wet' ? '🔵 WET' : '✅ OK';
+        const label  = z.pump_running   ? t('irrigating_caps') :
+                       z.moisture_status === 'dry' ? t('dry_caps') :
+                       z.moisture_status === 'wet' ? t('wet_caps') : t('ok_caps');
         return `
             <div class="ks-card p-4 text-center border-t-4 cursor-pointer hover:shadow-md transition-shadow relative"
                  style="border-top-color:${color};"

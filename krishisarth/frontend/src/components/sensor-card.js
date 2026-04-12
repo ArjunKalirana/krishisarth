@@ -4,7 +4,7 @@
  */
 export function createSensorCard({ title, icon, value, unit, badgeType, badgeText, children = "" }) {
     const card = document.createElement('div');
-    card.className = "ks-card p-6 flex flex-col h-full";
+    card.className = "zone-card ks-card p-6 flex flex-col h-full";
     
     card.innerHTML = `
         <div class="flex items-center justify-between mb-4">
@@ -18,7 +18,7 @@ export function createSensorCard({ title, icon, value, unit, badgeType, badgeTex
         </div>
         
         <div class="flex items-baseline gap-1 mb-4">
-            <span class="text-4xl font-extrabold tracking-tight text-gray-900">${value}</span>
+            <span class="sensor-val text-4xl font-extrabold tracking-tight text-gray-900">${value}</span>
             <span class="text-gray-400 font-semibold text-lg">${unit}</span>
         </div>
         
@@ -28,5 +28,25 @@ export function createSensorCard({ title, icon, value, unit, badgeType, badgeTex
     `;
     
     // Re-trigger icon rendering if needed after insertion
+    const valEl = card.querySelector('.sensor-val');
+    if (valEl && unit === '%') {
+        const to = parseFloat(value) || 0;
+        valEl.textContent = '0.0';
+        animateMoistureChange(valEl, 0, to);
+    }
+
     return card;
+}
+
+function animateMoistureChange(el, from, to) {
+    const diff = to - from;
+    const duration = 600;
+    const start = performance.now();
+    const frame = (now) => {
+        const p = Math.min((now-start)/duration, 1);
+        const ease = 1 - Math.pow(1-p, 3);
+        el.textContent = (from + diff*ease).toFixed(1);
+        if (p < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
 }

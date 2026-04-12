@@ -1,6 +1,13 @@
 /**
- * KrishiSarth i18n — Internationalization System
- * Supported languages: English (en), Hindi (hi), Marathi (mr)
+ * KrishiSarth i18n — Reactive Translation Engine
+ * 
+ * How it works (like production apps do it):
+ * 1. Every translated string in the DOM gets a data-i18n="key" attribute
+ * 2. When language changes, we walk the DOM and swap text — no page reload
+ * 3. Dynamic JS strings (e.g. toast messages) still use t() — they get
+ *    the current language automatically since _lang is module-level state
+ * 4. On language change, a custom 'ks-lang-changed' event fires so any
+ *    component that has non-DOM state can re-render just its text
  */
 
 const TRANSLATIONS = {
@@ -234,8 +241,131 @@ const TRANSLATIONS = {
     twin_preview_active: "Digital Twin Active",
     twin_history_title: "Simulation History",
     twin_calibrate_btn: "Recalibrate Twin",
-  },
 
+    // Page titles
+    page_dashboard: "Dashboard",
+    page_ai: "AI Engine", 
+    page_control: "Control Panel",
+    page_analytics: "Analytics",
+    page_farm3d: "3D Farm View",
+  
+    // Contextual
+    good_morning: "Good morning",
+    good_afternoon: "Good afternoon", 
+    good_evening: "Good evening",
+    farm_all_ok: "all systems optimal",
+    farm_warn: "needs attention",
+    farm_critical: "critical alert",
+    last_sync: "Last sync",
+    min_ago: "min ago",
+    just_now: "just now",
+    timeline_title: "Crop Stage Timeline",
+    crop_stage_sowing: "Sowing",
+    crop_stage_germination: "Germination",
+    crop_stage_vegetative: "Vegetative",
+    crop_stage_flowering: "Flowering",
+    crop_stage_harvest: "Harvest",
+    timeline_days_in: "days in stage",
+    timeline_days_next: "days to next",
+    timeline_today: "Today",
+    budget_title: "Water Budget",
+    budget_weekly_limit: "Total weekly budget:",
+    budget_used_of: "used of",
+    budget_of_weekly: "of weekly budget",
+    budget_saved_vs_manual: "Saved",
+    budget_vs_manual_end: "vs manual irrigation this week",
+    budget_manual_baseline: "Manual baseline:",
+    budget_daily_target: "Daily target",
+    alerts_title: "Field Alerts",
+    alerts_mark_all_read: "Mark all read",
+    alerts_close: "Close",
+    alerts_empty: "No new alerts",
+    decision_breakdown: "Decision Breakdown",
+    decision_factors: "Input Factors",
+    decision_chain: "Reasoning Chain",
+    decision_confidence_meter: "Confidence Meter",
+    factor_moisture: "Soil Moisture",
+    factor_temp: "Temperature",
+    factor_ec: "EC Level",
+    factor_stage: "Crop Stage",
+    factor_tank: "Tank Level",
+    decision_below_threshold: "BELOW threshold",
+    decision_above_threshold: "ABOVE threshold",
+    decision_optimal: "OPTIMAL range",
+    decision_high_urgency: "HIGH — increases urgency",
+    decision_sufficient: "SUFFICIENT for irrigation",
+    decision_low_tank: "LOW — insufficient",
+    decision_critical_stage: "CRITICAL stage, moisture vital",
+    decision_normal_stage: "Routine monitoring",
+    decision_irrigate: "DECISION: IRRIGATE",
+    decision_skip: "DECISION: SKIP",
+    decision_review: "DECISION: REVIEW",
+    decision_informational: "Informational only",
+    decision_pending_review: "Pending review",
+    decision_auto_execute: "Auto-execute",
+    water_budget_used: "Used",
+    weather_intelligence: "Weather Intelligence",
+    weather_partly_cloudy: "Partly Cloudy",
+    weather_humidity: "Humidity",
+    weather_wind: "Wind",
+    weather_today: "Today",
+    weather_tomorrow: "Tomorrow",
+    weather_day_after: "Day+2",
+    weather_ai_advisory: "Rain forecast tomorrow (40% chance) — AI recommends reducing today's irrigation by 35% to avoid waterlogging",
+    whatsapp_alert: "KrishiSarth Alert",
+    whatsapp_msg_1: "🌿 Zone A: Moisture critical (",
+    whatsapp_msg_2: "%). AI recommends irrigation — ",
+    whatsapp_msg_3: "L. Tap to confirm.",
+    whatsapp_irrigate: "Irrigate ✓",
+    whatsapp_skip: "Skip ✗",
+    whatsapp_now: "now",
+    channels_title: "Notification Channels",
+    channel_whatsapp: "WhatsApp Alerts",
+    channel_sms: "SMS (Regional Language)",
+    channel_email: "Email Summary",
+    channel_push: "Push Notification (App)",
+    farm_is: "Your farm is",
+    mins_ago: "minutes ago",
+    initializing: "INITIALIZING KRISHISARTH CORE...",
+    greeting_morning: "Good morning",
+    greeting_afternoon: "Good afternoon",
+    greeting_evening: "Good evening",
+    sys_status: "System Status",
+    sys_status_critical: "CRITICAL",
+    sys_status_dry: "DRY",
+    sys_status_optimal: "OPTIMAL",
+    water_saved_today: "Water Saved Today (L)",
+    next_irrigation: "Next Irrigation",
+    active_zones: "Active Zones",
+    ai_decisions: "AI Decisions",
+    mins: "m",
+    ai_no_farm: "No farm found. Please make sure you have run the seed script.",
+    ai_no_zones: "No zones found for this farm.",
+    ai_run_hint: "Click RUN AI AUDIT NOW to generate the first decision",
+    twin_calibrating: "Calibrating...",
+    twin_calibrated: "Calibration complete ✓",
+    initializing_sensors: "INITIALIZING FIELD SENSORS...",
+    connecting_mqtt: "CONNECTING TO MQTT...",
+    loading_ai: "LOADING AI ENGINE...",
+    syncing_telemetry: "SYNCING TELEMETRY...",
+    calibrating_twin: "CALIBRATING TWIN...",
+    farm_ready: "FARM READY ✓",
+    twin_label: "TWIN",
+    twin_optimal_suggest: "Optimal duration.",
+    irrigating_caps: "💧 IRRIGATING",
+    dry_caps: "🔴 DRY",
+    wet_caps: "🔵 WET",
+    ok_caps: "✅ OK",
+    sim_step_1: "🔍 AI Engine analyzing all zones...",
+    sim_step_2: "🔬 Digital Twin: Running virtual simulation...",
+    sim_step_3: "📐 Twin MAE: 0.089 — HIGH TRUST result",
+    sim_step_4: "⚠️ Zone CRITICAL — moisture 19%",
+    sim_step_5: "💧 AI decision: IRRIGATE Zone",
+    sim_step_6: "🌿 Fertigation: Nitrogen application",
+    sim_step_7: "🧪 Applying precise nutrients blend...",
+    sim_step_8: "📊 Moisture & EC levels updating...",
+    sim_step_9: "✅ Simulation complete — all zones managed",
+  },
   hi: {
     nav_dashboard:    "डैशबोर्ड",
     nav_ai:           "AI निर्णय",
@@ -386,7 +516,7 @@ const TRANSLATIONS = {
     zone_never:           "कभी नहीं",
     zone_start_irrig:     "सिंचाई शुरू करें",
     zone_stop_irrig:      "सिंचाई बंद करें",
-    zone_min:             "मिनट",
+    zone_min:             "मिनिट",
     sensor_soil_moisture: "मिट्टी की नमी",
     sensor_temperature:   "तापमान",
     sensor_tank_level:    "टंकी स्तर",
@@ -442,8 +572,102 @@ const TRANSLATIONS = {
     twin_preview_active: "डिजिटल ट्विन सक्रिय",
     twin_history_title: "सिमुलेशन इतिहास",
     twin_calibrate_btn: "ट्विन को फिर से कैलिब्रेट करें",
-  },
 
+    page_dashboard: "डैशबोर्ड",
+    page_ai: "AI इंजन",
+    page_control: "नियंत्रण पैनल",
+    page_analytics: "विश्लेषण",
+    page_farm3d: "3D खेत दृश्य",
+    good_morning: "सुप्रभात",
+    good_afternoon: "नमस्कार",
+    good_evening: "शुभ संध्या",
+    farm_all_ok: "सभी सिस्टम इष्टतम",
+    farm_warn: "ध्यान चाहिए",
+    farm_critical: "गंभीर चेतावनी",
+    last_sync: "अंतिम सिंक",
+    min_ago: "मिनट पहले",
+    just_now: "अभी",
+    timeline_title: "फसल चरण समयरेखा",
+    crop_stage_sowing: "बुवाई",
+    crop_stage_germination: "अंकुरण",
+    crop_stage_vegetative: "वनस्पतिक",
+    crop_stage_flowering: "फूल आना",
+    crop_stage_harvest: "कटाई",
+    timeline_days_in: "चरण में दिन",
+    timeline_days_next: "अगले चरण तक दिन",
+    timeline_today: "आज",
+    budget_title: "जल बजट",
+    budget_weekly_limit: "कुल साप्ताहिक बजट:",
+    budget_used_of: "उपयोग हुआ",
+    budget_of_weekly: "साप्ताहिक बजट का",
+    budget_saved_vs_manual: "बचाया गया",
+    budget_vs_manual_end: "मैनुअल सिंचाई की तुलना में इस सप्ताह",
+    budget_manual_baseline: "मैनुअल आधार रेखा:",
+    budget_daily_target: "दैनिक लक्ष्य",
+    alerts_title: "फिल्ड अलर्ट",
+    alerts_mark_all_read: "सभी को पढ़ा हुआ मानें",
+    alerts_close: "बंद करें",
+    alerts_empty: "कोई नया अलर्ट नहीं",
+    decision_breakdown: "निर्णय विश्लेषण",
+    decision_factors: "मापदंड",
+    decision_chain: "तर्क श्रृंखला",
+    decision_confidence_meter: "विश्वास मीटर",
+    factor_moisture: "मिट्टी की नमी",
+    factor_temp: "तापमान",
+    factor_ec: "EC स्तर",
+    factor_stage: "फसल का चरण",
+    factor_tank: "टंकी स्तर",
+    decision_below_threshold: "सीमा से नीचे",
+    decision_above_threshold: "सीमा से ऊपर",
+    decision_optimal: "इष्टतम सीमा",
+    decision_high_urgency: "उच्च — बहुत जरूरी",
+    decision_sufficient: "सिंचाई के लिए पर्याप्त",
+    decision_low_tank: "कम — अपर्याप्त",
+    decision_critical_stage: "महत्वपूर्ण चरण, नमी जरूरी",
+    decision_normal_stage: "नियमित निगरानी",
+    decision_irrigate: "निर्णय: सिंचाई करें",
+    decision_skip: "निर्णय: छोड़ें",
+    decision_review: "निर्णय: समीक्षा करें",
+    decision_informational: "केवल सूचनात्मक",
+    decision_pending_review: "समीक्षा लंबित",
+    decision_auto_execute: "स्वतः-निष्पादन",
+    water_budget_used: "उपयोग हुआ",
+    weather_intelligence: "मौसम बुद्धिमत्ता",
+    weather_partly_cloudy: "आंशिक रूप से बादल",
+    weather_humidity: "नमी",
+    weather_wind: "हवा",
+    weather_today: "आज",
+    weather_tomorrow: "कल",
+    weather_day_after: "परसों",
+    weather_ai_advisory: "कल बारिश का अनुमान (40% संभावना) — AI आज की सिंचाई को 35% कम करने की सलाह देता है ताकि जलभराव से बचा जा सके",
+    whatsapp_alert: "KrishiSarth अलर्ट",
+    whatsapp_msg_1: "🌿 ज़ोन A: नमी गंभीर (",
+    whatsapp_msg_2: "%). AI सिंचाई का सुझाव देता है — ",
+    whatsapp_msg_3: "L. पुष्टि करने के लिए टैप करें।",
+    whatsapp_irrigate: "सिंचाई ✓",
+    whatsapp_skip: "छोड़ें ✗",
+    whatsapp_now: "अभी",
+    channels_title: "अधिसूचना चैनल",
+    channel_whatsapp: "WhatsApp अलर्ट",
+    channel_sms: "SMS (क्षेत्रीय भाषा)",
+    channel_email: "ईमेल सारांश",
+    channel_push: "पुश अधिसूचना (ऐप)",
+    farm_is: "आपका खेत",
+    mins_ago: "मिनट पहले",
+    initializing: "कृषिसार्थ शुरू हो रहा है...",
+    greeting_morning: "सुप्रभात",
+    greeting_afternoon: "नमस्कार",
+    greeting_evening: "शुभ संध्या",
+    sys_status: "सिस्टम की स्थिति",
+    sys_status_critical: "गंभीर",
+    sys_status_dry: "सूखा",
+    sys_status_optimal: "इष्टतम",
+    water_saved_today: "आज बचा हुआ पानी (L)",
+    next_irrigation: "अगली सिंचाई",
+    active_zones: "सक्रिय क्षेत्र",
+    ai_decisions: "AI निर्णय",
+    mins: "मि",
+  },
   mr: {
     nav_dashboard:    "डॅशबोर्ड",
     nav_ai:           "AI निर्णय",
@@ -530,7 +754,7 @@ const TRANSLATIONS = {
     ctrl_concentration:"एकाग्रता",
     ctrl_inject:      "आता इंजेक्ट करा",
     ctrl_warn_conc:   "उच्च एकाग्रता — पीक सहनशीलता तपासा",
-    ctrl_pump_idle:   "पंप बंद आहे. पुढील सिंचनासोबत शेड्यूल करायचे?",
+    ctrl_pump_idle:   "पंप बंद বাতাসে आहे. पुढील सिंचनासोबत शेड्यूल करायचे?",
     ctrl_scheduled:   "पुढील चक्रासाठी इंजेक्शन शेड्यूल केले",
     ctrl_inject_ok:   "इंजेक्शन रांगेत लावले",
     ctrl_inject_fail: "इंजेक्शन अयशस्वी",
@@ -616,7 +840,7 @@ const TRANSLATIONS = {
     anal_no_farm:         "कोणतेही शेत निवडलेले नाही",
     btn_refresh:          "रिफ्रेश",
     btn_close:            "बंद करा",
-    btn_confirm:          "पुष्टी करा",
+    btn_confirm:          "पुष्टि करें",
     btn_cancel:           "रद्द करा",
     btn_save:             "जतन करा",
     assistant_title:      "KrishiSarth AI सहाय्यक",
@@ -650,30 +874,171 @@ const TRANSLATIONS = {
     twin_preview_active: "डिजिटल ट्विन सक्रिय",
     twin_history_title: "सिम्युलेशन इतिहास",
     twin_calibrate_btn: "ट्विन पुन्हा कॅलिब्रेट करा",
+
+    page_dashboard: "डॅशबोर्ड",
+    page_ai: "AI इंजिन",
+    page_control: "नियंत्रण पॅनेल",
+    page_analytics: "विश्लेषण",
+    page_farm3d: "3D शेत दृश्य",
+    good_morning: "सुप्रभात",
+    good_afternoon: "नमस्कार",
+    good_evening: "शुभ संध्याकाळ",
+    farm_all_ok: "सर्व प्रणाली इष्टतम",
+    farm_warn: "लक्ष देणे आवश्यक",
+    farm_critical: "गंभीर सूचना",
+    last_sync: "शेवटचा सिंक",
+    min_ago: "मिनिट पूर्वी",
+    just_now: "आत्ता",
+    timeline_title: "पीक अवस्था टाइमलाइन",
+    crop_stage_sowing: "पेरणी",
+    crop_stage_germination: "उगवण",
+    crop_stage_vegetative: "शाकीय वाढ",
+    crop_stage_flowering: "फुलोरा",
+    crop_stage_harvest: "काढणी",
+    timeline_days_in: "अस्थेतील दिवस",
+    timeline_days_next: "पुढील अवस्थेसाठी दिवस",
+    timeline_today: "आज",
+    budget_title: "पाण्याचे बजेट",
+    budget_weekly_limit: "एकूण साप्ताहिक बजेट:",
+    budget_used_of: "वापरले",
+    budget_of_weekly: "साप्ताहिक बजेटच्या",
+    budget_saved_vs_manual: "बचत झाली",
+    budget_vs_manual_end: "मॅन्युअल सिंचनाच्या तुलनेत या आठवड्यात",
+    budget_manual_baseline: "मॅन्युअल आधार रेषा:",
+    budget_daily_target: "दैनिक लक्ष्य",
+    alerts_title: "फिल्ड अलर्ट्स",
+    alerts_mark_all_read: "सर्व वाचलेले म्हणून खूण करा",
+    alerts_close: "बंद करा",
+    alerts_empty: "कोणतेही नवीन अलर्ट नाही",
+    decision_breakdown: "निर्णय विश्लेषण",
+    decision_factors: "इनपुट घटक",
+    decision_chain: "तर्क मालिका",
+    decision_confidence_meter: "विश्वास मीटर",
+    factor_moisture: "मातीमधील ओलावा",
+    factor_temp: "तापमान",
+    factor_ec: "EC पातळी",
+    factor_stage: "पीक अवस्था",
+    factor_tank: "पाण्याची पातळी",
+    decision_below_threshold: "मर्यादेच्या खाली",
+    decision_above_threshold: "मर्यादेच्या वर",
+    decision_optimal: "इष्टतम श्रेणी",
+    decision_high_urgency: "उच्च — अत्यंत आवश्यक",
+    decision_sufficient: "सिंचनासाठी पुरेसे",
+    decision_low_tank: "कमी — अपुरे",
+    decision_critical_stage: "महत्त्वाची अवस्था, ओलावा आवश्यक",
+    decision_normal_stage: "नियमित निरीक्षण",
+    decision_irrigate: "निर्णय: सिंचन करा",
+    decision_skip: "निर्णय: टाळा",
+    decision_review: "निर्णय: पुनरावलोकन करा",
+    decision_informational: "केवळ माहितीसाठी",
+    decision_pending_review: "पुनरावलोकन प्रलंबित",
+    decision_auto_execute: "स्वयं-अंमलबजावणी",
+    water_budget_used: "वापरले",
+    weather_intelligence: "हवामान बुद्धिमत्ता",
+    weather_partly_cloudy: "अंशतः ढगाळ",
+    weather_humidity: "आर्द्रता",
+    weather_wind: "वारा",
+    weather_today: "आज",
+    weather_tomorrow: "उद्या",
+    weather_day_after: "परवा",
+    weather_ai_advisory: "उद्या पावसाचा अंदाज (40% शक्यता) — पाणी साचणे टाळण्यासाठी AI आजचे सिंचन 35% ने कमी करण्याचा सल्ला देत आहे",
+    whatsapp_alert: "KrishiSarth अलर्ट",
+    whatsapp_msg_1: "🌿 झोन A: ओलावा गंभीर (",
+    whatsapp_msg_2: "%). AI सिंचनाचा सल्ला देत आहे — ",
+    whatsapp_msg_3: "L. पुष्टी करण्यासाठी टॅप करा.",
+    whatsapp_irrigate: "सिंचन करा ✓",
+    whatsapp_skip: "टाळा ✗",
+    whatsapp_now: "आता",
+    channels_title: "सूचना चॅनेल",
+    channel_whatsapp: "WhatsApp अलर्ट",
+    channel_sms: "SMS (प्रादेशिक भाषा)",
+    channel_email: "ईमेल सारांश",
+    channel_push: "पुश सूचना (अॅप)",
+    farm_is: "तुमची शेती",
+    mins_ago: "मिनिटांपूर्वी",
+    initializing: "कृषिसार्थ सुरू होत आहे...",
+    greeting_morning: "शुभ प्रभात",
+    greeting_afternoon: "शुभ दुपार",
+    greeting_evening: "शुभ संध्याकाळ",
+    sys_status: "सिस्टम स्थिती",
+    sys_status_critical: "गंभीर",
+    sys_status_dry: "कोरडे",
+    sys_status_optimal: "उत्तम",
+    water_saved_today: "आज वाचवलेले पाणी (L)",
+    next_irrigation: "पुढील सिंचन",
+    active_zones: "सक्रीय क्षेत्र",
+    ai_decisions: "AI निर्णय",
+    mins: "मि",
   }
 };
 
-let _currentLang = localStorage.getItem('ks_lang') || 'en';
+// ── State ──────────────────────────────────────────────────────────
+let _lang = localStorage.getItem('ks_lang') || 'en';
 
-export function setLanguage(lang) {
-  if (TRANSLATIONS[lang]) {
-    _currentLang = lang;
-    localStorage.setItem('ks_lang', lang);
-  }
-}
-
-export function getLanguage() {
-  return _currentLang;
-}
-
+// ── Core API ───────────────────────────────────────────────────────
 export function t(key) {
-  return TRANSLATIONS[_currentLang]?.[key] || TRANSLATIONS['en']?.[key] || key;
+  return TRANSLATIONS[_lang]?.[key]
+    ?? TRANSLATIONS['en']?.[key]
+    ?? key;  // Ultimate fallback: return the key itself
 }
+
+export function getLanguage() { return _lang; }
 
 export function getAvailableLanguages() {
   return [
     { code: 'en', label: 'EN', name: 'English' },
-    { code: 'hi', label: 'हिं', name: 'Hindi' },
+    { code: 'hi', label: 'हिं', name: 'Hindi'  },
     { code: 'mr', label: 'मर', name: 'Marathi' },
   ];
+}
+
+/**
+ * setLanguage — the RIGHT way to switch language
+ * 1. Update state + localStorage
+ * 2. Walk every [data-i18n] element in the DOM and swap its text
+ * 3. Fire a custom event so dynamic components (toast, charts) can update
+ * 4. DO NOT call renderNavbar() or fire hashchange — that causes flickering
+ */
+export function setLanguage(lang) {
+  if (!TRANSLATIONS[lang] || lang === _lang) return;
+  _lang = lang;
+  localStorage.setItem('ks_lang', lang);
+
+  // Update all data-i18n elements instantly
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const attr = el.dataset.i18nAttr; // e.g. data-i18n-attr="placeholder"
+    const translated = t(key);
+    if (attr) {
+      el.setAttribute(attr, translated);
+    } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      el.placeholder = translated;
+    } else {
+      // Only update text node, preserve child elements
+      const textNodes = [...el.childNodes].filter(n => n.nodeType === Node.TEXT_NODE);
+      if (textNodes.length > 0) {
+        textNodes[0].textContent = translated;
+      } else {
+        el.textContent = translated;
+      }
+    }
+  });
+
+  // Update document lang attribute (accessibility + SEO)
+  document.documentElement.lang = lang;
+
+  // Update page title
+  document.title = `KrishiSarth | ${t('page_' + (window.location.hash.replace('#','') || 'dashboard'))}`;
+
+  // Update active lang button styling (update just the buttons, not the whole navbar)
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.dataset.lang === lang;
+    btn.classList.toggle('bg-white',         isActive);
+    btn.classList.toggle('text-primary',     isActive);
+    btn.classList.toggle('shadow-sm',        isActive);
+    btn.classList.toggle('text-gray-400',    !isActive);
+  });
+
+  // Notify any components that need to re-render dynamic content
+  window.dispatchEvent(new CustomEvent('ks-lang-changed', { detail: { lang } }));
 }

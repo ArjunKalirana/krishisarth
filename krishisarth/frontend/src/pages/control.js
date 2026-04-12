@@ -17,15 +17,15 @@ export function renderControl() {
     header.className = "flex flex-col md:flex-row md:items-end justify-between gap-6";
     header.innerHTML = `
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900">${t('ctrl_title')}</h1>
-            <p class="text-gray-500 font-medium mt-1">${t('ctrl_subtitle')}</p>
+            <h1 class="text-3xl font-extrabold text-gray-900" data-i18n="ctrl_title">${t('ctrl_title')}</h1>
+            <p class="text-gray-500 font-medium mt-1" data-i18n="ctrl_subtitle">${t('ctrl_subtitle')}</p>
         </div>
         <div class="flex gap-3">
-            <button id="start-all-btn" class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-black text-sm transition-all shadow-md active:scale-95 flex items-center gap-2">
-                <i data-lucide="play-circle" class="w-5 h-5"></i> ${t('ctrl_start') + ' ALL'}
+            <button id="start-all-btn" class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-black text-sm transition-all shadow-md active:scale-95 flex items-center gap-2" data-magnetic>
+                <i data-lucide="play-circle" class="w-5 h-5"></i> <span data-i18n="ctrl_start">${t('ctrl_start')}</span> ALL
             </button>
-            <button id="stop-all-btn" class="border-2 border-red-600 text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 uppercase tracking-tight">
-                <i data-lucide="stop-circle" class="w-5 h-5"></i> ${t('ctrl_stop_all')}
+            <button id="stop-all-btn" class="border-2 border-red-600 text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 uppercase tracking-tight" data-magnetic>
+                <i data-lucide="stop-circle" class="w-5 h-5"></i> <span data-i18n="ctrl_stop_all">${t('ctrl_stop_all')}</span>
             </button>
         </div>
     `;
@@ -53,7 +53,7 @@ export function renderControl() {
     const renderFert = () => {
         fertCard.innerHTML = `
             <h2 class="text-lg font-black text-gray-800 uppercase tracking-tight mb-6 flex items-center gap-2">
-                <i data-lucide="test-tube-2" class="w-5 h-5 text-primary"></i> ${t('ctrl_fertigation')}
+                <i data-lucide="test-tube-2" class="w-5 h-5 text-primary"></i> <span data-i18n="ctrl_fertigation">${t('ctrl_fertigation')}</span>
             </h2>
 
             <div class="flex bg-gray-100 p-1 rounded-xl mb-6">
@@ -66,13 +66,13 @@ export function renderControl() {
 
             <div class="space-y-6">
                 <div class="flex justify-between items-end">
-                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">${t('ctrl_concentration')}</span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest" data-i18n="ctrl_concentration">${t('ctrl_concentration')}</span>
                     <span class="text-3xl font-black text-primary" id="fert-val">12 <span class="text-xs text-gray-400 ml-1">ml/L</span></span>
                 </div>
                 <input type="range" min="0" max="30" value="12" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="fert-slider">
                 
-                <button id="inject-btn" class="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95">
-                    ${t('ctrl_inject')}
+                <button id="inject-btn" class="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95" data-magnetic>
+                    <span data-i18n="ctrl_inject">${t('ctrl_inject')}</span>
                 </button>
             </div>
         `;
@@ -217,6 +217,7 @@ export function renderControl() {
         });
 
         if (window.lucide) window.lucide.createIcons();
+        if (window.ksReveal) window.ksReveal();
     }, 1500);
 
     return container;
@@ -239,7 +240,7 @@ async function _loadZones(gridEl) {
             } else {
                 gridEl.innerHTML = `
                     <div class="md:col-span-2 ks-card p-10 text-center">
-                        <p class="text-gray-400 font-bold">
+                        <p class="text-gray-400 font-bold" data-i18n="ctrl_no_farm">
                             ${t('ctrl_no_farm')}
                         </p>
                         <p class="text-gray-300 text-xs mt-2">
@@ -273,7 +274,7 @@ async function _loadZones(gridEl) {
                 <div class="md:col-span-2 ks-card p-10 text-center">
                     <i data-lucide="map-pin-off" 
                        class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
-                    <p class="font-bold text-gray-400">
+                    <p class="font-bold text-gray-400" data-i18n="ctrl_no_zones">
                         ${t('ctrl_no_zones')}
                     </p>
                 </div>`;
@@ -304,7 +305,7 @@ async function _loadZones(gridEl) {
             <div class="md:col-span-2 ks-card p-8 text-center"
                  style="background:#fef2f2; border-color:#fecaca;">
                 <p class="text-red-500 font-bold">
-                    ${t('ctrl_load_fail')}: ${err.message}
+                    <span data-i18n="ctrl_load_fail">${t('ctrl_load_fail')}</span>: ${err.message}
                 </p>
                 <button onclick="location.reload()" 
                         class="mt-4 px-4 py-2 bg-red-500 text-white 

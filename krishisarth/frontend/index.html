@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KrishiSarth | Smart IoT Farming</title>
+    <title data-i18n="app_title">KrishiSarth | Smart IoT Farming</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: DM Sans & DM Mono -->
+    <!-- Google Fonts: Syne, DM Sans & DM Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -21,33 +20,71 @@
 
     <style>
         :root {
-            --color-primary: #1a7a4a;
-            --color-primary-light: #2ECC71;
-            --color-primary-dark: #0f5232;
-            --color-bg: #f0f7f3;
-            --color-bg-card: #ffffff;
-            --font-main: 'DM Sans', sans-serif;
-            --font-mono: 'DM Mono', monospace;
+            /* Brand */
+            --ks-green:        #0d6b3a;
+            --ks-green-mid:    #1a7a4a;
+            --ks-green-light:  #2ECC71;
+            --ks-green-glow:   rgba(26,122,74,0.18);
+            --ks-cyan:         #00e5a0;
+
+            /* Surfaces — dark card system */
+            --ks-bg:           #f2f7f4;
+            --ks-surface:      #ffffff;
+            --ks-surface-2:    #f8faf9;
+            --ks-border:       rgba(26,122,74,0.09);
+            --ks-border-mid:   rgba(26,122,74,0.18);
+
+            /* Text */
+            --ks-text:         #0d1a12;
+            --ks-muted:        #5a7266;
+            --ks-faint:        #9ab5a8;
+
+            /* Status */
+            --ks-dry:          #dc2626;
+            --ks-wet:          #2563eb;
+            --ks-optimal:      #16a34a;
+            --ks-warn:         #d97706;
+
+            /* Typography */
+            --font-display:    'Syne', sans-serif;
+            --font-body:       'DM Sans', sans-serif;
+            --font-mono:       'DM Mono', monospace;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
         body {
-            font-family: var(--font-main);
-            background-color: var(--color-bg);
-            color: #1a1a1a;
+            font-family: var(--font-body);
+            background-color: var(--ks-bg);
+            color: var(--ks-text);
             margin: 0;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.025;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
         .brand-text {
-            color: var(--color-primary);
+            color: var(--ks-green-mid);
         }
 
         .pulse-dot {
             width: 8px;
             height: 8px;
-            background-color: var(--color-primary-light);
+            background-color: var(--ks-green-light);
             border-radius: 50%;
             display: inline-block;
             box-shadow: 0 0 0 rgba(46, 204, 113, 0.4);
@@ -62,10 +99,47 @@
 
         /* Standardized Cards */
         .ks-card {
-            background-color: var(--color-bg-card);
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(26, 122, 74, 0.08);
+            background-color: var(--ks-surface);
+            border: 1px solid var(--ks-border);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zone-card {
+            transition: transform 0.22s cubic-bezier(0.23,1,0.32,1), box-shadow 0.22s ease;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .zone-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 12px 40px rgba(26,122,74,0.12), 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .zone-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .zone-card:hover::after { left: 150%; }
+        .ks-card {
+            background: var(--ks-surface);
+            border-radius: 16px;
+            border: 1px solid var(--ks-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(26,122,74,0.04);
+            transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ks-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(26,122,74,0.1);
+            border-color: var(--ks-border-mid);
+            transform: translateY(-2px);
         }
     </style>
 
@@ -75,16 +149,31 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            DEFAULT: '#1a7a4a',
-                            light: '#2ECC71',
-                            dark: '#0f5232',
-                        },
-                        bg: '#f0f7f3',
+                        ks: {
+                            green: 'var(--ks-green)',
+                            'green-mid': 'var(--ks-green-mid)',
+                            'green-light': 'var(--ks-green-light)',
+                            'green-glow': 'var(--ks-green-glow)',
+                            cyan: 'var(--ks-cyan)',
+                            bg: 'var(--ks-bg)',
+                            surface: 'var(--ks-surface)',
+                            'surface-2': 'var(--ks-surface-2)',
+                            border: 'var(--ks-border)',
+                            'border-mid': 'var(--ks-border-mid)',
+                            text: 'var(--ks-text)',
+                            muted: 'var(--ks-muted)',
+                            faint: 'var(--ks-faint)',
+                            dry: 'var(--ks-dry)',
+                            wet: 'var(--ks-wet)',
+                            optimal: 'var(--ks-optimal)',
+                            warn: 'var(--ks-warn)',
+                        }
                     },
                     fontFamily: {
-                        sans: ['DM Sans', 'sans-serif'],
-                        mono: ['DM Mono', 'monospace'],
+                        sans: ['var(--font-body)', 'sans-serif'],
+                        mono: ['var(--font-mono)', 'monospace'],
+                        display: ['var(--font-display)', 'sans-serif'],
+                        body: ['var(--font-body)', 'sans-serif'],
                     }
                 }
             }
@@ -99,14 +188,74 @@
     </script>
 </head>
 <body class="antialiased">
+    <div id="ks-loader" style="
+      position:fixed; inset:0; background:#0d1a10; z-index:100000;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:16px; transition:opacity 0.6s ease;
+    ">
+      <!-- Animated leaf logo -->
+      <svg width="48" height="48" viewBox="0 0 24 24" style="animation:grow 1s cubic-bezier(0.34,1.56,0.64,1) forwards">
+        <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
+        <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#2ECC71"/>
+      </svg>
+      
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em">
+        Krishi<span style="color:#2ECC71">Sarth</span>
+      </div>
+      
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.2em" id="loader-status">
+        INITIALIZING...
+      </div>
+      
+      <div style="width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;margin-top:8px">
+        <div id="loader-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a7a4a,#2ECC71);border-radius:1px;transition:width 0.3s ease;box-shadow:0 0 8px #2ECC71"></div>
+      </div>
+    </div>
+
+    <style>
+    @keyframes grow {
+      from { transform:scale(0) rotate(-20deg); opacity:0; }
+      to   { transform:scale(1) rotate(0deg); opacity:1; }
+    }
+    </style>
+
+    <script>
+    const loaderSteps = [
+      [0,  'INITIALIZING FIELD SENSORS...'],
+      [20, 'CONNECTING TO MQTT...'],
+      [45, 'LOADING AI ENGINE...'],
+      [65, 'SYNCING TELEMETRY...'],
+      [85, 'CALIBRATING TWIN...'],
+      [100,'FARM READY ✓'],
+    ];
+    const bar = document.getElementById('loader-bar');
+    const status = document.getElementById('loader-status');
+    let si = 0;
+    const stepInterval = setInterval(() => {
+      if (si >= loaderSteps.length) { clearInterval(stepInterval); return; }
+      bar.style.width = loaderSteps[si][0] + '%';
+      status.textContent = loaderSteps[si][1];
+      si++;
+    }, 400);
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const ksLoader = document.getElementById('ks-loader');
+        if(ksLoader) {
+            ksLoader.style.opacity = '0';
+            setTimeout(() => ksLoader.remove(), 600);
+        }
+      }, loaderSteps.length * 400 + 200);
+    });
+    </script>
     <div id="navbar-root" class="sticky top-0 z-50"></div>
 
     <main id="app-root" class="flex-grow container mx-auto px-4 py-8">
         <!-- SPA content renders here -->
         <div class="flex items-center justify-center h-64">
             <div class="text-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p class="text-gray-500 font-medium font-mono text-sm">INITIALIZING KRISHISARTH CORE...</p>
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-ks-green-mid mx-auto mb-4"></div>
+                <p class="text-gray-500 font-medium font-mono text-sm" data-i18n="initializing">${window.t ? window.t('initializing') : 'INITIALIZING KRISHISARTH CORE...'}</p>
             </div>
         </div>
     </main>
@@ -114,12 +263,84 @@
     <footer class="bg-white border-t border-gray-100 py-6 mt-12">
         <div class="container mx-auto px-4 text-center">
             <p class="text-gray-500 text-sm font-medium">
-                KrishiSarth &copy; 2026 | Powered by <span class="text-primary font-bold">IoT + AI</span> | Smart Farming for Every Acre
+                <span data-i18n="footer_copyright">KrishiSarth &copy; 2026</span> | <span data-i18n="footer_powered">Powered by</span> <span class="text-ks-green-mid font-bold" data-i18n="footer_tech">IoT + AI</span> | <span data-i18n="footer_tagline">Smart Farming for Every Acre</span>
             </p>
         </div>
     </footer>
 
     <!-- App Scripts -->
     <script type="module" src="./src/app.js"></script>
+
+<script>
+// ── Custom cursor ──────────────────────────────────────────────
+(function() {
+  const cursor = document.createElement('div');
+  cursor.id = 'ks-cursor';
+  cursor.style.cssText = `
+    position:fixed; width:16px; height:16px; border-radius:50%;
+    background:rgba(26,122,74,0.5); pointer-events:none; z-index:99999;
+    mix-blend-mode:multiply; transition:transform 0.1s ease, opacity 0.2s;
+    transform:translate(-50%,-50%);
+  `;
+  document.body.appendChild(cursor);
+
+  let mx=0, my=0, cx=0, cy=0;
+  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+
+  const loop = () => {
+    cx += (mx-cx)*0.12; cy += (my-cy)*0.12;
+    cursor.style.left = cx+'px'; cursor.style.top = cy+'px';
+    requestAnimationFrame(loop);
+  };
+  loop();
+
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest('button, a, [data-magnetic], .ks-card');
+    if (t) { cursor.style.transform='translate(-50%,-50%) scale(2.8)'; cursor.style.opacity='0.25'; }
+    else    { cursor.style.transform='translate(-50%,-50%) scale(1)';   cursor.style.opacity='1'; }
+  });
+})();
+
+// ── Magnetic buttons ──────────────────────────────────────────────
+document.addEventListener('mousemove', e => {
+  document.querySelectorAll('[data-magnetic]').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top  + rect.height/2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 80) {
+      const pull = (80-dist)/80;
+      el.style.transform = `translate(${dx*pull*0.3}px,${dy*pull*0.3}px)`;
+    } else {
+      el.style.transform = '';
+    }
+  });
+});
+
+// ── Scroll-triggered reveals ──────────────────────────────────────
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+      revealObs.unobserve(e.target);
+    }
+  });
+}, { threshold:0.08 });
+
+// Call this after each page render to wire new elements
+window.ksReveal = function() {
+  document.querySelectorAll('.ks-card, .zone-card, .sensor-card').forEach((el,i) => {
+    if (el.dataset.revealed) return;
+    el.dataset.revealed = '1';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = \`opacity 0.55s ease \${i%6*0.07}s, transform 0.55s cubic-bezier(0.23,1,0.32,1) \${i%6*0.07}s\`;
+    revealObs.observe(el);
+  });
+};
+</script>
 </body>
 </html>

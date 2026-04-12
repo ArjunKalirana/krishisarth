@@ -17,11 +17,11 @@ export function renderAIDecisions() {
     header.className = "flex flex-col md:flex-row md:items-end justify-between gap-6";
     header.innerHTML = `
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900">${t('ai_title')}</h1>
-            <p class="text-gray-500 font-medium mt-1">${t('ai_subtitle')}</p>
+            <h1 class="text-3xl font-extrabold text-gray-900" data-i18n="ai_title">${t('ai_title')}</h1>
+            <p class="text-gray-500 font-medium mt-1" data-i18n="ai_subtitle">${t('ai_subtitle')}</p>
         </div>
         <button id="run-ai-btn" class="bg-gray-900 hover:bg-black text-white px-8 py-4 rounded-xl font-black text-sm transition-all shadow-xl active:scale-95 flex items-center gap-3">
-            <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i> ${t('ai_run_btn')}
+            <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i> <span data-i18n="ai_run_btn">${t('ai_run_btn')}</span>
         </button>
     `;
     container.appendChild(header);
@@ -62,7 +62,7 @@ async function _loadAI(gridEl, runBtn) {
             } else {
                 gridEl.innerHTML = `<div class="lg:col-span-12 ks-card p-10 
                     text-center text-gray-400 font-bold">
-                    No farm found. Please make sure you have run the seed script.
+                    ${t('ai_no_farm')}
                 </div>`;
             }
         }, 1000);
@@ -120,7 +120,7 @@ async function _loadAI(gridEl, runBtn) {
             <div style="background:rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.1);"
                  class="px-4 py-3 flex items-center justify-between">
                 <span class="font-bold text-white/30 uppercase tracking-widest"
-                      style="font-size:10px; font-family:var(--font-mono, monospace);">
+                      style="font-size:10px; font-family:var(--font-mono, monospace);" data-i18n="ai_terminal_title">
                     ${t('ai_terminal_title')}
                 </span>
                 <div class="flex gap-1.5">
@@ -131,7 +131,7 @@ async function _loadAI(gridEl, runBtn) {
             </div>
             <div class="p-6 space-y-3" style="font-family:var(--font-mono, monospace);">
                 <p class="font-bold mb-4" style="color:rgba(74,222,128,0.5); font-size:10px;">
-                    > ${t('ai_system_ready')}: INFERENCE_CORE_v4.2
+                    > <span data-i18n="ai_system_ready">${t('ai_system_ready')}</span>: INFERENCE_CORE_v4.2
                 </p>
                 ${[
                     ['SOIL_MOISTURE',  `${(firstZone.moisture_pct || 0).toFixed(1)}%`],
@@ -140,7 +140,7 @@ async function _loadAI(gridEl, runBtn) {
                     ['MOISTURE_STATUS',firstZone.moisture_status?.toUpperCase() || '—'],
                     ['ACTIVE_ZONE',    firstZone.name],
                     ['FARM',           farm.name],
-                    ['TOTAL_ZONES',    `${zones.length} ${t('ai_zones_label')}`],
+                    ['TOTAL_ZONES',    `${zones.length} <span data-i18n="ai_zones_label">${t('ai_zones_label')}</span>`],
                 ].map(([k, v]) => `
                     <div class="flex justify-between items-center" style="font-size:12px;">
                         <span style="color:rgba(255,255,255,0.4); font-weight:700;">> ${k}</span>
@@ -151,26 +151,52 @@ async function _loadAI(gridEl, runBtn) {
                      style="border-top:1px solid rgba(255,255,255,0.05);
                             font-size:9px; color:rgba(46,204,113,0.4);
                             font-weight:800; text-transform:uppercase; letter-spacing:0.05em;">
-                    ${t('ai_kernel')} stable_alpha_inference · ${zones.length} ${t('ai_zones_label')}
+                    <span data-i18n="ai_kernel">${t('ai_kernel')}</span> stable_alpha_inference · ${zones.length} <span data-i18n="ai_zones_label">${t('ai_zones_label')}</span>
                 </div>
             </div>
         </div>
 
         <!-- Decisions panel -->
-        <div class="lg:col-span-7 space-y-5" id="decisions-panel">
-            ${decisions.length > 0
-                ? decisions.map(d => _decisionCard(d)).join('')
-                : `<div class="ks-card p-10 text-center">
-                    <i data-lucide="brain" class="w-12 h-12 mx-auto mb-4" 
-                       style="color:rgba(26,122,74,0.3);"></i>
-                    <p class="font-bold text-gray-400 uppercase tracking-widest text-sm">
-                        ${t('ai_no_decisions')}
-                    </p>
-                    <p class="text-gray-300 text-xs mt-2">
-                        Click RUN AI AUDIT NOW to generate the first decision
-                    </p>
-                  </div>`
-            }
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            <div class="space-y-5" id="decisions-panel">
+                ${decisions.length > 0
+                    ? decisions.map(d => _decisionCard(d)).join('')
+                    : `<div class="ks-card p-10 text-center">
+                        <i data-lucide="brain" class="w-12 h-12 mx-auto mb-4" 
+                           style="color:rgba(26,122,74,0.3);"></i>
+                        <p class="font-bold text-gray-400 uppercase tracking-widest text-sm" data-i18n="ai_no_decisions">
+                            ${t('ai_no_decisions')}
+                        </p>
+                        <p class="text-gray-300 text-xs mt-2">
+                            Click RUN AI AUDIT NOW to generate the first decision
+                        </p>
+                      </div>`
+                }
+            </div>
+
+            <!-- Notification Channels -->
+            <div class="ks-card p-6 mt-4 opacity-80 hover:opacity-100 transition-opacity flex flex-col gap-4 bg-gray-50/50">
+                <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2 mb-2"><i data-lucide="satellite" class="w-4 h-4"></i> <span data-i18n="channels_title">${t('channels_title')}</span></h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${[
+                        { id: 'whatsapp', label: 'channel_whatsapp', icon: 'message-circle', active: true },
+                        { id: 'sms', label: 'channel_sms', icon: 'smartphone', active: true },
+                        { id: 'email', label: 'channel_email', icon: 'mail', active: false },
+                        { id: 'push', label: 'channel_push', icon: 'bell', active: false }
+                    ].map(ch => `
+                        <div class="flex items-center justify-between p-3 rounded-xl border ${ch.active ? 'bg-white border-green-500 shadow-sm' : 'bg-gray-100/50 border-gray-200'} cursor-pointer transition-all hover:bg-white" onclick="this.classList.toggle('border-green-500'); this.classList.toggle('bg-white'); this.classList.toggle('shadow-sm'); this.classList.toggle('bg-gray-100/50'); this.classList.toggle('border-gray-200'); const btn = this.querySelector('.switch-handle'); if(btn) { btn.classList.toggle('translate-x-3'); btn.parentElement.classList.toggle('bg-green-500'); btn.parentElement.classList.toggle('bg-gray-300'); }">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="${ch.icon}" class="w-4 h-4 ${ch.active ? 'text-green-600' : 'text-gray-400'}"></i>
+                                <span class="text-xs font-bold ${ch.active ? 'text-gray-800' : 'text-gray-500'}" data-i18n="${ch.label}">${t(ch.label)}</span>
+                            </div>
+                            <div class="w-8 h-5 rounded-full relative transition-colors ${ch.active ? 'bg-green-500' : 'bg-gray-300'}">
+                                <div class="switch-handle absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${ch.active ? 'translate-x-3' : ''} shadow-sm"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
         </div>
     `;
 
@@ -180,7 +206,7 @@ async function _loadAI(gridEl, runBtn) {
     runBtn.onclick = async () => {
         runBtn.disabled = true;
         runBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 
-            border-t-white rounded-full animate-spin"></div> ${t('ai_calculating')}`;
+            border-t-white rounded-full animate-spin"></div> <span data-i18n="ai_calculating">${t('ai_calculating')}</span>`;
         try {
             const res = await api(
                 `/zones/${firstZone.id}/ai-decisions/run/`, 
@@ -197,6 +223,11 @@ async function _loadAI(gridEl, runBtn) {
                     emptyCard.closest('.ks-card').remove();
                 }
                 if (window.lucide) window.lucide.createIcons();
+                
+                const finalType = res.data.type || res.data.decision_type || 'analysis';
+                if (finalType === 'irrigate' || finalType === 'alert') {
+                    showWhatsAppNotification(firstZone.name, res.data.water_volume_l || 14);
+                }
             }
         } catch (err) {
             const panel = gridEl.querySelector('#decisions-panel');
@@ -204,13 +235,13 @@ async function _loadAI(gridEl, runBtn) {
                 panel.insertAdjacentHTML('afterbegin', `
                     <div class="ks-card p-4 mb-2" 
                          style="background:#fffbeb; border-color:#fde68a; color:#92400e;">
-                        <p class="font-bold text-sm">${t('ai_unavailable')}</p>
+                        <p class="font-bold text-sm" data-i18n="ai_unavailable">${t('ai_unavailable')}</p>
                     </div>`);
             }
         } finally {
             runBtn.disabled = false;
             runBtn.innerHTML = `<i data-lucide="zap" class="w-5 h-5" 
-                style="color:#facc15;"></i> ${t('ai_run_btn')}`;
+                style="color:#facc15;"></i> <span data-i18n="ai_run_btn">${t('ai_run_btn')}</span>`;
             if (window.lucide) window.lucide.createIcons();
         }
     };
@@ -237,11 +268,47 @@ function _decisionCard(d) {
     const dateStr = d.created_at
         ? new Date(d.created_at).toLocaleString()
         : '';
+        
+    // 1. Simulate input factor weights
+    const mWeight = type === 'irrigate' ? 0.82 : 0.55;
+    const tWeight = type === 'alert' ? 0.70 : 0.45;
+    const ecWeight = 0.34;
+    const stageWeight = 0.61;
+    const tankWeight = 0.42;
+    
+    const barsHtml = [
+        { label: 'factor_moisture', lw: mWeight },
+        { label: 'factor_temp', lw: tWeight },
+        { label: 'factor_ec', lw: ecWeight },
+        { label: 'factor_stage', lw: stageWeight },
+        { label: 'factor_tank', lw: tankWeight }
+    ].map(f => {
+        const pct = Math.round(f.lw * 100);
+        return `<div class="flex items-center gap-3 text-xs mb-1.5"><span class="w-24 text-gray-500 font-bold" data-i18n="${f.label}">${t(f.label)}</span>
+            <div class="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all" style="width: ${pct}%; background-color: ${border};"></div>
+            </div>
+            <span class="w-12 text-right font-mono text-gray-400 font-bold">${pct}%</span>
+        </div>`;
+    }).join('');
+
+    // 2. Decision chain
+    const mapDec = type === 'irrigate' ? 'decision_irrigate' : (type === 'skip' ? 'decision_skip' : 'decision_review');
+    const chainItems = [
+        `① <span data-i18n="factor_moisture">${t('factor_moisture')}</span> → <span class="font-bold font-mono" style="color:${type==='irrigate'?'#ef4444':'#22c55e'}" data-i18n="${type==='irrigate'?'decision_below_threshold':'decision_optimal'}">${t(type==='irrigate'?'decision_below_threshold':'decision_optimal')}</span>`,
+        `② <span data-i18n="factor_temp">${t('factor_temp')}</span> → <span class="font-bold" style="color:#f59e0b" data-i18n="decision_high_urgency">${t('decision_high_urgency')}</span>`,
+        `③ <span data-i18n="factor_tank">${t('factor_tank')}</span> → <span class="font-bold text-gray-600" data-i18n="decision_sufficient">${t('decision_sufficient')}</span>`,
+        `④ <span data-i18n="factor_stage">${t('factor_stage')}</span> → <span class="font-bold text-gray-600" data-i18n="decision_critical_stage">${t('decision_critical_stage')}</span>`,
+        `⑤ <span class="font-black uppercase tracking-widest text-white px-2 py-0.5 rounded" style="background:${border};font-size:10px;" data-i18n="${mapDec}">${t(mapDec)}</span>`
+    ];
+    
+    // 3. Confidence meter
+    const needleLeft = Math.max(5, Math.min(95, conf));
 
     return `
-        <div class="ks-card p-6" 
+        <div class="ks-card p-6 transition-all duration-300" 
              style="border-left:4px solid ${border}; background:${bg};">
-            <div class="flex items-start justify-between mb-4 gap-3">
+            <div class="flex items-start justify-between mb-4 gap-3 cursor-pointer" onclick="const det = this.parentElement.querySelector('details'); if(det) { det.open = !det.open; const i = this.querySelector('i'); if(i) { i.style.transform = det.open ? 'rotate(180deg)' : 'rotate(0deg)'; } }">
                 <div>
                     <h2 class="font-black text-gray-800 uppercase tracking-tight text-base">
                         ${type.toUpperCase()}
@@ -251,18 +318,54 @@ function _decisionCard(d) {
                         ${dateStr}
                     </p>
                 </div>
-                <span class="font-black px-4 py-1.5 rounded-full shrink-0"
-                      style="background:rgba(26,122,74,0.1); color:#1a7a4a;
-                             font-size:10px; border:1px solid rgba(26,122,74,0.2);">
-                    ${conf}% ${t('ai_confidence')}
-                </span>
+                <div class="flex items-center gap-3">
+                    <span class="font-black px-4 py-1.5 rounded-full shrink-0"
+                          style="background:rgba(26,122,74,0.1); color:#1a7a4a;
+                                 font-size:10px; border:1px solid rgba(26,122,74,0.2);">
+                        ${conf}% <span data-i18n="ai_confidence">${t('ai_confidence')}</span>
+                    </span>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 transform transition-transform details-arrow"></i>
+                </div>
             </div>
+            
             <p class="text-gray-600 leading-relaxed mb-4" style="font-size:13px;">
-                ${d.reasoning || t('ai_no_reasoning')}
+                ${d.reasoning || `<span data-i18n="ai_no_reasoning">${t('ai_no_reasoning')}</span>`}
             </p>
+            
             <span class="badge ${isHigh ? 'badge-ok' : 'badge-warning'}">
-                ${isHigh ? t('ai_auto') : t('ai_review')}
+                <span data-i18n="${isHigh ? 'ai_auto' : 'ai_review'}">${isHigh ? t('ai_auto') : t('ai_review')}</span>
             </span>
+
+            <details class="mt-5 pt-5 border-t border-gray-200/50 group/details">
+                <summary class="hidden text-[0px]"></summary>
+                <div class="flex flex-col gap-6 animate-in slide-in-from-top-4 duration-300 pb-2 cursor-default" onclick="event.stopPropagation()">
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2 mt-2"><i data-lucide="bar-chart" class="w-4 h-4"></i> <span data-i18n="decision_factors">${t('decision_factors')}</span></h3>
+                    <div class="bg-white/60 rounded-xl p-4 border border-white mt-1 shadow-sm">
+                        ${barsHtml}
+                    </div>
+
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2"><i data-lucide="git-merge" class="w-4 h-4"></i> <span data-i18n="decision_chain">${t('decision_chain')}</span></h3>
+                    <div class="flex flex-col gap-2 pl-2 border-l-2 border-gray-200 ml-2 mt-1">
+                        ${chainItems.map(item => `<div class="text-xs text-gray-600 relative before:absolute before:-left-[13px] before:top-1.5 before:w-2 before:h-2 before:bg-gray-300 before:rounded-full">${item}</div>`).join('')}
+                    </div>
+
+                    <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2"><i data-lucide="target" class="w-4 h-4"></i> <span data-i18n="decision_confidence_meter">${t('decision_confidence_meter')}</span></h3>
+                    <div class="bg-white/60 rounded-xl p-4 border border-white mt-1 shadow-sm">
+                        <div class="h-2 w-full rounded-full flex overflow-hidden mb-2 relative bg-gray-100">
+                            <div class="h-full bg-red-400 opacity-40" style="width: 60%"></div>
+                            <div class="h-full bg-amber-400 opacity-40" style="width: 20%"></div>
+                            <div class="h-full bg-green-400 opacity-40" style="width: 20%"></div>
+                            <!-- Needle -->
+                            <div class="absolute top-0 bottom-0 w-1.5 bg-gray-900 rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)] transition-all duration-1000 -translate-x-1/2 z-10" style="left: ${needleLeft}%;"></div>
+                        </div>
+                        <div class="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mt-2">
+                            <span data-i18n="decision_informational">${t('decision_informational')}</span>
+                            <span data-i18n="decision_pending_review">${t('decision_pending_review')}</span>
+                            <span data-i18n="decision_auto_execute">${t('decision_auto_execute')}</span>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
     `;
 }
@@ -408,3 +511,56 @@ async function _loadTwinPerformance(container) {
     });
 }
 
+function showWhatsAppNotification(zoneName, volume) {
+    let mock = document.getElementById('whatsapp-mock-notification');
+    if (mock) mock.remove();
+
+    mock = document.createElement('div');
+    mock.id = 'whatsapp-mock-notification';
+    mock.className = "fixed top-0 right-4 w-[340px] max-w-[calc(100vw-32px)] z-[9999] shadow-2xl rounded-2xl overflow-hidden font-sans transition-all duration-500 translate-y-[-120%]";
+    mock.style.backgroundColor = "white";
+    mock.style.border = "1px solid rgba(0,0,0,0.05)";
+
+    mock.innerHTML = `
+        <div style="background: linear-gradient(135deg, #128C7E, #075E54);" class="px-4 py-3 flex items-center gap-3 text-white">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold truncate leading-tight" style="font-family: var(--font-display);"><span data-i18n="whatsapp_alert">${t('whatsapp_alert')}</span></h4>
+                <p class="text-[10px] text-white/80" data-i18n="whatsapp_now">${t('whatsapp_now')}</p>
+            </div>
+        </div>
+        <div class="p-4 relative" style="background-color: #E5DDD5;">
+            <!-- Subtle pattern overlay -->
+            <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTIwIDIwaDIwdjIwSDIweiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==')]"></div>
+            
+            <div class="bg-white rounded-xl p-3 pb-6 shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] border border-gray-100 flex flex-col gap-2 relative max-w-[95%]">
+                <!-- Tail for bubble -->
+                <div class="absolute -top-1 -left-1 w-3 h-3 bg-white rotate-45 transform border-l border-t border-gray-100 hidden"></div>
+                <p class="text-[13px] text-gray-800 leading-snug">
+                    <span data-i18n="whatsapp_msg_1">${t('whatsapp_msg_1')}</span>${zoneName} · 19<span data-i18n="whatsapp_msg_2">${t('whatsapp_msg_2')}</span>${volume}<span data-i18n="whatsapp_msg_3">${t('whatsapp_msg_3')}</span>
+                </p>
+                <div class="flex gap-2 mt-2 border-t border-gray-100/50 pt-2 z-10 relative">
+                    <button class="flex-1 bg-[#128C7E] hover:bg-[#075E54] text-white text-xs font-bold py-1.5 rounded transition-colors border border-transparent flex items-center justify-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> <span data-i18n="whatsapp_irrigate">${t('whatsapp_irrigate')}</span></button>
+                    <button class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1"><i data-lucide="x" class="w-3 h-3"></i> <span data-i18n="whatsapp_skip">${t('whatsapp_skip')}</span></button>
+                </div>
+                <span class="text-[9px] text-gray-400 absolute bottom-1.5 right-2" style="font-family: var(--font-mono);">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(mock);
+    if (window.lucide) window.lucide.createIcons();
+
+    // Slide in
+    setTimeout(() => { mock.style.transform = "translateY(16px)"; }, 100);
+
+    // Auto dismiss
+    setTimeout(() => {
+        if(mock) {
+            mock.style.transform = "translateY(-120%)";
+            setTimeout(() => mock.remove(), 500);
+        }
+    }, 5000);
+}

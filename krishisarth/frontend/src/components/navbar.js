@@ -1,6 +1,7 @@
 import { store } from '../state/store.js';
 import { t, getLanguage, setLanguage, getAvailableLanguages } from '../utils/i18n.js';
 import { clearToken } from '../api/client.js';
+import { toggleAlertsFeed, renderAlertsFeed } from './alerts-feed.js';
 
 let _navbarMounted = false;
 
@@ -19,48 +20,53 @@ export function renderNavbar() {
     const unreadCount = store.getState('unreadAlertCount');
 
     const template = `
-        <nav class="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 shadow-sm relative z-50">
-            <div class="container mx-auto flex items-center justify-between">
+        <nav class="px-4 shadow-sm relative z-50 flex items-center w-full" style="background: rgba(255,255,255,0.82); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(26,122,74,0.08); height: 60px;">
+            <div class="container mx-auto flex items-center justify-between w-full">
                 <!-- Logo -->
-                <a href="#dashboard" class="flex items-center gap-2">
-                    <div class="text-primary">
-                        <i data-lucide="droplets" class="w-8 h-8"></i>
+                <a href="#dashboard" class="flex items-center gap-2" style="text-decoration:none;">
+                    <div class="ks-logo flex items-center gap-2">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6 2 3 8 3 12c0 5 4 9 9 9s9-4 9-9C21 7 17 2 12 2z" fill="#1a7a4a" opacity="0.2"/>
+                            <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
+                            <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#0d6b3a" opacity="0.7"/>
+                        </svg>
+                        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-0.03em;color:#0d1a12;">
+                            Krishi<span style="color:#1a7a4a">Sarth</span>
+                        </span>
                     </div>
-                    <span class="text-xl font-bold tracking-tight text-gray-900">
-                        Krishi<span class="text-primary">Sarth</span>
-                    </span>
-                    <div id="ws-status-dot" class="pulse-dot ml-1 bg-amber-500" title="Connecting..."></div>
+                    <div id="ws-status-dot" class="live-dot ml-1 bg-amber-500" title="Connecting..."></div>
                 </a>
 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center gap-8">
-                    <a href="#dashboard" class="nav-link ${activePage === '#dashboard' ? 'active' : ''}" data-page="#dashboard">${t('nav_dashboard')}</a>
-                    <a href="#ai"        class="nav-link ${activePage === '#ai'        ? 'active' : ''}" data-page="#ai">${t('nav_ai')}</a>
-                    <a href="#control"   class="nav-link ${activePage === '#control'   ? 'active' : ''}" data-page="#control">${t('nav_control')}</a>
-                    <a href="#analytics" class="nav-link ${activePage === '#analytics' ? 'active' : ''}" data-page="#analytics">${t('nav_analytics')}</a>
-                    <a href="#farm3d"    class="nav-link ${activePage === '#farm3d'    ? 'active' : ''}" data-page="#farm3d">${t('nav_farm3d')}</a>
+                    <a href="#dashboard" class="nav-link ${activePage === '#dashboard' ? 'active' : ''}" data-page="#dashboard" data-i18n="nav_dashboard">${t('nav_dashboard')}</a>
+                    <a href="#ai"        class="nav-link ${activePage === '#ai'        ? 'active' : ''}" data-page="#ai" data-i18n="nav_ai">${t('nav_ai')}</a>
+                    <a href="#control"   class="nav-link ${activePage === '#control'   ? 'active' : ''}" data-page="#control" data-i18n="nav_control">${t('nav_control')}</a>
+                    <a href="#analytics" class="nav-link ${activePage === '#analytics' ? 'active' : ''}" data-page="#analytics" data-i18n="nav_analytics">${t('nav_analytics')}</a>
+                    <a href="#farm3d"    class="nav-link ${activePage === '#farm3d'    ? 'active' : ''}" data-page="#farm3d" data-i18n="nav_farm3d">${t('nav_farm3d')}</a>
                 </div>
 
                 <!-- Right side actions -->
                 <div class="flex items-center gap-3">
                     <!-- Language Switcher -->
-                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1" id="lang-switcher">
-                        ${getAvailableLanguages().map(l => `
-                            <button
-                                class="lang-btn px-2 py-1 rounded-md text-[10px] font-black transition-all
-                                    ${getLanguage() === l.code
-                                        ? 'bg-white text-primary shadow-sm'
-                                        : 'text-gray-400 hover:text-gray-600'}"
-                                data-lang="${l.code}"
-                                title="${l.name}"
-                            >${l.label}</button>
-                        `).join('')}
+                    <!-- Language Switcher -->
+                    <div class="lang-switcher" id="lang-switcher">
+                      ${getAvailableLanguages().map(l => `
+                        <button
+                          class="lang-btn ${getLanguage() === l.code ? 'lang-active' : ''}"
+                          data-lang="${l.code}"
+                          title="Switch to ${l.name}"
+                          aria-label="${l.name}"
+                        >
+                          ${l.label}
+                        </button>
+                      `).join('')}
                     </div>
 
                     <!-- Bell -->
-                    <div class="relative cursor-pointer">
-                        <i data-lucide="bell" class="w-6 h-6 text-gray-500 hover:text-primary transition-colors"></i>
-                        ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full border-2 border-white">${unreadCount}</span>` : ''}
+                    <div id="nav-bell-btn" class="relative cursor-pointer group">
+                        <i data-lucide="bell" class="w-6 h-6 text-gray-500 group-hover:text-primary transition-colors"></i>
+                        <span id="nav-bell-badge" class="${unreadCount > 0 ? '' : 'hidden '}absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-full border-2 border-white min-w-[18px] text-center">${unreadCount}</span>
                     </div>
 
                     <!-- Profile (desktop) -->
@@ -102,23 +108,23 @@ export function renderNavbar() {
                 <div class="container mx-auto pt-2 pb-4 flex flex-col gap-1 border-t border-gray-100 mt-3">
                     <a href="#dashboard" class="mobile-nav-link ${activePage === '#dashboard' ? 'mobile-nav-active' : ''}">
                         <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                        ${t('nav_dashboard')}
+                        <span data-i18n="nav_dashboard">${t('nav_dashboard')}</span>
                     </a>
                     <a href="#ai" class="mobile-nav-link ${activePage === '#ai' ? 'mobile-nav-active' : ''}">
                         <i data-lucide="brain" class="w-5 h-5"></i>
-                        ${t('nav_ai')}
+                        <span data-i18n="nav_ai">${t('nav_ai')}</span>
                     </a>
                     <a href="#control" class="mobile-nav-link ${activePage === '#control' ? 'mobile-nav-active' : ''}">
                         <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-                        ${t('nav_control')}
+                        <span data-i18n="nav_control">${t('nav_control')}</span>
                     </a>
                     <a href="#analytics" class="mobile-nav-link ${activePage === '#analytics' ? 'mobile-nav-active' : ''}">
                         <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
-                        ${t('nav_analytics')}
+                        <span data-i18n="nav_analytics">${t('nav_analytics')}</span>
                     </a>
                     <a href="#farm3d" class="mobile-nav-link ${activePage === '#farm3d' ? 'mobile-nav-active' : ''}">
                         <i data-lucide="box" class="w-5 h-5"></i>
-                        ${t('nav_farm3d')}
+                        <span data-i18n="nav_farm3d">${t('nav_farm3d')}</span>
                     </a>
 
                     <!-- Logout in mobile drawer -->
@@ -133,25 +139,45 @@ export function renderNavbar() {
         </nav>
 
         <style>
+            .live-dot {
+                width: 8px;
+                height: 8px;
+                background: #22c55e;
+                border-radius: 50%;
+                display: inline-block;
+                animation: livePulse 2s ease-in-out infinite;
+            }
+            @keyframes livePulse {
+                0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+                50%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+            }
+
             /* Desktop nav links */
             .nav-link {
+                font-family: 'DM Sans', sans-serif;
+                font-size: 13px;
                 font-weight: 600;
-                font-size: 0.925rem;
-                color: #6B7280;
-                transition: all 0.2s ease;
+                color: #5a7266;
+                text-decoration: none;
                 position: relative;
-                padding: 4px 0;
+                padding-bottom: 2px;
+                transition: color 0.2s;
             }
-            .nav-link:hover { color: var(--color-primary); }
-            .nav-link.active { color: var(--color-primary); }
-            .nav-link.active::after {
+            .nav-link::after {
                 content: '';
                 position: absolute;
                 bottom: -2px; left: 0; right: 0;
-                height: 3px;
-                background-color: var(--color-primary);
-                border-radius: 99px;
+                height: 2px;
+                background: #1a7a4a;
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.25s cubic-bezier(0.23,1,0.32,1);
+                border-radius: 1px;
             }
+            .nav-link:hover { color: #1a7a4a; }
+            .nav-link:hover::after,
+            .nav-link.active::after { transform: scaleX(1); }
+            .nav-link.active { color: #1a7a4a; font-weight: 700; }
 
             /* Mobile drawer nav links */
             .mobile-nav-link {
@@ -199,6 +225,13 @@ export function renderNavbar() {
     // ── Logout (desktop dropdown) ────────────────────────────────────────────
     if (logoutBtn) {
         logoutBtn.addEventListener('click', _doLogout);
+    }
+
+    // ── Pre-mount alerts feed in background ──────────────────────────────────
+    renderAlertsFeed();
+    const bellBtn = root.querySelector('#nav-bell-btn');
+    if (bellBtn) {
+        bellBtn.addEventListener('click', () => { toggleAlertsFeed(); });
     }
 
     // ── Mobile logout ────────────────────────────────────────────────────────
@@ -261,9 +294,6 @@ export function renderNavbar() {
     root.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             setLanguage(btn.dataset.lang);
-            _navbarMounted = false;
-            renderNavbar();
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
         });
     });
 
@@ -291,6 +321,17 @@ export function renderNavbar() {
             } else {
                 dot.classList.add('bg-red-500');
                 dot.title = "Offline: Disconnected";
+            }
+        });
+
+        // ── Subscription for unread count ────────────────────────────────────────
+        store.subscribe('unreadAlertCount', () => {
+            const count = store.getState('unreadAlertCount');
+            const badge = document.getElementById('nav-bell-badge');
+            if (badge) {
+                badge.textContent = count;
+                if (count > 0) badge.classList.remove('hidden');
+                else badge.classList.add('hidden');
             }
         });
 

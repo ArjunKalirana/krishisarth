@@ -19,7 +19,7 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
     };
 
     const updateUI = () => {
-        card.className = `ks-card p-6 transition-all duration-500 border-l-4 ${
+        card.className = `zone-card ks-card p-6 transition-all duration-500 border-l-4 ${
             isOn
                 ? 'border-l-primary-light'
                 : 'border-l-gray-200'
@@ -34,7 +34,7 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                     </h3>
                     <p class="font-bold text-gray-400 uppercase tracking-widest mt-0.5"
                        style="font-size:10px;">
-                        ${t('ctrl_last_irrig')}: ${lastIrrig}
+                        <span data-i18n="ctrl_last_irrig">${t('ctrl_last_irrig')}</span>: ${lastIrrig}
                     </p>
                 </div>
                 <div class="flex flex-col items-end gap-2">
@@ -42,11 +42,12 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                         moisture < 30 ? 'badge-dry' :
                         moisture < 70 ? 'badge-ok'  : 'badge-wet'
                     }">
-                        ${moisture}% ${t('zone_moisture')}
+                        <span class="moisture-val" data-target="${moisture}">0.0%</span> <span data-i18n="zone_moisture">${t('zone_moisture')}</span>
                     </span>
                     <div class="flex items-center gap-2">
                         <span class="font-black uppercase tracking-tighter"
-                              style="font-size:9px; color:${isOn ? 'var(--color-primary)' : '#9ca3af'}">
+                              style="font-size:9px; color:${isOn ? 'var(--color-primary)' : '#9ca3af'}"
+                              data-i18n="${isOn ? 'dash_irrigating' : 'ctrl_status_idle'}">
                             ${isOn ? t('dash_irrigating') + '...' : t('ctrl_status_idle')}
                         </span>
                         <button class="toggle-btn w-12 h-6 rounded-full relative transition-colors"
@@ -63,7 +64,7 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
 
             <div class="space-y-4">
                 <p class="font-black text-gray-400 uppercase tracking-widest"
-                   style="font-size:10px;">${t('ctrl_duration')}</p>
+                   style="font-size:10px;" data-i18n="ctrl_duration">${t('ctrl_duration')}</p>
                 <div class="flex gap-2">
                     ${[10, 20, 30].map(dur => `
                         <button class="dur-btn flex-1 py-2 rounded-lg font-black 
@@ -73,7 +74,7 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                                        color:${activeDuration === dur ? 'white' : '#6b7280'};
                                        border-color:${activeDuration === dur ? 'var(--color-primary)' : '#f3f4f6'};"
                                 data-dur="${dur}">
-                            ${dur}${t('zone_min')}
+                            <span data-i18n="zone_min">${dur}${t('zone_min')}</span>
                         </button>
                     `).join('')}
                 </div>
@@ -120,8 +121,25 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                 updateUI();
             };
         });
+
+        // Animate moisture
+        const valEl = card.querySelector('.moisture-val');
+        if (valEl) animateMoistureChange(valEl, 0, moisture);
     };
 
     updateUI();
     return card;
+}
+
+function animateMoistureChange(el, from, to) {
+    const diff = to - from;
+    const duration = 600;
+    const start = performance.now();
+    const frame = (now) => {
+        const p = Math.min((now-start)/duration, 1);
+        const ease = 1 - Math.pow(1-p, 3); // ease-out cubic
+        el.textContent = (from + diff*ease).toFixed(1) + '%';
+        if (p < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
 }

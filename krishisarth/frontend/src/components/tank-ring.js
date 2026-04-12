@@ -2,6 +2,7 @@
  * TankRing Component
  * Renders a circular SVG progress ring for water levels.
  */
+import { t } from '../utils/i18n.js';
 export function createTankRing(percentage) {
     const radius = 36;
     const circumference = 2 * Math.PI * radius;
@@ -38,7 +39,7 @@ export function createTankRing(percentage) {
         </svg>
         <div class="absolute flex flex-col items-center">
             <span class="text-2xl font-black text-gray-800">${percentage}%</span>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">RESERVOIR</span>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter" data-i18n="tank_reservoir">${t('tank_reservoir') || 'RESERVOIR'}</span>
         </div>
     `;
     
