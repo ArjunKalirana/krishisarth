@@ -19,8 +19,8 @@ from app.models import (
 )
 from app.services.auth_service import hash_password
 
-DEMO_EMAIL    = "demo@krishisarth.com"
-DEMO_PASSWORD = "Demo@2025"
+DEMO_EMAIL    = "demo@gmail.com"
+DEMO_PASSWORD = "Demo@123"
 
 # Zone configs — each zone has a distinct personality for a good demo
 ZONES = [
@@ -103,12 +103,12 @@ def run():
 
     # ── 2. Farm ────────────────────────────────────────────────────────────────
     farm = db.query(Farm).filter(
-        Farm.farmer_id == farmer.id, Farm.name == "Sharma Smart Farm"
+        Farm.farmer_id == farmer.id, Farm.name == "KrishiSarth Demo Farm"
     ).first()
     if not farm:
         farm = Farm(
             farmer_id=farmer.id,
-            name="Sharma Smart Farm",
+            name="KrishiSarth Demo Farm",
             soil_type="black cotton",
             area_ha=8.2,
             lat=20.0059,
@@ -185,7 +185,8 @@ def run():
                 "skip" if moisture_snap > 65 else random.choice(["irrigate", "skip"])
             )
             confidence    = round(random.uniform(0.72, 0.97), 2)
-            water_saved   = round(random.uniform(8, 28), 1) if decision_type == "skip" else 0.0
+            # WATER SAVED: Increased to 800L - 4000L range for the demo
+            water_saved   = round(random.uniform(800.0, 4000.0), 1) if decision_type == "skip" else 0.0
             reasoning_map = {
                 "irrigate": f"Soil moisture critically low at {moisture_snap:.1f}% for {zone.crop_type} in {zone.crop_stage} stage. Immediate irrigation required.",
                 "skip":     f"Adequate moisture at {moisture_snap:.1f}%. Rain probability 68%. Skipping irrigation saves {water_saved}L.",
@@ -223,12 +224,10 @@ def run():
 
     # ── 5. Alerts ─────────────────────────────────────────────────────────────
     alert_defs = [
-        ("critical", "SENSOR_FAULT",   "Wheat Block sensor offline for 2 hours — last reading at 22% moisture"),
-        ("warning",  "PUMP_FAILURE",   "Grape Vineyard pump pressure dropped 0.4 bar — possible blockage"),
-        ("info",     "AI_DECISION",    "AI skipped irrigation in Pomegranate Orchard — rain forecast 80%"),
-        ("warning",  "TANK_LOW",       "Main water tank at 18% — schedule refill before next irrigation cycle"),
-        ("critical", "MOISTURE_ALERT", "Wheat Block moisture at 14% — critically below threshold. Irrigate immediately."),
-        ("info",     "FERTIGATION",    "Nitrogen injection completed for Tomato Greenhouse A — EC stable at 1.7"),
+        ("critical", "MOISTURE_ALERT", "Wheat Block moisture at 18% — critically below threshold of 25%."),
+        ("warning",  "PUMP_FAILURE",   "Grape Vineyard pump pressure dropped 0.4 bar — check for possible leakage."),
+        ("info",     "AI_DECISION",    "AI skipped irrigation in Pomegranate Orchard: High moisture (72%) detected."),
+        ("critical", "TANK_LOW",       "Main water tank critically low (28%) — auto-refill sequence pending."),
     ]
     existing_alerts = db.query(Alert).filter(Alert.farm_id == farm.id).count()
     if existing_alerts == 0:

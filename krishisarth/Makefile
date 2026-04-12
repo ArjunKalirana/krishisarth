@@ -1,4 +1,4 @@
-.PHONY: dev stop migrate migration test lint format seed deploy
+.PHONY: dev stop migrate migration test lint format seed seed-demo deploy
 
 # Start local infrastructure and application services in development mode
 dev:
@@ -45,6 +45,11 @@ format:
 seed:
 	@echo "Seeding database..."
 	cd backend && python scripts/seed.py
+
+# Seed the specific judge's demo account
+seed-demo:
+	@echo "Seeding judge's demo account..."
+	cd backend && python scripts/seed_demo.py
 
 # Placeholder for production deployment configuration
 deploy:
