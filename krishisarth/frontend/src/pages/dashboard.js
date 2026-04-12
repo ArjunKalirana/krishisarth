@@ -223,12 +223,12 @@ function renderHeader(data) {
                 <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid var(--ks-warn);">
                     <div class="flex items-start justify-between mb-4">
                         <i data-lucide="clock" class="w-6 h-6 text-ks-warn"></i>
-                        <div class="w-20 text-ks-warn">\${sparklineSvg}</div>
+                        <div class="w-20 text-ks-warn">${sparklineSvg}</div>
                     </div>
                     <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="next_irrigation">\${t('next_irrigation') || 'Next Irrigation'}</p>
+                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="next_irrigation">${t('next_irrigation') || 'Next Irrigation'}</p>
                         <div style="font-family: var(--font-display);" class="text-4xl text-ks-text flex items-baseline gap-1">
-                            <span data-countup="45">0</span><span class="text-lg text-ks-muted" data-i18n="mins">\${t('mins') || 'm'}</span>
+                            <span data-countup="45">0</span><span class="text-lg text-ks-muted" data-i18n="mins">${t('mins') || 'm'}</span>
                         </div>
                     </div>
                 </div>
@@ -237,12 +237,12 @@ function renderHeader(data) {
                 <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid var(--ks-optimal);">
                     <div class="flex items-start justify-between mb-4">
                         <i data-lucide="sprout" class="w-6 h-6 text-ks-optimal"></i>
-                        <div class="w-20 text-ks-optimal">\${sparklineSvg}</div>
+                        <div class="w-20 text-ks-optimal">${sparklineSvg}</div>
                     </div>
                     <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="active_zones">\${t('active_zones') || 'Active Zones'}</p>
+                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="active_zones">${t('active_zones') || 'Active Zones'}</p>
                         <div style="font-family: var(--font-display);" class="text-4xl text-ks-text">
-                            <span data-countup="\${activeZoneCount}">0</span>
+                            <span data-countup="${activeZoneCount}">0</span>
                         </div>
                     </div>
                 </div>

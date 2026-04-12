@@ -25,8 +25,8 @@ class TelemetryWS {
         if (!farmId) return;
         this.farmId = farmId;
         
-        const url = `ws://localhost:8000/v1/ws/farms/${farmId}`;
-        
+        let wsRoot = (window.__KS_API_URL__ || 'http://localhost:8000/v1').replace('http', 'ws');
+        const url = `${wsRoot}/ws/farms/${farmId}`;
         console.log(`WS: Connecting to ${url}...`);
         this._setStatus('connecting');
         this.ws = new WebSocket(url);

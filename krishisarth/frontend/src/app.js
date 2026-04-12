@@ -95,6 +95,22 @@ async function initApp() {
                         const newFarm = createRes.data;
                         console.log('[ROUTER] Default farm created:', newFarm.name);
                         store.setState('currentFarm', newFarm);
+                        
+                        // Auto-create a default zone for the new farm
+                        console.log('[ROUTER] Provisioning default zone: Main Plot...');
+                        const zoneRes = await api(`/farms/${newFarm.id}/zones`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                name: 'Main Plot',
+                                crop_type: 'Tomato',
+                                area_sqm: 100
+                            })
+                        });
+                        
+                        if (zoneRes?.success) {
+                            console.log('[ROUTER] Default zone created.');
+                        }
+                        
                         telemetryWS.connect(newFarm.id);
                     }
                 }
