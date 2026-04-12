@@ -140,7 +140,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
 
         // Global Add Zone Button
         const addBtn = mainElement.querySelector('#add-zone-btn');
-        const modal = container.querySelector('#zone-modal');
+        const modal = document.getElementById('zone-modal');
         if (addBtn && modal) {
             addBtn.onclick = () => {
                 modal.classList.remove('hidden');

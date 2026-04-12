@@ -40,8 +40,8 @@ async def backfill_history():
             db.commit()
             db.refresh(farmer)
 
-        # 2. Farm
-        farm = db.query(Farm).filter(Farm.farmer_id == farmer.id, Farm.name == "KrishiSarth Demo Farm").first()
+        # 2. Farm - Try to find existing farm first
+        farm = db.query(Farm).filter(Farm.farmer_id == farmer.id).first()
         if not farm:
             farm = Farm(
                 name="KrishiSarth Demo Farm",
@@ -54,11 +54,16 @@ async def backfill_history():
             db.add(farm)
             db.commit()
             db.refresh(farm)
+            print(f"[Seeder] Created new farm: {farm.id}")
+        else:
+            print(f"[Seeder] Using existing farm for seeding: {farm.id} ({farm.name})")
         
-        # 3. Zones - Check if already seeded
+        # 3. Zones - Check if already seeded for THIS farm
         existing_zones = db.query(Zone).filter(Zone.farm_id == farm.id).count()
         if existing_zones >= 6:
-            return {"success": True, "message": "Demo data already seeded", "farm_id": str(farm.id)}
+            return {"success": True, "message": f"Demo data already seeded for farm: {farm.name}", "farm_id": str(farm.id)}
+        
+        print(f"[Seeder] Seeding zones for farm {farm.id}...")
 
         # Continue with seeding...
 
