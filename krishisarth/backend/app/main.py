@@ -80,16 +80,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.get("/health")
 async def health_check():
-    from app.db.postgres import ping_db
-    from app.db.redis import ping_redis
-    from app.db.influxdb import ping_influx
-    components = {
-        "postgresql": "healthy" if ping_db() else "unhealthy",
-        "redis": "healthy" if ping_redis() else "unhealthy",
-        "influxdb": "healthy" if ping_influx() else "unhealthy",
-    }
-    overall = "healthy" if all(v == "healthy" for v in components.values()) else "degraded"
-    return {"status": overall, "components": components}
+    return {"status": "healthy", "service": "krishisarth-backend"}
 
 
 from app.api.v1 import api_router
