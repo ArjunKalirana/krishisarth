@@ -1,7 +1,7 @@
-from fastapi import APIRouter
-from app.api.v1 import auth, farms, dashboard, control, ai_decisions, analytics, alerts, alerts_mark, websocket, demo, digital_twin
+from app.middleware.rate_limit import rate_limit
+from fastapi import Depends
 
-api_router = APIRouter()
+api_router = APIRouter(dependencies=[Depends(rate_limit)])
 api_router.include_router(auth.router,          prefix="/auth",   tags=["auth"])
 api_router.include_router(farms.router,         prefix="/farms",  tags=["farms"])
 api_router.include_router(dashboard.router,     prefix="/farms",  tags=["dashboard"])

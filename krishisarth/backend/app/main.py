@@ -12,7 +12,6 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     default_response_class=JSONResponse,
-    dependencies=[Depends(rate_limit)],
 )
 
 @app.on_event("startup")

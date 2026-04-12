@@ -52,10 +52,11 @@ class SimulationEngine:
         write_api = get_write_api()
         try:
             # ONLY simulate farms where the farmer's name OR the farm name contains "Demo"
-            # This ensures total isolation for your hosted environment.
+            # OR exactly the demo@gmail.com account.
             farms = db.query(Farm).join(Farmer).filter(
                 (Farmer.name.ilike('%Demo%')) | 
-                (Farm.name.ilike('%Demo%'))
+                (Farm.name.ilike('%Demo%')) |
+                (Farmer.email == 'demo@gmail.com')
             ).all()
             
             for farm in farms:

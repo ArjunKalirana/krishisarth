@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
-@router.post("/history")
+@router.api_route("/history", methods=["GET", "POST"])
 async def backfill_history():
     """Triggers the 7-day historical backfill for InfluxDB."""
     import subprocess, sys
@@ -19,7 +19,7 @@ async def backfill_history():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/crisis")
+@router.api_route("/crisis", methods=["GET", "POST"])
 async def inject_crisis(zone_id: str):
     """Instantly drops moisture to 5% to trigger AI alerts."""
     from app.services.simulation_service import simulation_engine
@@ -28,7 +28,7 @@ async def inject_crisis(zone_id: str):
         return {"success": True, "message": f"Moisture drop injected for zone {zone_id}"}
     return {"success": False, "message": "Zone ID not yet initialized in simulator"}
 
-@router.post("/reset")
+@router.api_route("/reset", methods=["GET", "POST"])
 async def reset_simulation():
     """Resets all simulated zones to healthy moisture (55%)."""
     from app.services.simulation_service import simulation_engine
