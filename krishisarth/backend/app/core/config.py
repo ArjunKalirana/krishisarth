@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     AWS_REGION: Optional[str] = "ap-south-1"
     OPENWEATHER_API_KEY: Optional[str] = None
     GROQ_KEY: Optional[str] = None
+    ENABLE_DEMO_MODE: bool = True  # Enable simulation engine by default for hardware-less demos
 
     # CORS — add your Vercel URL here OR override via CORS_ORIGINS env var
     # as a comma-separated string: "https://a.vercel.app,http://localhost:3000"

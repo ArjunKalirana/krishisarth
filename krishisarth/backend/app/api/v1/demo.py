@@ -8,28 +8,30 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
-@router.post("/seed")
-async def seed_demo_data():
-    """
-    Runs the demo seeder once. Protected by DEMO_SEED_KEY env var.
-    Call: POST /v1/demo/seed
-    """
+@router.post("/history")
+async def backfill_history():
+    """Triggers the 7-day historical backfill for InfluxDB."""
     import subprocess, sys
+    script_path = os.path.join(os.getcwd(), "krishisarth", "backend", "scripts", "demo_seed.py")
     try:
-        script_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "scripts", "seed_demo.py"
-        )
-        result = subprocess.run(
-            [sys.executable, script_path],
-            capture_output=True, text=True, timeout=300
-        )
-        return {
-            "success": True,
-            "output": result.stdout[-3000:],  # last 3000 chars
-            "errors": result.stderr[-1000:] if result.stderr else None
-        }
-    except subprocess.TimeoutExpired:
-        return {"success": False, "error": "Seeder timed out after 5 minutes"}
+        subprocess.Popen([sys.executable, script_path])
+        return {"success": True, "message": "Historical backfill started in background"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/crisis")
+async def inject_crisis(zone_id: str):
+    """Instantly drops moisture to 5% to trigger AI alerts."""
+    from app.services.simulation_service import simulation_engine
+    if zone_id in simulation_engine.zone_states:
+        simulation_engine.zone_states[zone_id]["moisture"] = 5.0
+        return {"success": True, "message": f"Moisture drop injected for zone {zone_id}"}
+    return {"success": False, "message": "Zone ID not yet initialized in simulator"}
+
+@router.post("/reset")
+async def reset_simulation():
+    """Resets all simulated zones to healthy moisture (55%)."""
+    from app.services.simulation_service import simulation_engine
+    for zid in simulation_engine.zone_states:
+        simulation_engine.zone_states[zid]["moisture"] = 55.0
+    return {"success": True, "message": "Simulation states reset to healthy"}

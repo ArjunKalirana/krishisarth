@@ -15,6 +15,18 @@ app = FastAPI(
     dependencies=[Depends(rate_limit)],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    if settings.ENABLE_DEMO_MODE:
+        from app.services.simulation_service import simulation_engine
+        await simulation_engine.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if settings.ENABLE_DEMO_MODE:
+        from app.services.simulation_service import simulation_engine
+        await simulation_engine.stop()
+
 app.add_middleware(LoggingMiddleware)
 
 # Handle X-Forwarded-Proto for correct 307 redirects behind proxies (Railway)
