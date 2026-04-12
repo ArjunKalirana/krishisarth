@@ -153,6 +153,78 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
                 }
             };
         }
+
+        // Crop selector
+        let selectedCrop = '';
+        let selectedStage = 'vegetative';
+        const cropBtns = mainElement.querySelectorAll('.crop-btn');
+        const zoneForm = mainElement.querySelector('#zone-form');
+        const stageSelector = mainElement.querySelector('#stage-selector');
+
+        cropBtns.forEach(btn => {
+            btn.onclick = () => {
+                cropBtns.forEach(b => b.classList.remove('border-green-400', 'bg-green-50', 'scale-105'));
+                btn.classList.add('border-green-400', 'bg-green-50', 'scale-105');
+                selectedCrop = btn.dataset.crop;
+                const label = btn.dataset.label;
+                const emoji = btn.querySelector('span:first-child').textContent;
+                if (zoneForm) {
+                    zoneForm.classList.remove('hidden');
+                    mainElement.querySelector('#selected-emoji').textContent = emoji;
+                    mainElement.querySelector('#selected-label').textContent = label + ' Zone';
+                    mainElement.querySelector('#zone-name-input').placeholder = `e.g. ${label} Field A`;
+                }
+            };
+        });
+
+        stageSelector?.querySelectorAll('.stage-btn').forEach(btn => {
+            btn.onclick = () => {
+                stageSelector.querySelectorAll('.stage-btn').forEach(b => {
+                    b.classList.remove('border-green-400', 'bg-green-50', 'text-green-700');
+                });
+                btn.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
+                selectedStage = btn.dataset.stage;
+            };
+        });
+
+        const createZoneBtn = mainElement.querySelector('#create-zone-btn');
+        if (createZoneBtn) {
+            createZoneBtn.onclick = async () => {
+                if (!selectedCrop) { showToast('Please select a crop first', 'error'); return; }
+                const farm = store.getState('currentFarm');
+                if (!farm?.id) { showToast('No farm found', 'error'); return; }
+
+                const zoneName = mainElement.querySelector('#zone-name-input')?.value?.trim() 
+                              || `${selectedCrop.charAt(0).toUpperCase() + selectedCrop.slice(1)} Zone`;
+                const areaSqm = parseInt(mainElement.querySelector('#zone-area-input')?.value) || 5000;
+
+                createZoneBtn.disabled = true;
+                createZoneBtn.innerHTML = `<span>⏳</span><span>Creating...</span>`;
+
+                try {
+                    const res = await api(`/farms/${farm.id}/zones`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            name: zoneName,
+                            crop_type: selectedCrop,
+                            crop_stage: selectedStage,
+                            area_sqm: areaSqm,
+                        })
+                    });
+                    if (res?.success) {
+                        showToast(`✅ ${zoneName} created! Reloading...`, 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast('Zone creation failed', 'error');
+                    }
+                } catch(e) {
+                    showToast('Zone creation failed: ' + e.message, 'error');
+                } finally {
+                    createZoneBtn.disabled = false;
+                    createZoneBtn.innerHTML = `<span>➕</span><span>Create Zone</span>`;
+                }
+            };
+        }
         
         mainEl.querySelectorAll('[data-countup]').forEach(el => {
             const target = parseInt(el.getAttribute('data-countup'), 10);
@@ -209,6 +281,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             initWeatherCard();
             
             if (window.lucide) window.lucide.createIcons();
+            const sensorMap = {};
             data.zones.forEach(z => sensorMap[z.id] = { moisture: z.moisture_pct, temp_c: z.temp_c, ec_ds_m: z.ec_ds_m });
             store.setState('sensorData', sensorMap);
         } else {
@@ -389,18 +462,99 @@ function renderSkeleton() {
 }
 
 function renderEmptyState() {
+    const crops = [
+        { id: 'tomato',       label: 'Tomato',       emoji: '🍅' },
+        { id: 'grape',        label: 'Grape',        emoji: '🍇' },
+        { id: 'onion',        label: 'Onion',        emoji: '🧅' },
+        { id: 'pomegranate',  label: 'Pomegranate',  emoji: '🍎' },
+        { id: 'chilli',       label: 'Chilli',       emoji: '🌶️' },
+        { id: 'wheat',        label: 'Wheat',        emoji: '🌾' },
+        { id: 'cotton',       label: 'Cotton',       emoji: '🌿' },
+        { id: 'sugarcane',    label: 'Sugarcane',    emoji: '🎋' },
+        { id: 'soybean',      label: 'Soybean',      emoji: '🫘' },
+        { id: 'rice',         label: 'Rice',         emoji: '🍚' },
+        { id: 'maize',        label: 'Maize',        emoji: '🌽' },
+        { id: 'banana',       label: 'Banana',       emoji: '🍌' },
+    ];
+
     return `
-        <div class="flex flex-col items-center justify-center py-20 bg-ks-surface rounded-3xl border-2 border-dashed border-ks-border">
-            <div class="w-20 h-20 bg-ks-optimal/10 rounded-full flex items-center justify-center mb-6">
-                <i data-lucide="sprout" class="w-10 h-10 text-ks-optimal"></i>
+        <div class="space-y-8">
+            <!-- Hero empty state -->
+            <div class="flex flex-col items-center justify-center py-12 bg-white rounded-3xl border-2 border-dashed border-green-200 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\'><text y=\\'40\\' font-size=\\'30\\'>🌱</text></svg>');"></div>
+                <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4 relative z-10">
+                    <span class="text-4xl">🌾</span>
+                </div>
+                <h2 class="text-2xl font-black text-gray-900 mb-2 relative z-10" style="font-family: var(--font-display);">
+                    Welcome to KrishiSarth
+                </h2>
+                <p class="text-gray-500 mb-6 text-center max-w-sm px-4 relative z-10">
+                    Set up your farm plots to start getting AI-powered irrigation decisions
+                </p>
+                <button id="rescue-demo-btn" 
+                        class="btn-primary relative z-10 text-sm font-black uppercase tracking-wider">
+                    <span>⚡</span>
+                    <span>Initialize Demo Farm</span>
+                </button>
             </div>
-            <h2 class="text-2xl font-bold text-ks-text mb-2" data-i18n="no_zones_title">${t('no_zones_title') || 'No farm plots found'}</h2>
-            <p class="text-ks-muted mb-8 text-center max-w-md" data-i18n="no_zones_desc">${t('no_zones_desc') || 'We couldn\'t find any plots for your account. Click below to initialize your demo showcase.'}</p>
-            
-            <button id="rescue-demo-btn" class="px-8 py-4 bg-ks-optimal text-white rounded-2xl font-bold shadow-lg shadow-ks-optimal/20 hover:scale-105 transition-transform flex items-center gap-2">
-                <i data-lucide="zap" class="w-5 h-5"></i>
-                <span data-i18n="btn_init_demo">${t('btn_init_demo') || 'Initialize Demo Data'}</span>
-            </button>
+
+            <!-- Crop selector quick-add -->
+            <div class="ks-card p-6">
+                <h3 class="font-black text-gray-900 mb-1" style="font-family: var(--font-display);">
+                    🌱 Quick Add a Zone
+                </h3>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-5">
+                    Select your crop and we'll configure it
+                </p>
+                
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-6" id="crop-grid">
+                    ${crops.map(c => `
+                        <button class="crop-btn flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-transparent hover:border-green-400 hover:bg-green-50 transition-all group"
+                                data-crop="${c.id}" data-label="${c.label}">
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-200">${c.emoji}</span>
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-wider">${c.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+
+                <!-- Selected crop form -->
+                <div id="zone-form" class="hidden">
+                    <div class="bg-green-50 rounded-2xl p-5 border border-green-100">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span id="selected-emoji" class="text-3xl">🌱</span>
+                            <div>
+                                <p class="font-black text-gray-900" id="selected-label">Select a crop</p>
+                                <p class="text-xs text-gray-400">Fill in zone details below</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Zone Name</label>
+                                <input id="zone-name-input" type="text" placeholder="e.g. North Field A"
+                                       class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Area (sq meters)</label>
+                                <input id="zone-area-input" type="number" placeholder="e.g. 5000" value="5000"
+                                       class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Crop Stage</label>
+                            <div class="flex flex-wrap gap-2" id="stage-selector">
+                                ${['Seedling', 'Vegetative', 'Flowering', 'Fruiting', 'Harvesting'].map(s => `
+                                    <button class="stage-btn px-3 py-1.5 rounded-lg text-xs font-black border-2 border-transparent hover:border-green-400 hover:bg-green-50 transition-all"
+                                            data-stage="${s.toLowerCase()}">${s}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button id="create-zone-btn" class="btn-primary w-full justify-center text-sm font-black uppercase tracking-wider">
+                            <span>➕</span>
+                            <span>Create Zone</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }

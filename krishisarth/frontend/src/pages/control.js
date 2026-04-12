@@ -135,30 +135,17 @@ export function renderControl() {
     layout.appendChild(sidebar);
     container.appendChild(layout);
 
-    // Attach Start/Stop ALL listeners after zones load
-    const attachBulkListeners = () => {
+    // Attach after zones load (1.5s delay to ensure DOM is ready)
+    setTimeout(() => {
         const startAllBtn = container.querySelector('#start-all-btn');
         const stopAllBtn  = container.querySelector('#stop-all-btn');
-        
+
         startAllBtn?.addEventListener('click', async () => {
-            const farm = store.getState('currentFarm');
-            if (!farm?.id) return;
-            
             startAllBtn.disabled = true;
-            startAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Starting...`;
-            
+            startAllBtn.innerHTML = `<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Starting...`;
             const cards = container.querySelectorAll('[data-zone-id]');
-            if (cards.length === 0) {
-                showToast('No zones loaded yet', 'warning');
-            } else {
-                const promises = [...cards].map(card => {
-                    const zid = card.dataset.zoneId;
-                    return startIrrigation(zid, 30).catch(() => {});
-                });
-                await Promise.all(promises);
-                showToast('All zones started ✅', 'success');
-            }
-            
+            await Promise.all([...cards].map(c => startIrrigation(c.dataset.zoneId, 20).catch(() => {})));
+            showToast('All zones started 💧', 'success');
             startAllBtn.disabled = false;
             startAllBtn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> Start ALL`;
             if (window.lucide) window.lucide.createIcons();
@@ -166,22 +153,15 @@ export function renderControl() {
 
         stopAllBtn?.addEventListener('click', async () => {
             stopAllBtn.disabled = true;
-            stopAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Stopping...`;
+            stopAllBtn.innerHTML = `<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Stopping...`;
             const cards = container.querySelectorAll('[data-zone-id]');
-            const promises = [...cards].map(card => {
-                const zid = card.dataset.zoneId;
-                return stopIrrigation(zid).catch(() => {});
-            });
-            await Promise.all(promises);
+            await Promise.all([...cards].map(c => stopIrrigation(c.dataset.zoneId).catch(() => {})));
             showToast('All zones stopped 🛑', 'success');
             stopAllBtn.disabled = false;
             stopAllBtn.innerHTML = `<i data-lucide="stop-circle" class="w-5 h-5"></i> Stop ALL`;
             if (window.lucide) window.lucide.createIcons();
         });
-    };
-
-    // Call after _loadZones completes (use a small delay to ensure DOM is ready)
-    setTimeout(attachBulkListeners, 1500);
+    }, 1500);
 
     return container;
 }
@@ -240,8 +220,9 @@ async function _loadZones(gridEl) {
                 id:           z.id,
                 name:         z.name,
                 lastIrrig:    'N/A',
-                moisture:     z.moisture_pct || 0,
-                initialState: z.pump_running || false,
+                moisture:     z.moisture_pct   || 0,
+                initialState: z.pump_running   || false,
+                cropType:     z.crop_type      || '',
             }));
         });
 

@@ -38,12 +38,27 @@ export function renderNavbar() {
                 </a>
 
                 <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="#dashboard" class="nav-link ${activePage === '#dashboard' ? 'active' : ''}" data-page="#dashboard" data-i18n="nav_dashboard">${t('nav_dashboard')}</a>
-                    <a href="#ai"        class="nav-link ${activePage === '#ai'        ? 'active' : ''}" data-page="#ai" data-i18n="nav_ai">${t('nav_ai')}</a>
-                    <a href="#control"   class="nav-link ${activePage === '#control'   ? 'active' : ''}" data-page="#control" data-i18n="nav_control">${t('nav_control')}</a>
-                    <a href="#analytics" class="nav-link ${activePage === '#analytics' ? 'active' : ''}" data-page="#analytics" data-i18n="nav_analytics">${t('nav_analytics')}</a>
-                    <a href="#farm3d"    class="nav-link ${activePage === '#farm3d'    ? 'active' : ''}" data-page="#farm3d" data-i18n="nav_farm3d">${t('nav_farm3d')}</a>
+                <div class="hidden md:flex items-center gap-4">
+                    ${[
+                        { hash: '#dashboard', icon: 'layout-dashboard', label: t('nav_dashboard') },
+                        { hash: '#ai',        icon: 'brain',            label: t('nav_ai') },
+                        { hash: '#control',   icon: 'sliders',          label: t('nav_control') },
+                        { hash: '#analytics', icon: 'bar-chart-2',      label: t('nav_analytics') },
+                        { hash: '#farm3d',    icon: 'box',              label: t('nav_farm3d') },
+                    ].map(link => {
+                        const isActive = activePage === link.hash;
+                        return `
+                            <a href="${link.hash}" 
+                               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+                                   isActive 
+                                   ? 'bg-green-50 text-green-800 border border-green-200 shadow-sm' 
+                                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-transparent'
+                               }">
+                                <i data-lucide="${link.icon}" class="w-4 h-4"></i>
+                                ${link.label}
+                            </a>
+                        `;
+                    }).join('')}
                 </div>
 
                 <!-- Right side actions -->
@@ -185,20 +200,24 @@ export function renderNavbar() {
                 align-items: center;
                 gap: 12px;
                 padding: 12px 16px;
-                border-radius: 10px;
-                font-weight: 600;
+                border-radius: 12px;
+                font-weight: 700;
                 font-size: 0.95rem;
                 color: #4B5563;
-                transition: all 0.15s ease;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 text-decoration: none;
+                border: 1px solid transparent;
             }
             .mobile-nav-link:hover {
                 background-color: #f0f7f3;
-                color: var(--color-primary);
+                color: #1a7a4a;
+                transform: translateX(4px);
             }
             .mobile-nav-active {
                 background-color: #f0f7f3;
-                color: var(--color-primary) !important;
+                color: #1a7a4a !important;
+                border-color: rgba(26,122,74,0.1);
+                box-shadow: 0 4px 12px rgba(26,122,74,0.05);
             }
         </style>
     `;
