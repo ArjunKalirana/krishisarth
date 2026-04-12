@@ -17,6 +17,22 @@ const BACKEND = window.__KS_API_URL__ || 'http://localhost:8000/v1';
 async function initApp() {
     console.log('[KrishiSarth] Booting…');
 
+    // Clear stale dashboard cache from old deployments
+    // This runs once per session to ensure fresh data after code changes
+    const cacheVersion = '2.1';
+    if (localStorage.getItem('ks_cache_version') !== cacheVersion) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('ks_dash_cache') || key.startsWith('ks_dash_cache_ts'))) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        localStorage.setItem('ks_cache_version', cacheVersion);
+        console.log('[KrishiSarth] Stale cache cleared');
+    }
+
     // ── Silent session restore ───────────────────────────────────────────────
     // On hard-refresh the in-memory access token is gone but refresh token
     // is still in sessionStorage. Restore access token before route guard runs.

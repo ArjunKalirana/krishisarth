@@ -93,10 +93,23 @@ async function _loadAI(gridEl, runBtn) {
         }
     }
 
+    // Fallback: if dashboard returned 0 zones, hit the farm zones endpoint directly
+    if (zones.length === 0) {
+        // One more retry after 2s — simulation might still be initializing
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+            const retryRes = await api(`/farms/${farm.id}/dashboard`);
+            zones = retryRes?.data?.zones || [];
+        } catch {}
+    }
+
     if (zones.length === 0) {
         gridEl.innerHTML = `<div class="lg:col-span-12 ks-card p-10 text-center">
             <p class="text-gray-400 font-bold text-sm">No zones found for this farm.</p>
-            <p class="text-gray-300 text-xs mt-2">Run: python scripts/seed.py</p>
+            <p class="text-gray-300 text-xs mt-2">
+                Visit <code class="bg-gray-800 px-1 rounded">/v1/demo/history</code> 
+                to seed demo data, then refresh.
+            </p>
         </div>`;
         return;
     }
@@ -230,6 +243,7 @@ async function _loadAI(gridEl, runBtn) {
                 }
             }
         } catch (err) {
+            if (err.message?.includes('listener')) return; // browser extension noise
             const panel = gridEl.querySelector('#decisions-panel');
             if (panel) {
                 panel.insertAdjacentHTML('afterbegin', `

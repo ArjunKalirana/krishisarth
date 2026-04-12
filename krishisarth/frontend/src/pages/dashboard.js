@@ -15,27 +15,47 @@ export function renderDashboard() {
     const container = document.createElement('div');
     container.className = "space-y-6 animate-in fade-in duration-500";
 
-    const userEmail = store.getState('currentFarmer')?.email;
-    if (userEmail === 'demo@gmail.com') {
+    // MUST be declared first — everything below depends on these
+    const farmId = store.getState('currentFarm')?.id;
+    const farmer = store.getState('currentFarmer');
+
+    // Demo Banner (only for demo@gmail.com)
+    if (farmer?.email === 'demo@gmail.com') {
         const demoBanner = document.createElement('div');
-        demoBanner.className = "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse-subtle";
+        demoBanner.className = "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-2";
         demoBanner.innerHTML = `
             <div class="flex items-center gap-3">
-                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <p class="text-sm font-bold text-amber-900">
-                    🌱 <span data-i18n="demo_mode_banner">Demo Mode — Live simulation running. All sensor data is AI-generated for demonstration purposes.</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
+                <p class="text-sm font-semibold text-amber-800">
+                    🌱 Demo Mode — Live simulation running. All sensor data is AI-generated for demonstration purposes.
                 </p>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="demo-crisis-btn" class="px-4 py-2 bg-red-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-red-700 transition-all flex items-center gap-2">
-                    <i data-lucide="zap" class="w-3 h-3"></i> Trigger Crisis
+            <div class="flex gap-2 shrink-0">
+                <button id="demo-crisis-btn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all active:scale-95">
+                    ⚡ Trigger Crisis
                 </button>
-                <button id="demo-reset-btn" class="px-4 py-2 bg-ks-green text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700 transition-all flex items-center gap-2">
-                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Reset
+                <button id="demo-reset-btn" class="bg-gray-700 hover:bg-gray-900 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all active:scale-95">
+                    🔄 Reset
                 </button>
             </div>
         `;
         container.appendChild(demoBanner);
+
+        // Wire buttons AFTER appending to DOM
+        setTimeout(() => {
+            demoBanner.querySelector('#demo-crisis-btn')?.addEventListener('click', async () => {
+                try {
+                    await api('/demo/crisis?zone_name=Wheat+Block', { method: 'POST' });
+                    showToast('Crisis injected in Wheat Block! Watch the AI alerts fire.', 'error');
+                } catch { showToast('Could not trigger crisis', 'error'); }
+            });
+            demoBanner.querySelector('#demo-reset-btn')?.addEventListener('click', async () => {
+                try {
+                    await api('/demo/reset', { method: 'POST' });
+                    showToast('Simulation reset to healthy values ✅', 'success');
+                } catch { showToast('Could not reset simulation', 'error'); }
+            });
+        }, 0);
     }
 
     const topBar = document.createElement('div');
@@ -48,7 +68,7 @@ export function renderDashboard() {
     container.appendChild(mainContent);
 
     // 1.5. Demo Status Check (No-auth endpoint)
-    if (userEmail === 'demo@gmail.com') {
+    if (farmer?.email === 'demo@gmail.com') {
         api('/demo/status').then(res => {
             if (res && res.seeded && !res.simulation_running) {
                 showToast('Simulation is currently stopped on the server.', 'warning');

@@ -12,25 +12,6 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
     let activeDuration = savedStates[id]?.duration ?? 20;
 
     // Save state to store
-    const saveState = () => {
-        const current = store.getState('activeZoneStates') || {};
-        current[id] = { isOn, duration: activeDuration };
-        store.setState('activeZoneStates', { ...current });
-    };
-
-    const updateUI = () => {
-        card.className = `zone-card ks-card p-6 transition-all duration-500 border-l-4 ${
-            isOn
-                ? 'border-l-primary-light'
-                : 'border-l-gray-200'
-        }`;
-        card.style.background = isOn ? 'rgba(26,122,74,0.05)' : 'white';
-
-        card.innerHTML = `
-            <div class="flex items-start justify-between mb-6">
-                <div>
-                    <h3 class="font-black text-gray-800 uppercase tracking-tight text-lg">
-                         ${name}
                     </h3>
                     <p class="font-bold text-gray-400 uppercase tracking-widest mt-0.5"
                        style="font-size:10px;">

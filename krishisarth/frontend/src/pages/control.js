@@ -135,187 +135,122 @@ export function renderControl() {
     layout.appendChild(sidebar);
     container.appendChild(layout);
 
-    // Wire up Start All and Stop All buttons
-    // Wait for zone grid to load first
-    setTimeout(() => {
+    // Attach Start/Stop ALL listeners after zones load
+    const attachBulkListeners = () => {
         const startAllBtn = container.querySelector('#start-all-btn');
         const stopAllBtn  = container.querySelector('#stop-all-btn');
-
+        
         startAllBtn?.addEventListener('click', async () => {
-            const farm  = store.getState('currentFarm');
+            const farm = store.getState('currentFarm');
             if (!farm?.id) return;
-
-            // Get all zone toggle buttons and click the ones that are OFF
-            const toggles = container.querySelectorAll('.toggle-btn');
-            if (toggles.length === 0) {
-                showToast('No zones loaded yet', 'warning');
-                return;
-            }
-
+            
             startAllBtn.disabled = true;
-            let started = 0;
-            // Get current zone states
-            const zoneStates = store.getState('activeZoneStates') || {};
-
-            // Get zone IDs from the dashboard
-            try {
-                const dashRes = await api(`/farms/${farm.id}/dashboard`);
-                const zones   = dashRes?.data?.zones || [];
-
-                for (const zone of zones) {
-                    const state = zoneStates[zone.id];
-                    if (!state?.isOn) {
-                        try {
-                            await startIrrigation(zone.id, 20);
-                            const current = store.getState('activeZoneStates') || {};
-                            current[zone.id] = { isOn: true, duration: 20 };
-                            store.setState('activeZoneStates', { ...current });
-                            started++;
-                            // Stagger — wait 2 seconds between each zone start
-                            await new Promise(r => setTimeout(r, 2000));
-                        } catch (err) {
-                            console.warn(`Could not start zone ${zone.name}:`, err.message);
-                        }
-                    }
-                }
-
-                showToast(`Started ${started} zones`, 'success');
-                // Re-render the zone grid to show updated states
-                _loadZones(container.querySelector('.zone-grid-container'));
-            } catch (err) {
-                showToast('Failed to load zones: ' + err.message, 'error');
-            } finally {
-                startAllBtn.disabled = false;
+            startAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Starting...`;
+            
+            const cards = container.querySelectorAll('[data-zone-id]');
+            if (cards.length === 0) {
+                showToast('No zones loaded yet', 'warning');
+            } else {
+                const promises = [...cards].map(card => {
+                    const zid = card.dataset.zoneId;
+                    return startIrrigation(zid, 30).catch(() => {});
+                });
+                await Promise.all(promises);
+                showToast('All zones started ✅', 'success');
             }
+            
+            startAllBtn.disabled = false;
+            startAllBtn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> Start ALL`;
+            if (window.lucide) window.lucide.createIcons();
         });
 
         stopAllBtn?.addEventListener('click', async () => {
-            if (!confirm(t('ctrl_stop_confirm'))) return;
-
             stopAllBtn.disabled = true;
-            const zoneStates = store.getState('activeZoneStates') || {};
-            let stopped = 0;
-
-            for (const [zoneId, state] of Object.entries(zoneStates)) {
-                if (state?.isOn) {
-                    try {
-                        await stopIrrigation(zoneId);
-                        zoneStates[zoneId] = { ...state, isOn: false };
-                        stopped++;
-                    } catch (err) {
-                        console.warn(`Could not stop zone ${zoneId}:`, err.message);
-                    }
-                }
-            }
-
-            // Clear all active states
-            store.setState('activeZoneStates', {});
-            showToast(`Stopped ${stopped} active zones`, 'success');
-            // Re-render zone grid
-            _loadZones(container.querySelector('.zone-grid-container'));
+            stopAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Stopping...`;
+            const cards = container.querySelectorAll('[data-zone-id]');
+            const promises = [...cards].map(card => {
+                const zid = card.dataset.zoneId;
+                return stopIrrigation(zid).catch(() => {});
+            });
+            await Promise.all(promises);
+            showToast('All zones stopped 🛑', 'success');
             stopAllBtn.disabled = false;
+            stopAllBtn.innerHTML = `<i data-lucide="stop-circle" class="w-5 h-5"></i> Stop ALL`;
+            if (window.lucide) window.lucide.createIcons();
         });
+    };
 
-        if (window.lucide) window.lucide.createIcons();
-        if (window.ksReveal) window.ksReveal();
-    }, 1500);
+    // Call after _loadZones completes (use a small delay to ensure DOM is ready)
+    setTimeout(attachBulkListeners, 1500);
 
     return container;
 }
-
 async function _loadZones(gridEl) {
     const farm = store.getState('currentFarm');
-
     if (!farm?.id) {
-        // Retry after 1 second — farm bootstrap may still be running
-        gridEl.innerHTML = `
-            <div class="md:col-span-2 flex justify-center py-10">
-                <div class="w-8 h-8 border-4 border-primary/20 border-t-primary 
-                            rounded-full animate-spin"></div>
-            </div>`;
-        setTimeout(() => {
-            const retryFarm = store.getState('currentFarm');
-            if (retryFarm?.id) {
-                _loadZones(gridEl);
-            } else {
-                gridEl.innerHTML = `
-                    <div class="md:col-span-2 ks-card p-20 text-center flex flex-col items-center justify-center bg-white/50 border-dashed border-2 border-gray-100">
-                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                            <i data-lucide="layout-grid" class="w-8 h-8 text-gray-300"></i>
-                        </div>
-                        <p class="text-gray-400 font-black text-lg uppercase tracking-tight" data-i18n="ctrl_no_farm">
-                            ${t('ctrl_no_farm')}
-                        </p>
-                        <p class="text-gray-300 font-mono text-[10px] mt-4 uppercase tracking-widest">
-                            Run: python scripts/seed.py
-                        </p>
-                    </div>`;
-            }
-        }, 1000);
+        setTimeout(() => _loadZones(gridEl), 800);
         return;
     }
+
+    gridEl.innerHTML = `<div class="md:col-span-2 flex justify-center py-20">
+        <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+    </div>`;
 
     try {
         console.log('[Control] Loading zones for farm:', farm.id);
 
-        // Try dashboard first — it has sensor data (moisture %)
+        // Primary: dashboard (has moisture data)
         let zones = [];
         try {
             const dashRes = await api(`/farms/${farm.id}/dashboard`);
             zones = dashRes?.data?.zones || [];
             console.log('[Control] Zones from dashboard:', zones.length);
-        } catch {
-            // Fall back to farm detail endpoint
-            const farmRes = await api(`/farms/${farm.id}/`);
-            const raw = farmRes?.data?.zones || farmRes?.data || [];
-            zones = Array.isArray(raw) ? raw : [];
-            console.log('[Control] Zones from farm endpoint:', zones.length);
+        } catch (e) {
+            console.warn('[Control] Dashboard failed, trying farm endpoint');
+        }
+
+        // Fallback: if dashboard returned 0 zones, hit the farm zones endpoint directly
+        if (zones.length === 0) {
+            try {
+                const farmRes = await api(`/farms/${farm.id}/`);
+                const raw = farmRes?.data?.zones || farmRes?.data || [];
+                zones = Array.isArray(raw) ? raw : [];
+                console.log('[Control] Zones from farm endpoint:', zones.length);
+            } catch (e) {
+                console.error('[Control] Both endpoints failed:', e.message);
+            }
         }
 
         if (zones.length === 0) {
             gridEl.innerHTML = `
                 <div class="md:col-span-2 ks-card p-10 text-center">
-                    <i data-lucide="map-pin-off" 
-                       class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
-                    <p class="font-bold text-gray-400" data-i18n="ctrl_no_zones">
-                        ${t('ctrl_no_zones')}
+                    <i data-lucide="map-pin-off" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                    <p class="font-bold text-gray-400 font-mono text-[10px] uppercase tracking-widest mt-4">
+                        Visit <code class="bg-gray-100 px-1 rounded">/v1/demo/history</code> 
+                        to seed demo data, then refresh.
                     </p>
                 </div>`;
             if (window.lucide) window.lucide.createIcons();
             return;
         }
 
-        // Clear the spinner
         gridEl.innerHTML = '';
-
-        // Render one card per zone
         zones.forEach(z => {
             gridEl.appendChild(createZoneCard({
                 id:           z.id,
                 name:         z.name,
                 lastIrrig:    'N/A',
-                moisture:     z.moisture_pct   || 0,
-                initialState: z.pump_running   || false,
+                moisture:     z.moisture_pct || 0,
+                initialState: z.pump_running || false,
             }));
         });
 
         if (window.lucide) window.lucide.createIcons();
-        console.log('[Control] Rendered', zones.length, 'zone cards');
-
     } catch (err) {
-        console.error('[Control] Zone load error:', err.message);
-        gridEl.innerHTML = `
-            <div class="md:col-span-2 ks-card p-8 text-center"
-                 style="background:#fef2f2; border-color:#fecaca;">
-                <p class="text-red-500 font-bold">
-                    <span data-i18n="ctrl_load_fail">${t('ctrl_load_fail')}</span>: ${err.message}
-                </p>
-                <button onclick="location.reload()" 
-                        class="mt-4 px-4 py-2 bg-red-500 text-white 
-                               rounded-lg text-sm font-bold">
-                    Retry
-                </button>
-            </div>`;
+        console.error('[Control] _loadZones failed:', err.message);
+        gridEl.innerHTML = `<div class="md:col-span-2 ks-card p-6 text-center text-red-500 text-sm font-bold">Failed to load zones. Refresh the page.</div>`;
     }
+}
+}
 }
 
