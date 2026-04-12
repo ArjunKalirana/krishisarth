@@ -13,9 +13,43 @@ export function renderDashboard() {
     const container = document.createElement('div');
     container.className = "space-y-6 animate-in fade-in duration-500";
 
-    const farmId = store.getState('currentFarm')?.id;
+    const userEmail = store.getState('currentFarmer')?.email;
+    if (userEmail === 'demo@gmail.com') {
+        const demoBanner = document.createElement('div');
+        demoBanner.className = "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse-subtle";
+        demoBanner.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <p class="text-sm font-bold text-amber-900">
+                    🌱 <span data-i18n="demo_mode_banner">Demo Mode — Live simulation running. All sensor data is AI-generated for demonstration purposes.</span>
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="demo-crisis-btn" class="px-4 py-2 bg-red-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-red-700 transition-colors">
+                    Trigger Crisis Alert
+                </button>
+                <button id="demo-reset-btn" class="px-4 py-2 bg-ks-green text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700 transition-colors">
+                    Reset Simulation
+                </button>
+            </div>
+        `;
+        container.appendChild(demoBanner);
 
-    // 1. Initial Scaffold (Banners & Hero)
+        // Bind Actions
+        demoBanner.querySelector('#demo-crisis-btn').onclick = async () => {
+            try {
+                await fetch('/v1/demo/crisis?zone_name=Wheat%20Block', { method: 'POST' });
+                alert('Crisis injected in Wheat Block! Watch the AI alerts fire.');
+            } catch (e) { console.error(e); }
+        };
+        demoBanner.querySelector('#demo-reset-btn').onclick = async () => {
+            try {
+                await fetch('/v1/demo/reset', { method: 'POST' });
+                alert('Simulation reset to healthy values');
+            } catch (e) { console.error(e); }
+        };
+    }
+
     const topBar = document.createElement('div');
     topBar.id = "dashboard-alerts";
     container.appendChild(topBar);

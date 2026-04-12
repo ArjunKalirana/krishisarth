@@ -91,10 +91,18 @@ class SimulationEngine:
                     state = self.zone_states[zid]
                     
                     # 1. Physics Model: Check if irrigation is active
-                    is_irrigating = redis_client.get(f"irrigation_lock:{zid}") is not None
+                    # Use in-memory 'irrigating' flag as override for hardware-free demo
+                    is_irrigating = redis_client.get(f"irrigation_lock:{zid}") is not None or state.get("irrigating", False)
+                    
                     if is_irrigating:
                         # Rising moisture (Pump active)
-                        state["moisture"] = min(98.0, state["moisture"] + random.uniform(1.5, 3.5))
+                        # In demo mode, we rise moisture by 2% until 65% saturation or manually stopped
+                        rise_amt = 2.0 if state.get("irrigating") else random.uniform(1.5, 3.5)
+                        state["moisture"] = min(98.0, state["moisture"] + rise_amt)
+                        
+                        if state.get("irrigating") and state["moisture"] >= 65.0:
+                            state["irrigating"] = False # Auto-stop simulation after reaching goal
+                            
                         state["temp"] = max(24.0, state["temp"] - random.uniform(0.2, 0.5))
                     else:
                         # Natural evaporation / Evapotranspiration
