@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import Zone, Device, Alert, AIDecision
 from app.core.config import settings
+from app.services.simulation_service import simulation_engine
 
 
 def get_moisture_status(pct: float) -> str:
@@ -121,7 +122,20 @@ from(bucket: "{bucket}")
         pass
 
     for zid, name in zone_map.items():
-        t = soil_data.get(zid, {"moisture": 0.0, "temp_c": None, "ec_ds_m": None})
+        # FALLBACK: If InfluxDB is empty, check simulation_engine state
+        t = soil_data.get(zid)
+        if not t:
+            sim_state = simulation_engine.zone_states.get(zid)
+            if sim_state:
+                dashboard["data_source"] = "simulation"
+                t = {
+                    "moisture": sim_state["moisture"],
+                    "temp_c": sim_state.get("temp", 30.0),
+                    "ec_ds_m": sim_state.get("ec", 1.2),
+                }
+            else:
+                t = {"moisture": 0.0, "temp_c": 30.0, "ec_ds_m": 1.2}
+
         m = t.get("moisture", 0.0)
         dashboard["zones"].append({
             "id": zid,
@@ -130,13 +144,18 @@ from(bucket: "{bucket}")
             "moisture_status": get_moisture_status(m),
             "temp_c": t.get("temp_c"),
             "ec_ds_m": t.get("ec_ds_m"),
+            "ph": 6.5, # Default PH as requested
             "pump_running": False,
         })
 
     try:
         query_api = influx_client.query_api()
-        for table in query_api.query(flux_wq):
+        results = query_api.query(flux_wq)
+        
+        has_data = False
+        for table in results:
             for record in table.records:
+                has_data = True
                 dashboard["water_quality"] = {
                     "ph": record.values.get("ph"),
                     "ec_ms_cm": record.values.get("ec_ms_cm"),
@@ -145,6 +164,19 @@ from(bucket: "{bucket}")
                 }
                 if "tank_level" in record.values:
                     dashboard["tank_level_pct"] = float(record.values.get("tank_level", 0.0))
+        
+        # FALLBACK: If no water quality data in InfluxDB, use hardcoded demo values
+        if not has_data:
+            dashboard["data_source"] = "simulation"
+            dashboard["water_quality"] = {
+                "ph": 6.6,
+                "ec_ms_cm": 1.3,
+                "turbidity_ntu": 2.1,
+                "nitrate_ppm": 14.5,
+                "tank_level": 84.0 # For the hardcoded display
+            }
+            dashboard["tank_level_pct"] = 84.0
+            
     except Exception:
         pass
 
