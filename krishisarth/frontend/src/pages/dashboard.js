@@ -173,14 +173,14 @@ function renderHeader(data) {
             <div class="flex justify-between items-start mb-6 px-2 relative z-10">
                 <div>
                     <h1 style="font-family: var(--font-display);" class="text-3xl tracking-tight text-ks-text mb-1 flex items-center gap-2">
-                        <span data-i18n="greeting_${timeOfDay}">\${t('greeting_' + timeOfDay) || 'Good ' + timeOfDay}</span>, \${farmerName}.
+                        <span data-i18n="greeting_${timeOfDay}">${t('greeting_' + timeOfDay) || 'Good ' + timeOfDay}</span>, ${farmerName}.
                     </h1>
                     <p class="text-ks-muted font-medium text-sm">
-                        <span data-i18n="farm_is">\${t('farm_is') || 'Your farm is'}</span> 
-                        <span class="\${statusClass} font-bold lowercase" data-i18n="sys_status_\${sysStatus}">\${t('sys_status_' + sysStatus) || sysStatus}</span>. 
-                        <span data-i18n="last_sync">\${t('last_sync') || 'Last sync'}</span> 
-                        \${minsAgo} 
-                        <span data-i18n="mins_ago">\${t('mins_ago') || 'minutes ago'}</span>.
+                        <span data-i18n="farm_is">${t('farm_is') || 'Your farm is'}</span> 
+                        <span class="${statusClass} font-bold lowercase" data-i18n="sys_status_${sysStatus}">${t('sys_status_' + sysStatus) || sysStatus}</span>. 
+                        <span data-i18n="last_sync">${t('last_sync') || 'Last sync'}</span> 
+                        ${minsAgo} 
+                        <span data-i18n="mins_ago">${t('mins_ago') || 'minutes ago'}</span>.
                     </p>
                 </div>
                 <!-- Refresh Button -->
@@ -193,28 +193,28 @@ function renderHeader(data) {
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative z-10">
                 
                 <!-- Row 1 Card 1 (Wide) -->
-                <div class="ks-card col-span-1 md:col-span-3 flex flex-col p-5" style="border-left: 3px solid \${borderClass};">
+                <div class="ks-card col-span-1 md:col-span-3 flex flex-col p-5" style="border-left: 3px solid ${borderClass};">
                     <div class="flex items-start justify-between mb-4">
                         <i data-lucide="droplets" class="w-6 h-6 text-ks-optimal"></i>
-                        <div class="w-32 text-ks-optimal">\${sparklineSvg}</div>
+                        <div class="w-32 text-ks-optimal">${sparklineSvg}</div>
                     </div>
                     <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="water_saved_today">\${t('water_saved_today') || 'Water Saved Today (L)'}</p>
+                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="water_saved_today">${t('water_saved_today') || 'Water Saved Today (L)'}</p>
                         <div style="font-family: var(--font-display);" class="text-5xl text-ks-text flex items-baseline gap-1">
-                            <span data-countup="\${data.summary?.litres_saved || 2450}">0</span>
+                            <span data-countup="${data.summary?.litres_saved || 2450}">0</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Row 1 Card 2 (Narrow) -->
-                <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid \${borderClass};">
+                <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid ${borderClass};">
                     <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="activity" class="\${statusClass} w-6 h-6"></i>
+                        <i data-lucide="activity" class="${statusClass} w-6 h-6"></i>
                     </div>
                     <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="sys_status">\${t('sys_status') || 'System Status'}</p>
-                        <div style="font-family: var(--font-display);" class="text-3xl \${statusClass} uppercase" data-i18n="sys_status_\${sysStatus}">
-                            \${t('sys_status_' + sysStatus) || sysStatus}
+                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="sys_status">${t('sys_status') || 'System Status'}</p>
+                        <div style="font-family: var(--font-display);" class="text-3xl ${statusClass} uppercase" data-i18n="sys_status_${sysStatus}">
+                            ${t('sys_status_' + sysStatus) || sysStatus}
                         </div>
                     </div>
                 </div>
@@ -251,10 +251,10 @@ function renderHeader(data) {
                 <div class="ks-card col-span-1 flex flex-col p-5" style="border-left: 3px solid var(--ks-cyan);">
                     <div class="flex items-start justify-between mb-4">
                         <i data-lucide="brain" class="w-6 h-6 text-ks-cyan"></i>
-                        <div class="w-20 text-ks-cyan">\${sparklineSvg}</div>
+                        <div class="w-20 text-ks-cyan">${sparklineSvg}</div>
                     </div>
                     <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="ai_decisions">\${t('ai_decisions') || 'AI Decisions'}</p>
+                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="ai_decisions">${t('ai_decisions') || 'AI Decisions'}</p>
                         <div style="font-family: var(--font-display);" class="text-4xl text-ks-text">
                             <span data-countup="14">0</span>
                         </div>
@@ -294,11 +294,15 @@ function renderSkeleton() {
 }
 
 function renderEmptyState() {
-    return `<div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+    return `<div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100 shadow-sm">
+        <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="sprout" class="w-10 h-10 text-primary"></i>
+        </div>
         <h2 class="text-2xl font-black text-gray-800 mb-2" data-i18n="dash_no_farm">${t('dash_no_farm')}</h2>
         <p class="text-gray-400 font-medium mb-8" data-i18n="dash_no_zones">${t('dash_no_zones')}</p>
-        <button class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl font-black text-sm transition-all shadow-lg active:scale-95" data-magnetic>
-            + CREATE FIRST ZONE
+        <button id="create-first-zone-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg active:scale-95 flex items-center gap-2 mx-auto" data-magnetic>
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            + <span data-i18n="dash_btn_create_zone">${t('dash_btn_create_zone') || 'CREATE FIRST ZONE'}</span>
         </button>
     </div>`;
 }

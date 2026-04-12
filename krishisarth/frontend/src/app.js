@@ -1,5 +1,5 @@
 import { store }             from './state/store.js';
-import { setToken }          from './api/client.js';
+import { setToken, api }    from './api/client.js';
 import { telemetryWS }       from './api/websocket.js';
 import { listFarms }         from './api/farms.js';
 import { renderNavbar }      from './components/navbar.js';
@@ -81,7 +81,22 @@ async function initApp() {
                     store.setState('currentFarm', farms[0]);
                     telemetryWS.connect(farms[0].id);
                 } else {
-                    console.warn('[ROUTER] No farms found for this farmer — run seed.py');
+                    console.log('[ROUTER] No farms found — auto-provisioning default...');
+                    // Auto-create a default farm for a seamless experience (especially for "Demo" user)
+                    const createRes = await api('/farms/', {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            name: `${farmer.name}'s Plot`, 
+                            soil_type: 'Loam', 
+                            area_ha: 1.0 
+                        })
+                    });
+                    if (createRes?.success) {
+                        const newFarm = createRes.data;
+                        console.log('[ROUTER] Default farm created:', newFarm.name);
+                        store.setState('currentFarm', newFarm);
+                        telemetryWS.connect(newFarm.id);
+                    }
                 }
             } catch (err) {
                 console.warn('[ROUTER] Farm bootstrap failed:', err.message);

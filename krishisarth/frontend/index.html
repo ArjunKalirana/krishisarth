@@ -167,6 +167,9 @@
                             wet: 'var(--ks-wet)',
                             optimal: 'var(--ks-optimal)',
                             warn: 'var(--ks-warn)',
+                            primary: 'var(--ks-green-mid)',
+                            'primary-dark': 'var(--ks-green)',
+                            'primary-light': 'var(--ks-green-light)',
                         }
                     },
                     fontFamily: {
@@ -221,12 +224,12 @@
       [100,'FARM READY ✓'],
     ];
     const bar = document.getElementById('loader-bar');
-    const status = document.getElementById('loader-status');
+    const status = document.getElementById('loader-text');
     let si = 0;
     const stepInterval = setInterval(() => {
       if (si >= loaderSteps.length) { clearInterval(stepInterval); return; }
-      bar.style.width = loaderSteps[si][0] + '%';
-      status.textContent = loaderSteps[si][1];
+      if (bar) bar.style.width = loaderSteps[si][0] + '%';
+      if (status) status.textContent = loaderSteps[si][1];
       si++;
     }, 400);
 

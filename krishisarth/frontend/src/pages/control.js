@@ -21,10 +21,10 @@ export function renderControl() {
             <p class="text-gray-500 font-medium mt-1" data-i18n="ctrl_subtitle">${t('ctrl_subtitle')}</p>
         </div>
         <div class="flex gap-3">
-            <button id="start-all-btn" class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-black text-sm transition-all shadow-md active:scale-95 flex items-center gap-2" data-magnetic>
+            <button id="start-all-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_8px_30px_rgb(26,122,74,0.3)] active:scale-95 flex items-center gap-2" data-magnetic>
                 <i data-lucide="play-circle" class="w-5 h-5"></i> <span data-i18n="ctrl_start">${t('ctrl_start')}</span> ALL
             </button>
-            <button id="stop-all-btn" class="border-2 border-red-600 text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 uppercase tracking-tight" data-magnetic>
+            <button id="stop-all-btn" class="bg-red-50 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2" data-magnetic>
                 <i data-lucide="stop-circle" class="w-5 h-5"></i> <span data-i18n="ctrl_stop_all">${t('ctrl_stop_all')}</span>
             </button>
         </div>
@@ -239,11 +239,14 @@ async function _loadZones(gridEl) {
                 _loadZones(gridEl);
             } else {
                 gridEl.innerHTML = `
-                    <div class="md:col-span-2 ks-card p-10 text-center">
-                        <p class="text-gray-400 font-bold" data-i18n="ctrl_no_farm">
+                    <div class="md:col-span-2 ks-card p-20 text-center flex flex-col items-center justify-center bg-white/50 border-dashed border-2 border-gray-100">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                            <i data-lucide="layout-grid" class="w-8 h-8 text-gray-300"></i>
+                        </div>
+                        <p class="text-gray-400 font-black text-lg uppercase tracking-tight" data-i18n="ctrl_no_farm">
                             ${t('ctrl_no_farm')}
                         </p>
-                        <p class="text-gray-300 text-xs mt-2">
+                        <p class="text-gray-300 font-mono text-[10px] mt-4 uppercase tracking-widest">
                             Run: python scripts/seed.py
                         </p>
                     </div>`;
