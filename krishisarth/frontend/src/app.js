@@ -112,6 +112,9 @@ async function initApp() {
                         }
                         
                         telemetryWS.connect(newFarm.id);
+                        
+                        // RE-RENDER: Now that we have a farm, re-run the router to show the dashboard
+                        route();
                     }
                 }
             } catch (err) {

@@ -294,17 +294,40 @@ function renderSkeleton() {
 }
 
 function renderEmptyState() {
-    return `<div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100 shadow-sm">
-        <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <i data-lucide="sprout" class="w-10 h-10 text-primary"></i>
+    return `
+        <div class="flex flex-col items-center justify-center py-20 bg-ks-surface rounded-3xl border-2 border-dashed border-ks-border">
+            <div class="w-20 h-20 bg-ks-optimal/10 rounded-full flex items-center justify-center mb-6">
+                <i data-lucide="sprout" class="w-10 h-10 text-ks-optimal"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-ks-text mb-2" data-i18n="no_zones_title">${t('no_zones_title') || 'No farm plots found'}</h2>
+            <p class="text-ks-muted mb-8 text-center max-w-md" data-i18n="no_zones_desc">${t('no_zones_desc') || 'We couldn\'t find any plots for your account. Click below to initialize your demo showcase.'}</p>
+            
+            <button id="rescue-demo-btn" class="px-8 py-4 bg-ks-optimal text-white rounded-2xl font-bold shadow-lg shadow-ks-optimal/20 hover:scale-105 transition-transform flex items-center gap-2">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                <span data-i18n="btn_init_demo">${t('btn_init_demo') || 'Initialize Demo Data'}</span>
+            </button>
         </div>
-        <h2 class="text-2xl font-black text-gray-800 mb-2" data-i18n="dash_no_farm">${t('dash_no_farm')}</h2>
-        <p class="text-gray-400 font-medium mb-8" data-i18n="dash_no_zones">${t('dash_no_zones')}</p>
-        <button id="create-first-zone-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg active:scale-95 flex items-center gap-2 mx-auto" data-magnetic>
-            <i data-lucide="plus-circle" class="w-5 h-5"></i>
-            + <span data-i18n="dash_btn_create_zone">${t('dash_btn_create_zone') || 'CREATE FIRST ZONE'}</span>
-        </button>
-    </div>`;
+        
+        <script>
+            // Manual rescue logic
+            document.getElementById('rescue-demo-btn')?.addEventListener('click', async () => {
+                const btn = document.getElementById('rescue-demo-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i> Initializing...';
+                lucide.createIcons();
+                
+                try {
+                    // Trigger backend history backfill
+                    await fetch('https://krishisarth-production.up.railway.app/v1/demo/history', { method: 'POST' });
+                    // Give it a moment then reload
+                    setTimeout(() => window.location.reload(), 2000);
+                } catch (e) {
+                    alert('Initialization failed. Check your internet connection.');
+                    btn.disabled = false;
+                }
+            });
+        </script>
+    `;
 }
 
 function syncDashboardFromState(mainEl) {
