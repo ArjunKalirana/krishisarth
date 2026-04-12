@@ -255,11 +255,54 @@
         </div>
     </main>
 
-    <footer class="bg-white border-t border-gray-100 py-6 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-gray-500 text-sm font-medium">
-                <span data-i18n="footer_copyright">KrishiSarth &copy; 2026</span> | <span data-i18n="footer_powered">Powered by</span> <span class="text-ks-green-mid font-bold" data-i18n="footer_tech">IoT + AI</span> | <span data-i18n="footer_tagline">Smart Farming for Every Acre</span>
-            </p>
+    <footer class="bg-white/40 backdrop-blur-xl border-t border-ks-border-mid py-12 mt-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-ks-green-glow"></div>
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                <div class="space-y-4">
+                    <div class="ks-logo flex items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6 2 3 8 3 12c0 5 4 9 9 9s9-4 9-9C21 7 17 2 12 2z" fill="#1a7a4a" opacity="0.2"/>
+                            <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
+                            <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#0d6b3a" opacity="0.7"/>
+                        </svg>
+                        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.03em;color:#0d1a12;">
+                            Krishi<span style="color:#1a7a4a">Sarth</span>
+                        </span>
+                    </div>
+                    <p class="text-ks-muted text-xs leading-relaxed max-w-xs font-medium">
+                        Empowering farmers with industrial-grade AI and real-time IoT intelligence. 
+                        Cultivating the future of sustainable agriculture.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-8 md:col-span-2 place-items-end">
+                    <div class="flex flex-col gap-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Platform</span>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Digital Twin</a>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">AI Insights</a>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Hardware Connect</a>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Support</span>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Documentation</a>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">API Status</a>
+                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Contact Expert</a>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    KrishiSarth &copy; 2026 | Built for Bharat
+                </p>
+                <div class="flex items-center gap-6">
+                    <span class="text-[10px] font-bold text-ks-green-mid flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-3 h-3"></i> SSL SECURE
+                    </span>
+                    <span class="text-[10px] font-bold text-ks-green-mid flex items-center gap-2">
+                        <i data-lucide="server" class="w-3 h-3"></i> TIER-I INFRA
+                    </span>
+                </div>
+            </div>
         </div>
     </footer>
 
@@ -283,7 +326,7 @@
   document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
 
   const loop = () => {
-    cx += (mx-cx)*0.12; cy += (my-cy)*0.12;
+    cx += (mx-cx)*0.22; cy += (my-cy)*0.22;
     cursor.style.left = cx+'px'; cursor.style.top = cy+'px';
     requestAnimationFrame(loop);
   };

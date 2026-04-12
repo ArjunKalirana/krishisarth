@@ -313,7 +313,7 @@ export function renderNavbar() {
             const status = e.detail;
             dot.classList.remove('bg-amber-500', 'bg-primary-light', 'bg-red-500');
             if (status === 'connected') {
-                dot.classList.add('bg-primary-light');
+                dot.classList.add('bg-ks-green-light');
                 dot.title = "Live: Synchronized";
             } else if (status === 'connecting') {
                 dot.classList.add('bg-amber-500');

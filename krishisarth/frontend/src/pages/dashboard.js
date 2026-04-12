@@ -4,6 +4,7 @@ import { t } from '../utils/i18n.js';
 import { createSensorCard } from '../components/sensor-card.js';
 import { createTankRing } from '../components/tank-ring.js';
 import { countUp } from '../utils/dom.js';
+import { showToast } from '../components/toast.js';
 
 /**
  * Dynamic Dashboard Page
@@ -25,29 +26,15 @@ export function renderDashboard() {
                 </p>
             </div>
             <div class="flex items-center gap-2">
-                <button id="demo-crisis-btn" class="px-4 py-2 bg-red-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-red-700 transition-colors">
-                    Trigger Crisis Alert
+                <button id="demo-crisis-btn" class="px-4 py-2 bg-red-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-red-700 transition-all flex items-center gap-2">
+                    <i data-lucide="zap" class="w-3 h-3"></i> Trigger Crisis
                 </button>
-                <button id="demo-reset-btn" class="px-4 py-2 bg-ks-green text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700 transition-colors">
-                    Reset Simulation
+                <button id="demo-reset-btn" class="px-4 py-2 bg-ks-green text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700 transition-all flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Reset
                 </button>
             </div>
         `;
         container.appendChild(demoBanner);
-
-        // Bind Actions
-        demoBanner.querySelector('#demo-crisis-btn').onclick = async () => {
-            try {
-                await fetch('/v1/demo/crisis?zone_name=Wheat%20Block', { method: 'POST' });
-                alert('Crisis injected in Wheat Block! Watch the AI alerts fire.');
-            } catch (e) { console.error(e); }
-        };
-        demoBanner.querySelector('#demo-reset-btn').onclick = async () => {
-            try {
-                await fetch('/v1/demo/reset', { method: 'POST' });
-                alert('Simulation reset to healthy values');
-            } catch (e) { console.error(e); }
-        };
     }
 
     const topBar = document.createElement('div');
@@ -86,14 +73,51 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
     const cacheKey = `ks_dash_cache:${farmId}`;
     const tsKey = `ks_dash_cache_ts:${farmId}`;
 
-    const attachListeners = (data) => {
-        const refreshBtn = mainEl.querySelector('#dash-refresh-btn');
+    const attachListeners = (data, mainElement = mainEl) => {
+        const refreshBtn = mainElement.querySelector('#dash-refresh-btn');
         if (refreshBtn) {
             refreshBtn.onclick = async () => {
                 refreshBtn.querySelector('i').classList.add('animate-spin');
                 localStorage.removeItem(cacheKey);
                 localStorage.removeItem(tsKey);
                 await loadDashboardData(farmId, mainEl, alertEl);
+            };
+        }
+        
+        // Demo Actions (Event Delegation)
+        const crisisBtn = container.querySelector('#demo-crisis-btn');
+        if (crisisBtn) {
+            crisisBtn.onclick = async () => {
+                try {
+                    await fetch(`${window.__KS_API_URL__}/demo/crisis?zone_name=Wheat%20Block`, { method: 'POST' });
+                    showToast('Crisis injected in Wheat Block!', 'warning');
+                } catch (e) { showToast('Action failed', 'error'); }
+            };
+        }
+        const resetBtn = container.querySelector('#demo-reset-btn');
+        if (resetBtn) {
+            resetBtn.onclick = async () => {
+                try {
+                    await fetch(`${window.__KS_API_URL__}/demo/reset`, { method: 'POST' });
+                    showToast('Simulation reset to healthy values', 'success');
+                } catch (e) { showToast('Action failed', 'error'); }
+            };
+        }
+
+        // Rescue Button
+        const rescueBtn = mainElement.querySelector('#rescue-demo-btn');
+        if (rescueBtn) {
+            rescueBtn.onclick = async () => {
+                rescueBtn.disabled = true;
+                rescueBtn.innerHTML = '<i class="w-5 h-5 animate-spin"></i> Initializing...';
+                try {
+                    await fetch(`${window.__KS_API_URL__}/demo/history`, { method: 'POST' });
+                    showToast('Farm data generated!', 'success');
+                    setTimeout(() => window.location.reload(), 2000);
+                } catch (e) {
+                    showToast('Initialization failed', 'error');
+                    rescueBtn.disabled = false;
+                }
             };
         }
         
@@ -115,7 +139,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             const ageMins = Math.floor((Date.now() - ts) / 60000);
             
             mainEl.innerHTML = renderHeader(data) + renderWeatherCardSkeleton() + renderGrid(data) + renderWaterBudget() + renderCropTimeline(data.zones);
-            attachListeners(data);
+            attachListeners(data, mainEl);
             
             if (isError) {
                 if (ageMins < 5) {
@@ -126,6 +150,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             } else {
                 alertEl.innerHTML = "";
             }
+            attachListeners(data, mainEl);
             return true;
         }
         return false;
@@ -145,7 +170,7 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             store.setState('currentFarmDashboard', data);
             
             mainEl.innerHTML = renderHeader(data) + renderWeatherCardSkeleton() + renderGrid(data) + renderWaterBudget() + renderCropTimeline(data.zones);
-            attachListeners(data);
+            attachListeners(data, mainEl);
             
             const sensorMap = {};
             data.zones.forEach(z => sensorMap[z.id] = { moisture: z.moisture_pct, temp_c: z.temp_c, ec_ds_m: z.ec_ds_m });
@@ -341,26 +366,6 @@ function renderEmptyState() {
                 <span data-i18n="btn_init_demo">${t('btn_init_demo') || 'Initialize Demo Data'}</span>
             </button>
         </div>
-        
-        <script>
-            // Manual rescue logic
-            document.getElementById('rescue-demo-btn')?.addEventListener('click', async () => {
-                const btn = document.getElementById('rescue-demo-btn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i> Initializing...';
-                lucide.createIcons();
-                
-                try {
-                    // Trigger backend history backfill
-                    await fetch('https://krishisarth-production.up.railway.app/v1/demo/history', { method: 'POST' });
-                    // Give it a moment then reload
-                    setTimeout(() => window.location.reload(), 2000);
-                } catch (e) {
-                    alert('Initialization failed. Check your internet connection.');
-                    btn.disabled = false;
-                }
-            });
-        </script>
     `;
 }
 
