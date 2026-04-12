@@ -81,12 +81,14 @@ export function renderAlertsFeed() {
             
             panel.querySelector('#mark-all-read').addEventListener('click', async () => {
                 const farm = store.getState('currentFarm');
-                if (!farm?.id) return;
-                
+                // Optimization: Update UI immediately
                 alerts.forEach(a => a.read = true);
                 updateContent();
                 
+                if (!farm?.id) return;
+                
                 try {
+                    // Only attempt API for real farms
                     await api(`/farms/${farm.id}/alerts/read-all`, { method: 'PATCH' });
                 } catch (e) {
                     console.error("Failed to mark all read", e);
@@ -99,6 +101,10 @@ export function renderAlertsFeed() {
                     if (alert && !alert.read) {
                         alert.read = true;
                         updateContent();
+                        
+                        // Safety: Don't sync fallback/fake alerts to the backend
+                        if (alert.id && alert.id.startsWith('f')) return;
+                        
                         try {
                             await api(`/alerts/${alert.id}/read`, { method: 'PATCH' });
                         } catch (e) { }

@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Tuple, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -37,6 +38,13 @@ def mark_read(alert_id: str, farmer_id: str, db: Session) -> Optional[Alert]:
     Mark a specific alert as read. 
     Verifies that the alert belongs to a farm owned by the requesting farmer.
     """
+    # Verification: If alert_id is a fallback ID (e.g. 'f1'), it won't be a valid UUID.
+    # Postgres crashes with 500 DataError if we try to query UUID col with non-UUID string.
+    try:
+        uuid.UUID(str(alert_id))
+    except (ValueError, AttributeError):
+        return None
+
     alert = db.query(Alert).join(Farm).filter(
         Alert.id == alert_id, 
         Farm.farmer_id == farmer_id

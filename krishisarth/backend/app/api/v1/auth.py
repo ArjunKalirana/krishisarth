@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.postgres import get_db
 from app.db.redis import get_redis
-from app.models import Farmer
+from app.models import Farmer, Farm
 from app.services import auth_service
 from app.schemas.auth_schema import (
     RegisterRequest, 
@@ -47,7 +47,18 @@ async def register(
     db.commit()
     db.refresh(farmer)
     
-    # 3. Issue initial token pair
+    # 3. Auto-provision a default farm for a smooth first-run experience
+    default_farm = Farm(
+        name=f"{farmer.name}'s Plot",
+        farmer_id=farmer.id,
+        soil_type="Loam",
+        area_ha=1.0
+    )
+    db.add(default_farm)
+    db.commit()
+    db.refresh(default_farm)
+    
+    # 4. Issue initial token pair
     access_token = auth_service.create_access_token(farmer.id)
     refresh_token, _ = auth_service.create_refresh_token(farmer.id)
     

@@ -4,7 +4,13 @@
  * Refresh token: sessionStorage (survives page reload, cleared on tab close).
  */
 
-const BASE_URL = window.__KS_API_URL__ || 'http://localhost:8000/v1';
+const API_PROD_URL = 'https://krishisarth-production.up.railway.app/v1';
+const API_DEV_URL  = 'http://localhost:8000/v1';
+
+const BASE_URL = window.__KS_API_URL__ || 
+    (window.location.hostname.includes('railway') || window.location.hostname.includes('vercel') 
+        ? API_PROD_URL 
+        : API_DEV_URL);
 
 // Modified for 6A robust API client structure
 let _refreshing   = false;
@@ -85,9 +91,9 @@ async function _fetchWithAuth(path, options) {
     const ksToken = getToken();
     if (ksToken) headers['Authorization'] = `Bearer ${ksToken}`;
     
-    // Fix: Strip trailing slashes to prevent 307 redirects to HTTP which cause Mixed Content
-    const cleanPath = path.replace(/\/+(\?|$)/, '$1');
-    return fetch(`${BASE_URL}${cleanPath}`, { ...options, headers, credentials: 'include' });
+    // Removed: .replace(/\/+(\?|$)/, '$1') — stripping slashes causes 307 redirects 
+    // in FastAPI which often fail CORS/Mixed Content behind proxies.
+    return fetch(`${BASE_URL}${path}`, { ...options, headers, credentials: 'include' });
 }
 
 async function _refreshAccessToken() {

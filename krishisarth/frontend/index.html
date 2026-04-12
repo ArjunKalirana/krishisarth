@@ -188,25 +188,17 @@
     </script>
 </head>
 <body class="antialiased">
-    <div id="ks-loader" style="
-      position:fixed; inset:0; background:#0d1a10; z-index:100000;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      gap:16px; transition:opacity 0.6s ease;
-    ">
-      <!-- Animated leaf logo -->
+    <div id="ks-loader" style="position:fixed;inset:0;background:#0d1a10;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.6s ease;">
       <svg width="48" height="48" viewBox="0 0 24 24" style="animation:grow 1s cubic-bezier(0.34,1.56,0.64,1) forwards">
         <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
         <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#2ECC71"/>
       </svg>
-      
       <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em">
         Krishi<span style="color:#2ECC71">Sarth</span>
       </div>
-      
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.2em" id="loader-status">
+      <div id="loader-text" style="font-family:'DM Mono',monospace;font-size:10px;color:#2ECC71;opacity:0.8;text-transform:uppercase;letter-spacing:0.2em">
         INITIALIZING...
       </div>
-      
       <div style="width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;margin-top:8px">
         <div id="loader-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a7a4a,#2ECC71);border-radius:1px;transition:width 0.3s ease;box-shadow:0 0 8px #2ECC71"></div>
       </div>

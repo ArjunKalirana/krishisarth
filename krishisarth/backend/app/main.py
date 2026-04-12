@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.core.config import settings
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import rate_limit
@@ -15,6 +16,9 @@ app = FastAPI(
 )
 
 app.add_middleware(LoggingMiddleware)
+
+# Handle X-Forwarded-Proto for correct 307 redirects behind proxies (Railway)
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 app.add_middleware(
     CORSMiddleware,
