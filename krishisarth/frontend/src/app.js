@@ -86,20 +86,25 @@ async function initApp() {
             if (asstRoot) asstRoot.style.display = 'block';
         }
 
-        // Bootstrap farm on first authenticated route
-        if (farmer && !store.getState('currentFarm')) {
+        // Bootstrap/Verify farm on first authenticated route
+        let currentFarm = store.getState('currentFarm');
+        if (farmer && (!currentFarm || !currentFarm.id)) {
             appRoot.innerHTML = `<div class="flex flex-col items-center justify-center py-40 animate-pulse">
                 <div class="w-16 h-16 border-4 border-ks-optimal/20 border-t-ks-optimal rounded-full animate-spin mb-6"></div>
                 <p class="text-ks-muted font-black uppercase tracking-widest text-[10px]">Bootstrapping Intelligence...</p>
             </div>`;
             try {
                 const res = await listFarms();
-                // FIX: API returns res.data.farms array, not res.data directly
                 const farms = res?.data?.farms ?? [];
+                
                 if (farms.length > 0) {
-                    console.log('[ROUTER] Farm bootstrapped:', farms[0].name, farms[0].id);
-                    store.setState('currentFarm', farms[0]);
-                    telemetryWS.connect(farms[0].id);
+                    // VERIFY: If we have a stored farm, ensure it still exists in the list
+                    const stillExists = currentFarm ? farms.find(f => f.id === currentFarm.id) : null;
+                    const finalFarm = stillExists || farms[0];
+                    
+                    console.log('[ROUTER] Farm synced:', finalFarm.name, finalFarm.id);
+                    store.setState('currentFarm', finalFarm);
+                    telemetryWS.connect(finalFarm.id);
                 } else {
                     console.log('[ROUTER] No farms found — auto-provisioning default...');
                     // Auto-create a default farm for a seamless experience (especially for "Demo" user)

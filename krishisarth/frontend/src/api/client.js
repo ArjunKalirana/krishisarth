@@ -59,7 +59,18 @@ export async function api(path, options = {}, attempt = 1) {
         }
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.code || 'API_ERROR');
+        if (!response.ok) {
+            // SELF-HEALING: If we are not the farm owner, our currentFarm ID is stale
+            if (data.detail === 'NOT_FARM_OWNER') {
+                console.error('[API] Stale Farm ID detected. Purging local state…');
+                localStorage.removeItem('ks_dash_cache');
+                localStorage.removeItem('ks_current_farm'); // Just in case name varies
+                // Also clear partial keys from store if possible, 
+                // but a hard reload is the safest recover for the demo
+                setTimeout(() => window.location.reload(), 500);
+            }
+            throw new Error(data.detail || data.error?.code || 'API_ERROR');
+        }
         return data;
     } catch (err) {
         clearTimeout(timeoutId);
