@@ -251,6 +251,4 @@ async function _loadZones(gridEl) {
         gridEl.innerHTML = `<div class="md:col-span-2 ks-card p-6 text-center text-red-500 text-sm font-bold">Failed to load zones. Refresh the page.</div>`;
     }
 }
-}
-}
 
