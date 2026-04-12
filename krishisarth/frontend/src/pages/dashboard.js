@@ -97,6 +97,9 @@ export function renderDashboard() {
 async function loadDashboardData(farmId, mainEl, alertEl) {
     if (!farmId) {
         mainEl.innerHTML = renderEmptyState();
+        // MUST attach listeners for the rescue/initialize button
+        attachListeners(null, mainEl);
+        if (window.lucide) window.lucide.createIcons();
         return;
     }
 
@@ -199,10 +202,13 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             alertEl.innerHTML = ""; 
             store.setState('currentFarmDashboard', data);
             
+            // Clean render — ensure skeleton is fully replaced
             mainEl.innerHTML = renderHeader(data) + renderWeatherCardSkeleton() + renderGrid(data) + renderWaterBudget() + renderCropTimeline(data.zones);
-            attachListeners(data, mainEl);
             
-            const sensorMap = {};
+            attachListeners(data, mainEl);
+            initWeatherCard();
+            
+            if (window.lucide) window.lucide.createIcons();
             data.zones.forEach(z => sensorMap[z.id] = { moisture: z.moisture_pct, temp_c: z.temp_c, ec_ds_m: z.ec_ds_m });
             store.setState('sensorData', sensorMap);
         } else {
@@ -400,12 +406,18 @@ function renderEmptyState() {
 }
 
 function syncDashboardFromState(mainEl) {
-    // This would ideally do fine-grained DOM updates, 
-    // but for the MVP it ensures UI stays in sync with store.sensorData
+    // Only re-render if the mainContent is still in the DOM
+    if (!document.body.contains(mainEl)) return;
+
     const data = store.getState('currentFarmDashboard'); 
     if (data) {
-        mainEl.innerHTML = renderHeader(data) + renderWeatherCardSkeleton() + renderGrid(data) + renderWaterBudget() + renderCropTimeline(data.zones);
-        initWeatherCard();
+        try {
+            mainEl.innerHTML = renderHeader(data) + renderWeatherCardSkeleton() + renderGrid(data) + renderWaterBudget() + renderCropTimeline(data.zones);
+            initWeatherCard();
+            if (window.lucide) window.lucide.createIcons();
+        } catch (e) {
+            console.warn('[Dashboard] Sync failed:', e.message);
+        }
     }
 }
 

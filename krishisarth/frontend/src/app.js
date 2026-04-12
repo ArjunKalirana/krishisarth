@@ -88,6 +88,10 @@ async function initApp() {
 
         // Bootstrap farm on first authenticated route
         if (farmer && !store.getState('currentFarm')) {
+            appRoot.innerHTML = `<div class="flex flex-col items-center justify-center py-40 animate-pulse">
+                <div class="w-16 h-16 border-4 border-ks-optimal/20 border-t-ks-optimal rounded-full animate-spin mb-6"></div>
+                <p class="text-ks-muted font-black uppercase tracking-widest text-[10px]">Bootstrapping Intelligence...</p>
+            </div>`;
             try {
                 const res = await listFarms();
                 // FIX: API returns res.data.farms array, not res.data directly

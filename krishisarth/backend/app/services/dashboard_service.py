@@ -95,7 +95,7 @@ from(bucket: "{bucket}")
 
     dashboard = {
         "summary": {
-            "water_saved_today_l": float(water_saved),
+            "litres_saved": float(water_saved),
             "system_status": "optimal" if offline_count == 0 else "degraded",
             "next_irrigation_at": None,
             "active_zones": active_count,
@@ -117,9 +117,9 @@ from(bucket: "{bucket}")
                 zid = record.values.get("zone_id")
                 if zid:
                     soil_data[zid] = {
-                        "moisture": float(record.values.get("moisture_pct", 0.0)),
-                        "temp_c": record.values.get("temp_c"),
-                        "ec_ds_m": record.values.get("ec_ds_m"),
+                        "moisture": float(record.values.get("moisture_pct") or 0.0),
+                        "temp_c": float(record.values.get("temp_c") or 30.0),
+                        "ec_ds_m": float(record.values.get("ec_ds_m") or 1.2),
                     }
     except Exception:
         pass
