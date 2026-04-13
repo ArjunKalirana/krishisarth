@@ -160,13 +160,25 @@ export function renderAnalytics() {
                 </div>
             `;
 
-            if (window.lucide) window.lucide.createIcons();
-
             container.querySelector('#export-btn').onclick = () => {
+                if (!farmId) return;
                 exportCSV(farmId, range, new Date().toISOString());
             };
 
-        } catch (err) { console.error("ANAL_DATA_FAIL:", err); }
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                try { window.lucide.createIcons(); } catch(e) {}
+            }
+
+        } catch (err) { 
+            console.error("ANAL_DATA_FAIL:", err);
+            const content = container.querySelector('#analytics-content');
+            if (content) {
+                content.innerHTML = `<div class="py-40 flex flex-col items-center justify-center gap-4 glass-panel border-red-500/20">
+                    <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">Data Stream Interrupted</p>
+                    <p class="text-slate-500 text-xs">The telemetry shard could not be reconstructed.</p>
+                </div>`;
+            }
+        }
     };
 
     render();

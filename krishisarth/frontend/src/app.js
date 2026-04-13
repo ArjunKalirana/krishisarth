@@ -151,25 +151,38 @@ async function initApp() {
             }
         }
 
-        appRoot.innerHTML = '';
-        switch (hash) {
-            case '#login':      appRoot.appendChild(renderLogin());       break;
-            case '#register':   appRoot.appendChild(renderRegister());    break;
-            case '#dashboard':  appRoot.appendChild(renderDashboard());   break;
-            case '#ai':         appRoot.appendChild(renderAIDecisions()); break;
-            case '#control':    appRoot.appendChild(renderControl());     break;
-            case '#analytics':  appRoot.appendChild(renderAnalytics());   break;
-            case '#farm3d':     appRoot.appendChild(renderFarm3D());      break;
-            default:
-                appRoot.innerHTML = `<div class="text-center py-20 font-mono text-gray-400">404: PAGE_NOT_FOUND</div>`;
+        try {
+            switch (hash) {
+                case '#login':      appRoot.appendChild(renderLogin());       break;
+                case '#register':   appRoot.appendChild(renderRegister());    break;
+                case '#dashboard':  appRoot.appendChild(renderDashboard());   break;
+                case '#ai':         appRoot.appendChild(renderAIDecisions()); break;
+                case '#control':    appRoot.appendChild(renderControl());     break;
+                case '#analytics':  appRoot.appendChild(renderAnalytics());   break;
+                case '#farm3d':     appRoot.appendChild(renderFarm3D());      break;
+                default:
+                    appRoot.innerHTML = `<div class="text-center py-20 font-mono text-gray-400">404: PAGE_NOT_FOUND</div>`;
+            }
+        } catch (err) {
+            console.error('[ROUTER] Crash during page render:', err);
+            appRoot.innerHTML = `<div class="flex flex-col items-center justify-center py-40">
+                <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">Neural Segment Violation</p>
+                <p class="text-slate-500 text-xs mt-2">${err.message}</p>
+            </div>`;
         }
 
         // Re-init Lucide icons after every DOM swap
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) {
+            try { window.lucide.createIcons(); } catch { /* ignore lucide noise */ }
+        }
     };
 
     window.addEventListener('hashchange', route);
-    await route(); // MUST be awaited — session restore must complete first
+    try {
+        await route(); 
+    } catch (err) {
+        console.error('[APP] Critical routing failure:', err);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

@@ -20,7 +20,9 @@ export function initAIAssistant() {
     if (_widgetEl) return;
     _widgetEl = _buildWidget();
     document.body.appendChild(_widgetEl);
-    if (window.lucide) window.lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        try { window.lucide.createIcons(); } catch(e) { console.warn('[AI Asst] Lucide init deferred'); }
+    }
 }
 
 function _buildWidget() {

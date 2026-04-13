@@ -128,47 +128,27 @@ export function renderFarm3D() {
     return container;
 }
 
-let _scene, _renderer, _camera, _controls, _raycaster;
+let _scene, _renderer, _camera, _controls, _raycaster, _clock;
 let _zones = [];
-let _clock = new THREE.Clock();
 let _simTime = 0;
 let _weather = 'sunny';
 let _selectedZoneId = null;
 let _animId;
 
 async function _initEliteTwin(container) {
+    // Prevent duplicate script loading and ensure order
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
     await _loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
     await _loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');
 
-    if (!window.THREE) return;
+    if (!window.THREE) {
+        console.error('[Farm3D] THREE Engine failed to load');
+        showToast('Engine initialization failure', 'error');
+        return;
+    }
+
     const THREE = window.THREE;
-    const canvasContainer = container.querySelector('#farm3d-canvas-container');
-    const w = canvasContainer.clientWidth;
-    const h = canvasContainer.clientHeight;
-
-    _scene = new THREE.Scene();
-    _scene.background = new THREE.Color(0x0a0f12);
-    _scene.fog = new THREE.FogExp2(0x0a0f12, 0.012);
-
-    _camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-    _camera.position.set(40, 45, 55);
-
-    _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    _renderer.setSize(w, h);
-    _renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    _renderer.shadowMap.enabled = true;
-    _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    _renderer.outputEncoding = THREE.sRGBEncoding;
-    canvasContainer.appendChild(_renderer.domElement);
-
-    _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
-    _controls.enableDamping = true;
-    _controls.dampingFactor = 0.05;
-    _controls.maxPolarAngle = Math.PI / 2.1;
-    _controls.minDistance = 25;
-    _controls.maxDistance = 140;
-
+    _clock = new THREE.Clock();
     _raycaster = new THREE.Raycaster();
 
     // Lighting HQ
