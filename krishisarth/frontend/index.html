@@ -3,230 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="app_title">KrishiSarth | Smart IoT Farming</title>
+    <title data-i18n="app_title">KrishiSarth | Elite Smart IoT Farming</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: Syne, DM Sans & DM Mono -->
+    <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- KrishiSarth Tokens -->
+    <!-- KrishiSarth Elite Tokens -->
     <link rel="stylesheet" href="./src/styles/tokens.css">
 
     <style>
-        :root {
-            /* Brand */
-            --ks-green:        #0d6b3a;
-            --ks-green-mid:    #1a7a4a;
-            --ks-green-light:  #2ECC71;
-            --ks-green-glow:   rgba(26,122,74,0.18);
-            --ks-cyan:         #00e5a0;
-
-            /* Surfaces — dark card system */
-            --ks-bg:           #f2f7f4;
-            --ks-surface:      #ffffff;
-            --ks-surface-2:    #f8faf9;
-            --ks-border:       rgba(26,122,74,0.09);
-            --ks-border-mid:   rgba(26,122,74,0.18);
-
-            /* Text */
-            --ks-text:         #0d1a12;
-            --ks-muted:        #5a7266;
-            --ks-faint:        #9ab5a8;
-
-            /* Status */
-            --ks-dry:          #dc2626;
-            --ks-wet:          #2563eb;
-            --ks-optimal:      #16a34a;
-            --ks-warn:         #d97706;
-
-            /* Typography */
-            --font-display:    'Syne', sans-serif;
-            --font-body:       'DM Sans', sans-serif;
-            --font-mono:       'DM Mono', monospace;
-
-            /* Aliases for compatibility */
-            --color-primary:       #1a7a4a;
-            --color-primary-dark:  #0d6b3a;
-            --color-primary-light: #2ECC71;
-        }
-
-        h1, h2, h3 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background-color: var(--ks-bg);
-            color: var(--ks-text);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
+        /* Immersive Global Styles */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            opacity: 0.025;
+            opacity: 0.03;
             pointer-events: none;
             z-index: 9999;
         }
 
-        .brand-text {
-            color: var(--ks-green-mid);
+        /* Custom Scrollbar for Elite Feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--ks-bg); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--ks-surface-1); 
+            border-radius: 3px;
         }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ks-emerald); }
 
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--ks-green-light);
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 0 rgba(46, 204, 113, 0.4);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
-        }
-
-        /* Standardized Cards */
-        .ks-card {
-            background-color: var(--ks-surface);
-            border: 1px solid var(--ks-border);
-            border-radius: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .zone-card {
-            transition: transform 0.22s cubic-bezier(0.23,1,0.32,1), box-shadow 0.22s ease;
-            will-change: transform;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        .zone-card:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 12px 40px rgba(26,122,74,0.12), 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .zone-card::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%; width: 60%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            transform: skewX(-20deg);
-            transition: left 0.5s ease;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .zone-card:hover::after { left: 150%; }
-        .ks-card {
-            background: var(--ks-surface);
-            border-radius: 16px;
-            border: 1px solid var(--ks-border);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(26,122,74,0.04);
-            transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s cubic-bezier(0.23,1,0.32,1);
-        }
-        .ks-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(26,122,74,0.1);
-            border-color: var(--ks-border-mid);
-            transform: translateY(-2px);
+        .ks-glow-emerald {
+            box-shadow: 0 0 20px var(--ks-emerald-glow);
         }
     </style>
 
     <script>
-        // Tailwind Configuration for Brand Colors
+        // Tailwind Configuration for Elite Styles
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         ks: {
-                            green: 'var(--ks-green)',
-                            'green-mid': 'var(--ks-green-mid)',
-                            'green-light': 'var(--ks-green-light)',
-                            'green-glow': 'var(--ks-green-glow)',
-                            cyan: 'var(--ks-cyan)',
                             bg: 'var(--ks-bg)',
-                            surface: 'var(--ks-surface)',
-                            'surface-2': 'var(--ks-surface-2)',
-                            border: 'var(--ks-border)',
-                            'border-mid': 'var(--ks-border-mid)',
+                            surface0: 'var(--ks-surface-0)',
+                            surface1: 'var(--ks-surface-1)',
+                            surface2: 'var(--ks-surface-2)',
+                            emerald: 'var(--ks-emerald)',
+                            blue: 'var(--ks-blue)',
                             text: 'var(--ks-text)',
-                            muted: 'var(--ks-muted)',
-                            faint: 'var(--ks-faint)',
-                            dry: 'var(--ks-dry)',
-                            wet: 'var(--ks-wet)',
-                            optimal: 'var(--ks-optimal)',
-                            warn: 'var(--ks-warn)',
-                            primary: 'var(--ks-green-mid)',
-                            'primary-dark': 'var(--ks-green)',
-                            'primary-light': 'var(--ks-green-light)',
+                            'text-dim': 'var(--ks-text-dim)',
                         }
                     },
                     fontFamily: {
-                        sans: ['var(--font-body)', 'sans-serif'],
-                        mono: ['var(--font-mono)', 'monospace'],
-                        display: ['var(--font-display)', 'sans-serif'],
-                        body: ['var(--font-body)', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
         }
     </script>
 
-    <!-- Runtime API config — production backend on Railway v2-->
+    <!-- Runtime API config -->
     <script>
         (function () {
             window.__KS_API_URL__ = 'https://krishisarth-production.up.railway.app/v1';
         })();
     </script>
 </head>
-<body class="antialiased">
-    <div id="ks-loader" style="position:fixed;inset:0;background:#0d1a10;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.6s ease;">
-      <svg width="48" height="48" viewBox="0 0 24 24" style="animation:grow 1s cubic-bezier(0.34,1.56,0.64,1) forwards">
-        <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
-        <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#2ECC71"/>
-      </svg>
-      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em">
-        Krishi<span style="color:#2ECC71">Sarth</span>
+<body class="antialiased text-slate-100 bg-[#0f172a] selection:bg-emerald-500/30 selection:text-emerald-200">
+    <!-- Elite Loader -->
+    <div id="ks-loader" style="position:fixed;inset:0;background:#0f172a;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.6s ease;">
+      <div class="relative">
+          <svg width="60" height="60" viewBox="0 0 24 24" class="animate-pulse">
+            <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#10b981"/>
+            <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#34d399" opacity="0.8"/>
+          </svg>
+          <div class="absolute inset-0 blur-2xl bg-emerald-500/20 rounded-full animate-ping"></div>
       </div>
-      <div id="loader-text" style="font-family:'DM Mono',monospace;font-size:10px;color:#2ECC71;opacity:0.8;text-transform:uppercase;letter-spacing:0.2em">
-        INITIALIZING...
+      
+      <div class="text-center">
+          <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.03em">
+            Krishi<span class="text-[#10b981]">Sarth</span>
+          </div>
+          <div id="loader-text" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#10b981;opacity:0.8;text-transform:uppercase;letter-spacing:0.3em;margin-top:8px">
+            AUTHENTICATING CORE...
+          </div>
       </div>
-      <div style="width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;margin-top:8px">
-        <div id="loader-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a7a4a,#2ECC71);border-radius:1px;transition:width 0.3s ease;box-shadow:0 0 8px #2ECC71"></div>
+      
+      <div style="width:240px;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+        <div id="loader-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#059669,#10b981);transition:width 0.4s cubic-bezier(0.16, 1, 0.3, 1);"></div>
       </div>
     </div>
 
-    <style>
-    @keyframes grow {
-      from { transform:scale(0) rotate(-20deg); opacity:0; }
-      to   { transform:scale(1) rotate(0deg); opacity:1; }
-    }
-    </style>
-
     <script>
     const loaderSteps = [
-      [0,  'INITIALIZING FIELD SENSORS...'],
-      [20, 'CONNECTING TO MQTT...'],
-      [45, 'LOADING AI ENGINE...'],
-      [65, 'SYNCING TELEMETRY...'],
-      [85, 'CALIBRATING TWIN...'],
-      [100,'FARM READY ✓'],
+      [15, 'SYSTEM_VARS_INIT'],
+      [35, 'DECRYPTING_STORE'],
+      [60, 'TWIN_SYNC_START'],
+      [85, 'NEURAL_PASS_OK'],
+      [100,'ACCESS_GRANTED'],
     ];
     const bar = document.getElementById('loader-bar');
     const status = document.getElementById('loader-text');
@@ -236,7 +120,7 @@
       if (bar) bar.style.width = loaderSteps[si][0] + '%';
       if (status) status.textContent = loaderSteps[si][1];
       si++;
-    }, 400);
+    }, 350);
 
     window.addEventListener('load', () => {
       setTimeout(() => {
@@ -245,67 +129,69 @@
             ksLoader.style.opacity = '0';
             setTimeout(() => ksLoader.remove(), 600);
         }
-      }, loaderSteps.length * 400 + 200);
+      }, 2000);
     });
     </script>
-    <div id="navbar-root" class="sticky top-0 z-50"></div>
 
-    <main id="app-root" class="flex-grow container mx-auto px-4 py-8">
+    <!-- Layout Shell -->
+    <div id="navbar-root" class="fixed top-0 left-0 w-full z-50"></div>
+
+    <main id="app-root" class="w-full pt-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">
         <!-- SPA content renders here -->
-        <div class="flex items-center justify-center h-64">
+        <div class="flex flex-col items-center justify-center h-[70vh]">
             <div class="text-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-ks-green-mid mx-auto mb-4"></div>
-                <p class="text-gray-500 font-medium font-mono text-sm" data-i18n="initializing">INITIALIZING KRISHISARTH CORE...</p>
+                <div class="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-6"></div>
+                <p class="text-slate-400 font-bold font-mono text-xs uppercase tracking-widest" data-i18n="initializing">Syncing Hardware Telemetry...</p>
             </div>
         </div>
     </main>
 
-    <footer class="bg-white/40 backdrop-blur-xl border-t border-ks-border-mid py-12 mt-20 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-ks-green-glow"></div>
-        <div class="container mx-auto px-4 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-                <div class="space-y-4">
-                    <div class="ks-logo flex items-center gap-3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2C6 2 3 8 3 12c0 5 4 9 9 9s9-4 9-9C21 7 17 2 12 2z" fill="#1a7a4a" opacity="0.2"/>
-                            <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#1a7a4a"/>
-                            <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#0d6b3a" opacity="0.7"/>
+    <footer class="mt-24 py-16 border-t border-slate-800/50 bg-[#0f172a] relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"></div>
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-start gap-12">
+                <div class="max-w-md">
+                    <div class="flex items-center gap-3 mb-6">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C8 5 6 9 8 14c1.5 3 4 5 4 5V2z" fill="#10b981"/>
+                            <path d="M12 2C16 5 18 9 16 14c-1.5 3-4 5-4 5V2z" fill="#059669" opacity="0.6"/>
                         </svg>
-                        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.03em;color:#0d1a12;">
-                            Krishi<span style="color:#1a7a4a">Sarth</span>
-                        </span>
+                        <h2 class="text-2xl font-black tracking-tight text-white font-display">
+                            Krishi<span class="text-emerald-500">Sarth</span>
+                        </h2>
                     </div>
-                    <p class="text-ks-muted text-xs leading-relaxed max-w-xs font-medium">
-                        Empowering farmers with industrial-grade AI and real-time IoT intelligence. 
-                        Cultivating the future of sustainable agriculture.
+                    <p class="text-slate-400 font-medium text-sm leading-relaxed mb-6">
+                        Architecting the future of precision agriculture through high-fidelity digital twins and real-time AI simulation.
                     </p>
-                </div>
-                <div class="grid grid-cols-2 gap-8 md:col-span-2 place-items-end">
-                    <div class="flex flex-col gap-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Platform</span>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Digital Twin</a>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">AI Insights</a>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Hardware Connect</a>
+                    <div class="flex gap-4">
+                        <div class="badge-elite badge-success text-[10px]">Active Node: v2.4.0</div>
+                        <div class="badge-elite badge-success text-[10px]">Network: Secure</div>
                     </div>
-                    <div class="flex flex-col gap-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Support</span>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Documentation</a>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">API Status</a>
-                        <a href="#" class="text-xs font-bold text-ks-muted hover:text-ks-green-mid transition-colors">Contact Expert</a>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-12">
+                    <div class="flex flex-col gap-4">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Platform</h4>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">Digital Twin</a>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">AI Insights</a>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">Hardware</a>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Security</h4>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">Auth Protocol</a>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">Data Privacy</a>
+                        <a href="#" class="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">SSL Audit</a>
                     </div>
                 </div>
             </div>
-            <div class="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    KrishiSarth &copy; 2026 | Built for Bharat
+            
+            <div class="mt-16 pt-8 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-center gap-6">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                    Copyright &copy; 2026 KrishiSarth Technologies
                 </p>
-                <div class="flex items-center gap-6">
-                    <span class="text-[10px] font-bold text-ks-green-mid flex items-center gap-2">
-                        <i data-lucide="shield-check" class="w-3 h-3"></i> SSL SECURE
-                    </span>
-                    <span class="text-[10px] font-bold text-ks-green-mid flex items-center gap-2">
-                        <i data-lucide="server" class="w-3 h-3"></i> TIER-I INFRA
-                    </span>
+                <div class="flex items-center gap-4 text-emerald-500">
+                    <i data-lucide="heart" class="w-4 h-4 fill-emerald-500"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Powered by Advanced AI</span>
                 </div>
             </div>
         </div>
@@ -314,76 +200,42 @@
     <!-- App Scripts -->
     <script type="module" src="./src/app.js"></script>
 
-<script>
-// ── Custom cursor ──────────────────────────────────────────────
-(function() {
-  const cursor = document.createElement('div');
-  cursor.id = 'ks-cursor';
-  cursor.style.cssText = `
-    position:fixed; width:16px; height:16px; border-radius:50%;
-    background:rgba(26,122,74,0.5); pointer-events:none; z-index:99999;
-    mix-blend-mode:multiply; transition:transform 0.1s ease, opacity 0.2s;
-    transform:translate(-50%,-50%);
-  `;
-  document.body.appendChild(cursor);
+    <script>
+    // ── Elite Cursor Logic (Responsive Ready) ────────────────────────
+    (function() {
+      if (window.matchMedia('(pointer: coarse)').matches) return; // Disable for touch
+      
+      const cursor = document.createElement('div');
+      cursor.style.cssText = `
+        position:fixed; width:20px; height:20px; border: 2px solid rgba(16, 185, 129, 0.4);
+        border-radius:50%; pointer-events:none; z-index:99999;
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        transform:translate(-50%,-50%);
+      `;
+      const dot = document.createElement('div');
+      dot.style.cssText = `
+        position:absolute; top:50%; left:50%; width:4px; height:4px;
+        background:#10b981; border-radius:50%; transform:translate(-50%,-50%);
+      `;
+      cursor.appendChild(dot);
+      document.body.appendChild(cursor);
 
-  let mx=0, my=0, cx=0, cy=0;
-  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+      let mx=0, my=0, cx=0, cy=0;
+      document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
 
-  const loop = () => {
-    cx += (mx-cx)*0.22; cy += (my-cy)*0.22;
-    cursor.style.left = cx+'px'; cursor.style.top = cy+'px';
-    requestAnimationFrame(loop);
-  };
-  loop();
+      const loop = () => {
+        cx += (mx-cx)*0.2; cy += (my-cy)*0.2;
+        cursor.style.left = cx+'px'; cursor.style.top = cy+'px';
+        requestAnimationFrame(loop);
+      };
+      loop();
 
-  document.addEventListener('mouseover', e => {
-    const t = e.target.closest('button, a, [data-magnetic], .ks-card');
-    if (t) { cursor.style.transform='translate(-50%,-50%) scale(2.8)'; cursor.style.opacity='0.25'; }
-    else    { cursor.style.transform='translate(-50%,-50%) scale(1)';   cursor.style.opacity='1'; }
-  });
-})();
-
-// ── Magnetic buttons ──────────────────────────────────────────────
-document.addEventListener('mousemove', e => {
-  document.querySelectorAll('[data-magnetic]').forEach(el => {
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width/2;
-    const cy = rect.top  + rect.height/2;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 80) {
-      const pull = (80-dist)/80;
-      el.style.transform = `translate(${dx*pull*0.3}px,${dy*pull*0.3}px)`;
-    } else {
-      el.style.transform = '';
-    }
-  });
-});
-
-// ── Scroll-triggered reveals ──────────────────────────────────────
-const revealObs = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      e.target.style.opacity = '1';
-      e.target.style.transform = 'translateY(0)';
-      revealObs.unobserve(e.target);
-    }
-  });
-}, { threshold:0.08 });
-
-// Call this after each page render to wire new elements
-window.ksReveal = function() {
-  document.querySelectorAll('.ks-card, .zone-card, .sensor-card').forEach((el,i) => {
-    if (el.dataset.revealed) return;
-    el.dataset.revealed = '1';
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(24px)';
-    el.style.transition = `opacity 0.55s ease ${i%6*0.07}s, transform 0.55s cubic-bezier(0.23,1,0.32,1) ${i%6*0.07}s`;
-    revealObs.observe(el);
-  });
-};
-</script>
+      document.addEventListener('mouseover', e => {
+        const t = e.target.closest('button, a, .ks-card, .ks-clickable');
+        if (t) { cursor.style.transform='translate(-50%,-50%) scale(3)'; cursor.style.background='rgba(16,185,129,0.05)'; }
+        else    { cursor.style.transform='translate(-50%,-50%) scale(1)'; cursor.style.background='none'; }
+      });
+    })();
+    </script>
 </body>
 </html>

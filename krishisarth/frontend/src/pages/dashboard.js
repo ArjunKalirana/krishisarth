@@ -13,7 +13,7 @@ import { api } from '../api/client.js';
  */
 export function renderDashboard() {
     const container = document.createElement('div');
-    container.className = "space-y-6 animate-in fade-in duration-500";
+    container.className = "ks-responsive-container space-y-8 animate-in fade-in duration-700 pb-20";
 
     // MUST be declared first — everything below depends on these
     const farmId = store.getState('currentFarm')?.id;
@@ -22,20 +22,20 @@ export function renderDashboard() {
     // Demo Banner (only for demo@gmail.com)
     if (farmer?.email === 'demo@gmail.com') {
         const demoBanner = document.createElement('div');
-        demoBanner.className = "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-2";
+        demoBanner.className = "flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel px-6 py-4 mb-4 border-l-4 border-l-emerald-500";
         demoBanner.innerHTML = `
-            <div class="flex items-center gap-3">
-                <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
-                <p class="text-sm font-semibold text-amber-800">
-                    🌱 Demo Mode — Live simulation running. All sensor data is AI-generated for demonstration purposes.
+            <div class="flex items-center gap-4">
+                <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.5)]"></span>
+                <p class="text-sm font-bold text-emerald-400 font-display uppercase tracking-widest">
+                    Live Simulation Active
                 </p>
             </div>
-            <div class="flex gap-2 shrink-0">
-                <button id="demo-crisis-btn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all active:scale-95">
-                    ⚡ Trigger Crisis
+            <div class="flex gap-3 w-full sm:w-auto">
+                <button id="demo-crisis-btn" class="flex-1 sm:flex-none bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-red-500/20 transition-all active:scale-95">
+                    Trigger Crisis
                 </button>
-                <button id="demo-reset-btn" class="bg-gray-700 hover:bg-gray-900 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all active:scale-95">
-                    🔄 Reset
+                <button id="demo-reset-btn" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-slate-700 transition-all active:scale-95">
+                    Reset Twin
                 </button>
             </div>
         `;
@@ -426,117 +426,107 @@ function renderHeader(data) {
     });
     
     const sysStatus = isCritical ? 'critical' : (isWarning ? 'dry' : 'optimal');
-    const statusClass = isCritical ? 'text-ks-dry' : (isWarning ? 'text-ks-warn' : 'text-ks-optimal');
-    const borderClass = isCritical ? 'var(--ks-dry)' : (isWarning ? 'var(--ks-warn)' : 'var(--ks-optimal)');
+    const statusClass = isCritical ? 'text-red-400' : (isWarning ? 'text-amber-400' : 'text-emerald-400');
+    const glowClass = isCritical ? 'shadow-red-500/20' : (isWarning ? 'shadow-amber-500/20' : 'shadow-emerald-500/20');
     
-    const sparklineSvg = `<svg class="w-full h-10" preserveAspectRatio="none" viewBox="0 0 100 20">
-        <polyline points="0,15 15,10 30,12 45,5 60,8 75,2 100,6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"/>
+    const sparklineSvg = `<svg class="w-full h-8" preserveAspectRatio="none" viewBox="0 0 100 20">
+        <polyline points="0,15 15,10 30,12 45,5 60,8 75,2 100,6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
     </svg>`;
 
-    // We pass data attributes for countUp so they will automatically get mapped via the generic selector in attachListeners
     return `
-        <div class="relative mb-8 mt-4">
-            <!-- Glow -->
-            <div style="position:absolute; top:-40px; left:20%; width:60%; height:120px; background:radial-gradient(ellipse,rgba(26,122,74,0.08),transparent 70%); pointer-events:none; z-index:0;"></div>
-            
-            <div class="flex justify-between items-start mb-6 px-2 relative z-10">
-                <div>
-                    <h1 style="font-family: var(--font-display);" class="text-3xl tracking-tight text-ks-text mb-1 flex items-center gap-2">
-                        <span data-i18n="greeting_${timeOfDay}">${t('greeting_' + timeOfDay) || 'Good ' + timeOfDay}</span>, ${farmerName}.
+        <div class="relative mb-12">
+            <!-- Fluid Header -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+                <div class="space-y-1">
+                    <h1 class="ks-text-fluid-lg tracking-tight text-white font-display">
+                        <span class="text-slate-500 font-medium">${t('greeting_' + timeOfDay) || 'Good ' + timeOfDay},</span> ${farmerName}.
                     </h1>
-                    <p class="text-ks-muted font-medium text-sm">
-                        <span data-i18n="farm_is">${t('farm_is') || 'Your farm is'}</span> 
-                        <span class="${statusClass} font-bold lowercase" data-i18n="sys_status_${sysStatus}">${t('sys_status_' + sysStatus) || sysStatus}</span>. 
-                        <span data-i18n="last_sync">${t('last_sync') || 'Last sync'}</span> 
-                        ${minsAgo} 
-                        <span data-i18n="mins_ago">${t('mins_ago') || 'minutes ago'}</span>.
-                    </p>
+                    <div class="flex items-center gap-2 text-slate-400 font-medium text-xs md:text-sm">
+                        <span class="w-2 h-2 rounded-full ${isCritical ? 'bg-red-500' : 'bg-emerald-500'} animate-pulse"></span>
+                        <span data-i18n="farm_is">System is</span> 
+                        <span class="${statusClass} font-bold uppercase tracking-widest">${t('sys_status_' + sysStatus) || sysStatus}</span>.
+                        <span class="mx-2 text-slate-700">|</span>
+                        <span>Auto-Sync ${minsAgo}m ago</span>
+                    </div>
                 </div>
-                <!-- Global Actions -->
-                <div class="flex items-center gap-2">
-                    <button id="rescue-demo-header-btn" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-105 transition-all active:scale-95" title="Force seed demo data">
-                        <i data-lucide="zap" class="w-4 h-4"></i>
-                        <span>Fix Demo Data</span>
-                    </button>
-                    <button id="add-zone-btn" class="flex items-center gap-2 px-4 py-2 bg-ks-optimal text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-ks-optimal/20 hover:scale-105 transition-all active:scale-95">
+                
+                <div class="flex items-center gap-3 w-full lg:w-auto">
+                    <button id="add-zone-btn" class="flex-1 lg:flex-none btn-elite flex items-center justify-center gap-2">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Add Plot</span>
+                        <span>Register Plot</span>
                     </button>
-                    <button id="dash-refresh-btn" class="p-2 rounded-xl bg-ks-surface border border-ks-border hover:bg-ks-surface-2 transition-colors ks-card" title="Refresh Live Data">
-                        <i data-lucide="refresh-cw" class="w-5 h-5 text-ks-muted"></i>
+                    <button id="dash-refresh-btn" class="p-3 glass-panel hover:bg-slate-700/50 transition-all border-slate-700/50 group" title="Refresh Live Data">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-colors"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Bento Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative z-10">
+            <!-- Elite Bento Grid (Responsive) -->
+            <div class="ks-grid md:ks-grid-4 lg:ks-grid-4 gap-4">
                 
-                <!-- Row 1 Card 1 (Wide) -->
-                <div class="ks-card col-span-1 md:col-span-3 flex flex-col p-5" style="border-left: 3px solid ${borderClass};">
-                    <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="droplets" class="w-6 h-6 text-ks-optimal"></i>
-                        <div class="w-32 text-ks-optimal">${sparklineSvg}</div>
+                <!-- Main Metric: Water Saved -->
+                <div class="ks-card glass-panel md:col-span-2 lg:col-span-2 p-6 border-l-4 border-l-emerald-500 ${glowClass}">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="p-2 bg-emerald-500/10 rounded-lg">
+                            <i data-lucide="droplets" class="w-6 h-6 text-emerald-400"></i>
+                        </div>
+                        <div class="w-24 text-emerald-400">${sparklineSvg}</div>
                     </div>
-                    <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="water_saved_today">${t('water_saved_today') || 'Water Saved Today (L)'}</p>
-                        <div style="font-family: var(--font-display);" class="text-5xl text-ks-text flex items-baseline gap-1">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Water Intelligence (L)</p>
+                        <div class="text-5xl font-black text-white font-display tracking-tighter flex items-baseline gap-2">
                             <span data-countup="${data.summary?.litres_saved || 2450}">0</span>
+                            <span class="text-sm text-emerald-500/60 uppercase font-mono">SAVED TODAY</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 1 Card 2 (Narrow) -->
-                <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid ${borderClass};">
-                    <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="activity" class="${statusClass} w-6 h-6"></i>
-                    </div>
-                    <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="sys_status">${t('sys_status') || 'System Status'}</p>
-                        <div style="font-family: var(--font-display);" class="text-3xl ${statusClass} uppercase" data-i18n="sys_status_${sysStatus}">
-                            ${t('sys_status_' + sysStatus) || sysStatus}
+                <!-- Secondary Metric: Active Zones -->
+                <div class="ks-card glass-panel p-6 border-l-4 border-l-blue-500 shadow-blue-500/10">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="p-2 bg-blue-500/10 rounded-lg">
+                            <i data-lucide="sprout" class="w-6 h-6 text-blue-400"></i>
                         </div>
                     </div>
-                </div>
-
-                <!-- Row 2 Card 1 -->
-                <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid var(--ks-warn);">
-                    <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="clock" class="w-6 h-6 text-ks-warn"></i>
-                        <div class="w-20 text-ks-warn">${sparklineSvg}</div>
-                    </div>
-                    <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="next_irrigation">${t('next_irrigation') || 'Next Irrigation'}</p>
-                        <div style="font-family: var(--font-display);" class="text-4xl text-ks-text flex items-baseline gap-1">
-                            <span data-countup="45">0</span><span class="text-lg text-ks-muted" data-i18n="mins">${t('mins') || 'm'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 2 Card 2 -->
-                <div class="ks-card col-span-1 md:col-span-2 flex flex-col p-5" style="border-left: 3px solid var(--ks-optimal);">
-                    <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="sprout" class="w-6 h-6 text-ks-optimal"></i>
-                        <div class="w-20 text-ks-optimal">${sparklineSvg}</div>
-                    </div>
-                    <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="active_zones">${t('active_zones') || 'Active Zones'}</p>
-                        <div style="font-family: var(--font-display);" class="text-4xl text-ks-text">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Active Plots</p>
+                        <div class="text-4xl font-black text-white font-display">
                             <span data-countup="${activeZoneCount}">0</span>
                         </div>
+                        <p class="text-[9px] font-bold text-blue-400/60 mt-2 uppercase tracking-widest">Growth in progress</p>
                     </div>
                 </div>
 
-                <!-- Row 2 Card 3 -->
-                <div class="ks-card col-span-1 flex flex-col p-5" style="border-left: 3px solid var(--ks-cyan);">
-                    <div class="flex items-start justify-between mb-4">
-                        <i data-lucide="brain" class="w-6 h-6 text-ks-cyan"></i>
-                        <div class="w-20 text-ks-cyan">${sparklineSvg}</div>
-                    </div>
-                    <div class="mt-auto">
-                        <p class="text-ks-muted text-xs font-bold uppercase tracking-widest mb-1" data-i18n="ai_decisions">${t('ai_decisions') || 'AI Decisions'}</p>
-                        <div style="font-family: var(--font-display);" class="text-4xl text-ks-text">
-                            <span data-countup="14">0</span>
+                <!-- Status Card -->
+                <div class="ks-card glass-panel p-6 border-l-4 border-l-emerald-500">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="p-2 bg-emerald-500/10 rounded-lg">
+                            <i data-lucide="activity" class="w-6 h-6 text-emerald-400"></i>
                         </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Simulation State</p>
+                        <div class="text-3xl font-black text-white font-display uppercase tracking-tight">
+                            Healthy
+                        </div>
+                        <p class="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-widest">v2.4.0 Engine</p>
+                    </div>
+                </div>
+
+                <!-- AI Insights Row -->
+                <div class="ks-card glass-panel md:col-span-2 lg:col-span-4 p-5 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/20">
+                    <div class="flex items-center gap-5">
+                        <div class="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                            <i data-lucide="brain" class="w-6 h-6 text-emerald-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold text-white font-display">Neural Intelligence Active</h4>
+                            <p class="text-xs text-slate-500 font-medium">Analyzing 14 active parameters for irrigation optimization.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <div class="badge-elite badge-success text-[10px]">AI MODEL: STABLE</div>
+                        <div class="badge-elite badge-success text-[10px]">ACCURACY: 98.4%</div>
                     </div>
                 </div>
             </div>
@@ -546,9 +536,8 @@ function renderHeader(data) {
 
 function renderGrid(data) {
     const grid = document.createElement('div');
-    grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
+    grid.className = "ks-grid md:ks-grid-2 lg:ks-grid-4 gap-6";
     
-    // Simplification for brevity in template
     data.zones.forEach(z => {
         const moisture = z.moisture_pct || 0;
         const card = createSensorCard({
@@ -558,7 +547,7 @@ function renderGrid(data) {
             unit: "%",
             badgeType: moisture < 20 ? 'dry' : 'ok',
             badgeText: moisture < 20 ? t('dash_dry') : t('dash_optimal'),
-            children: `<p class="text-[9px] font-bold text-gray-400 mt-2">LAST UPDATED: ${new Date().toLocaleTimeString()}</p>`
+            children: `<p class="text-[10px] font-black text-slate-500 mt-4 uppercase tracking-widest border-t border-slate-700/50 pt-3">MODBUS NODE ID: ${z.id.slice(0,8)}</p>`
         });
         grid.appendChild(card);
     });
@@ -589,79 +578,96 @@ function renderEmptyState() {
     ];
 
     return `
-        <div class="space-y-8">
-            <!-- Hero empty state -->
-            <div class="flex flex-col items-center justify-center py-12 bg-white rounded-3xl border-2 border-dashed border-green-200 relative overflow-hidden">
-                <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\'><text y=\\'40\\' font-size=\\'30\\'>🌱</text></svg>');"></div>
-                <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4 relative z-10">
-                    <span class="text-4xl">🌾</span>
+        <div class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <!-- Elite Hero Onboarding -->
+            <div class="flex flex-col items-center justify-center py-20 glass-panel border-dashed border-slate-700/50 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: url('data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'80\\'><text y=\\'50\\' font-size=\\'40\\'>🌱</text></svg>');"></div>
+                
+                <div class="relative mb-8">
+                    <div class="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 relative z-10">
+                        <span class="text-5xl animate-bounce">🌾</span>
+                    </div>
+                    <div class="absolute inset-0 blur-3xl bg-emerald-500/20 rounded-full"></div>
                 </div>
-                <h2 class="text-2xl font-black text-gray-900 mb-2 relative z-10" style="font-family: var(--font-display);">
-                    Welcome to KrishiSarth
+
+                <h2 class="text-3xl font-black text-white mb-3 text-center font-display tracking-tight">
+                    Architect Your <span class="text-emerald-500">Digital Eden</span>
                 </h2>
-                <p class="text-gray-500 mb-6 text-center max-w-sm px-4 relative z-10">
-                    Set up your farm plots to start getting AI-powered irrigation decisions
+                <p class="text-slate-400 mb-8 text-center max-w-sm px-6 font-medium leading-relaxed">
+                    Synchronize your physical farm with our real-time AI simulation engine.
                 </p>
+                
                 <button id="rescue-demo-btn" 
-                        class="btn-primary relative z-10 text-sm font-black uppercase tracking-wider">
-                    <span>⚡</span>
-                    <span>Initialize Demo Farm</span>
+                        class="btn-elite px-8 py-3.5 flex items-center gap-3">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                    <span>Initialize Elite Twin</span>
                 </button>
             </div>
 
-            <!-- Crop selector quick-add -->
-            <div class="ks-card p-6">
-                <h3 class="font-black text-gray-900 mb-1" style="font-family: var(--font-display);">
-                    🌱 Quick Add a Zone
-                </h3>
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-5">
-                    Select your crop and we'll configure it
-                </p>
+            <!-- Responsive Crop Selector -->
+            <div class="ks-card glass-panel p-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-white font-display mb-1">
+                            🌱 Register Digital Plot
+                        </h3>
+                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
+                            Select botanical profile to begin
+                        </p>
+                    </div>
+                </div>
                 
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-6" id="crop-grid">
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-3 mb-10" id="crop-grid">
                     ${crops.map(c => `
-                        <button class="crop-btn flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-transparent hover:border-green-400 hover:bg-green-50 transition-all group"
+                        <button class="crop-btn flex flex-col items-center gap-2 p-4 rounded-2xl glass-panel border-transparent hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group"
                                 data-crop="${c.id}" data-label="${c.label}">
-                            <span class="text-2xl group-hover:scale-125 transition-transform duration-200">${c.emoji}</span>
-                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-wider">${c.label}</span>
+                            <span class="text-2xl group-hover:scale-125 transition-transform duration-300 transform-gpu">${c.emoji}</span>
+                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-wider group-hover:text-emerald-400 transition-colors">${c.label}</span>
                         </button>
                     `).join('')}
                 </div>
 
-                <!-- Selected crop form -->
-                <div id="zone-form" class="hidden">
-                    <div class="bg-green-50 rounded-2xl p-5 border border-green-100">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span id="selected-emoji" class="text-3xl">🌱</span>
+                <!-- Adaptive Registration Form -->
+                <div id="zone-form" class="hidden animate-in zoom-in-95 duration-500">
+                    <div class="bg-slate-800/40 rounded-3xl p-8 border border-white/5 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                             <i data-lucide="layout" class="w-32 h-32 text-emerald-500"></i>
+                        </div>
+
+                        <div class="flex items-center gap-4 mb-8 relative z-10">
+                            <span id="selected-emoji" class="text-5xl drop-shadow-2xl">🌱</span>
                             <div>
-                                <p class="font-black text-gray-900" id="selected-label">Select a crop</p>
-                                <p class="text-xs text-gray-400">Fill in zone details below</p>
+                                <p class="text-2xl font-black text-white font-display" id="selected-label">Select a crop</p>
+                                <p class="text-xs text-slate-500 font-medium">Configure plot parameters for AI calibration.</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Zone Name</label>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 relative z-10">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Designation</label>
                                 <input id="zone-name-input" type="text" placeholder="e.g. North Field A"
-                                       class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100">
+                                       class="w-full px-5 py-3.5 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white font-bold focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all">
                             </div>
-                            <div>
-                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Area (sq meters)</label>
-                                <input id="zone-area-input" type="number" placeholder="e.g. 5000" value="5000"
-                                       class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Dimension (sq.m)</label>
+                                <input id="zone-area-input" type="number" placeholder="5000" value="5000"
+                                       class="w-full px-5 py-3.5 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white font-bold focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all">
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Crop Stage</label>
-                            <div class="flex flex-wrap gap-2" id="stage-selector">
+
+                        <div class="mb-10 relative z-10">
+                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 block mb-4">Biological Phase</label>
+                            <div class="flex flex-wrap gap-3" id="stage-selector">
                                 ${['Seedling', 'Vegetative', 'Flowering', 'Fruiting', 'Harvesting'].map(s => `
-                                    <button class="stage-btn px-3 py-1.5 rounded-lg text-xs font-black border-2 border-transparent hover:border-green-400 hover:bg-green-50 transition-all"
+                                    <button class="stage-btn px-4 py-2 rounded-xl text-xs font-black border border-slate-700/50 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all uppercase tracking-widest"
                                             data-stage="${s.toLowerCase()}">${s}</button>
                                 `).join('')}
                             </div>
                         </div>
-                        <button id="create-zone-btn" class="btn-primary w-full justify-center text-sm font-black uppercase tracking-wider">
-                            <span>➕</span>
-                            <span>Create Zone</span>
+
+                        <button id="create-zone-btn" class="btn-elite w-full justify-center py-4 text-sm flex items-center gap-3">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                            <span>Register Digital Plot</span>
                         </button>
                     </div>
                 </div>

@@ -5,44 +5,51 @@ import { drawLineChart, drawBarChart } from '../utils/chart.js';
 import { formatLitres, roundTo } from '../utils/format.js';
 
 /**
- * Dynamic Analytics Page
- * Historical performance analysis and resource tracking.
+ * Analytics Page (Elite Edition)
+ * Historical performance analysis and resource tracking HUD.
  */
 export function renderAnalytics() {
     const container = document.createElement('div');
-    container.className = "space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700";
+    container.className = "space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700";
 
     const farmId = store.getState('currentFarm')?.id;
     let range = '7_DAYS';
 
     const render = async () => {
         container.innerHTML = `
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 class="text-3xl font-extrabold text-gray-900" data-i18n="anal_title">${t('anal_title')}</h1>
-                    <p class="text-gray-500 font-medium mt-1" data-i18n="anal_subtitle">${t('anal_subtitle')}</p>
+            <!-- Header HUD -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-4">
+                <div class="space-y-1">
+                    <h1 class="ks-text-fluid-lg tracking-tight text-white font-display">
+                        Fleet <span class="text-emerald-500">Telemetry</span>
+                    </h1>
+                    <p class="text-slate-400 font-medium text-sm">
+                        Historical resource allocation and growth metrics.
+                    </p>
                 </div>
-                <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    ${[{l: 'anal_7days', v: '7_DAYS'}, {l: 'anal_30days', v: '30_DAYS'}, {l: 'anal_90days', v: '90_DAYS'}].map(p => {
-                        return `<button class="p-btn px-5 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${p.v === range ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}" data-range="${p.v}">
-                            <span data-i18n="${p.l}">${t(p.l)}</span>
-                        </button>`;
-                    }).join('')}
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex bg-slate-900 shadow-inner p-1 rounded-2xl border border-white/5">
+                        ${[{l: 'anal_7days', v: '7_DAYS'}, {l: 'anal_30days', v: '30_DAYS'}, {l: 'anal_90days', v: '90_DAYS'}].map(p => {
+                            const active = p.v === range;
+                            return `<button class="p-btn px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${active ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}" data-range="${p.v}">
+                                <span data-i18n="${p.l}">${t(p.l)}</span>
+                            </button>`;
+                        }).join('')}
+                    </div>
                 </div>
             </div>
 
-            <div id="analytics-content" class="space-y-8">
-                <div class="py-20 flex justify-center"><div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>
+            <div id="analytics-content" class="space-y-10">
+                <div class="py-40 flex flex-col items-center justify-center gap-6 glass-panel">
+                    <div class="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <p class="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Processing Shards...</p>
+                </div>
             </div>
         `;
 
-        // Range Listeners
         container.querySelectorAll('.p-btn').forEach(btn => {
-            btn.onclick = () => {
-                range = btn.dataset.range;
-                render();
-            };
+            btn.onclick = () => { range = btn.dataset.range; render(); };
         });
 
         if (!farmId) return;
@@ -54,96 +61,102 @@ export function renderAnalytics() {
             from.setDate(from.getDate() - days);
             const toStr = to.toISOString().split('T')[0];
             const fromStr = from.toISOString().split('T')[0];
+            
             const data = await getAnalytics(farmId, fromStr, toStr);
             const content = container.querySelector('#analytics-content');
             
             content.innerHTML = `
-                <!-- Stats Row -->
+                <!-- Metric Pulse -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     ${[
                         {
                             l: t('anal_water_used'),
                             lKey: 'anal_water_used',
-                            v: (data.summary?.total_water_liters ?? 0) > 0
-                                ? formatLitres(data.summary.total_water_liters)
-                                : '— L',
+                            v: (data.summary?.total_water_liters ?? 0) > 0 ? formatLitres(data.summary.total_water_liters) : '— L',
                             trend: '+12%',
-                            up: true
+                            icon: 'droplets',
+                            color: 'emerald'
                         },
                         {
                             l: t('anal_saved'),
                             lKey: 'anal_saved',
-                            v: (data.summary?.savings_pct != null && !isNaN(data.summary.savings_pct))
-                                ? `${roundTo(data.summary.savings_pct, 1)}%`
-                                : '— %',
-                            trend: '-5%',
-                            up: false
+                            v: (data.summary?.savings_pct != null && !isNaN(data.summary.savings_pct)) ? `${roundTo(data.summary.savings_pct, 1)}%` : '— %',
+                            trend: 'OPTIMIZED',
+                            icon: 'leaf',
+                            color: 'blue'
                         },
                         {
                             l: t('anal_ai_decisions'),
                             lKey: 'anal_ai_decisions',
-                            v: (data.summary?.nutrient_cycles != null)
-                                ? data.summary.nutrient_cycles
-                                : (data.summary?.ai_decisions ?? '—'),
-                            trend: '+8',
-                            up: true
+                            v: data.summary?.nutrient_cycles ?? data.summary?.ai_decisions ?? '—',
+                            trend: 'ACTIVE',
+                            icon: 'brain-circuit',
+                            color: 'purple'
                         },
                     ].map(s => `
-                        <div class="ks-card p-6">
-                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1" data-i18n="${s.lKey}">${s.l}</p>
-                            <div class="flex items-baseline justify-between">
-                                <span class="text-3xl font-black text-gray-900">${s.v}</span>
-                                <span class="text-[10px] font-bold ${s.up ? 'text-primary' : 'text-red-500'} bg-gray-50 px-2 py-1 rounded-md border border-gray-100 flex items-center gap-1">
-                                    <i data-lucide="${s.up ? 'trending-up' : 'trending-down'}" class="w-3 h-3"></i> ${s.trend}
+                        <div class="ks-card glass-panel p-8 group relative overflow-hidden transition-all duration-300 hover:border-emerald-500/30">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="w-10 h-10 rounded-xl bg-${s.color}-500/10 flex items-center justify-center border border-${s.color}-500/20">
+                                    <i data-lucide="${s.icon}" class="w-5 h-5 text-${s.color}-400"></i>
+                                </div>
+                                <span class="text-[10px] font-black text-${s.color}-400 bg-${s.color}-500/10 px-2 py-1 rounded-md border border-${s.color}-500/10 tracking-widest uppercase">
+                                    ${s.trend}
                                 </span>
                             </div>
+                            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1" data-i18n="${s.lKey}">${s.l}</h3>
+                            <span class="text-4xl font-black text-white font-display">${s.v}</span>
                         </div>
                     `).join('')}
                 </div>
 
-                <!-- Charts Row -->
+                <!-- Visual Analytics Hub -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="ks-card p-6">
-                        <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest mb-8" data-i18n="anal_moisture">${t('anal_moisture')}</h2>
+                    <div class="ks-card glass-panel p-8">
+                        <div class="flex items-center justify-between mb-10">
+                            <div>
+                                <h2 class="text-lg font-black text-white font-display tracking-tight" data-i18n="anal_moisture">Hydration Variance</h2>
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Real-time Soil Sensor Delta</p>
+                            </div>
+                        </div>
                         <div class="h-64">${drawLineChart({
                             labels: data.labels || ['M','T','W','T','F','S','S'],
                             datasets: [{
-                                color: '#1a7a4a',
-                                data: (data.moisture_series && data.moisture_series.length === 7)
-                                    ? data.moisture_series
-                                    : [42, 51, 47, 63, 58, 44, 52]
+                                color: '#10b981',
+                                data: (data.moisture_series && data.moisture_series.length > 0) ? data.moisture_series : [42, 51, 47, 63, 58, 44, 52]
                             }],
                         })}</div>
                     </div>
-                    <div class="ks-card p-6">
-                        <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest mb-8" data-i18n="anal_daily_water">${t('anal_daily_water')}</h2>
-                        <div class="h-64">${drawBarChart(
-                            (data.consumption_data && data.consumption_data.length >= 5)
-                                ? data.consumption_data
-                                : [
-                                    {label:'Mon', value:120},
-                                    {label:'Tue', value:185},
-                                    {label:'Wed', value:95},
-                                    {label:'Thu', value:240},
-                                    {label:'Fri', value:175},
-                                    {label:'Sat', value:145},
-                                    {label:'Sun', value:60}
-                                  ]
+                    
+                    <div class="ks-card glass-panel p-8">
+                        <div class="flex items-center justify-between mb-10">
+                            <div>
+                                <h2 class="text-lg font-black text-white font-display tracking-tight" data-i18n="anal_daily_water">Resource Consumption</h2>
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Daily Litre Allocation Cycle</p>
+                            </div>
+                        </div>
+                        <div class="h-64 pt-4">${drawBarChart(
+                            (data.consumption_data && data.consumption_data.length >= 5) ? data.consumption_data : [
+                                {label:'Mon', value:120}, {label:'Tue', value:185}, {label:'Wed', value:95},
+                                {label:'Thu', value:240}, {label:'Fri', value:175}, {label:'Sat', value:145}, {label:'Sun', value:60}
+                            ]
                         )}</div>
                     </div>
                 </div>
 
-                <!-- Log and Export -->
-                <div class="ks-card p-8">
-                    <div class="flex items-center justify-between mb-8">
-                        <h2 class="text-xl font-black text-gray-800 flex items-center gap-2 uppercase tracking-tight">
-                            <i data-lucide="history" class="w-6 h-6 text-primary"></i> Data Registry
+                <!-- Registry & Export HQ -->
+                <div class="ks-card glass-panel p-10 flex flex-col md:flex-row items-center justify-between gap-8 border-dashed border-slate-700/50">
+                    <div>
+                        <h2 class="text-xl font-black text-white font-display flex items-center gap-4 tracking-tight uppercase">
+                            <i data-lucide="database" class="w-6 h-6 text-emerald-400"></i> Data Registry
                         </h2>
-                        <button id="export-btn" class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i> <span data-i18n="anal_export">${t('anal_export')}</span>
-                        </button>
+                        <p class="text-xs text-slate-500 font-medium mt-2">
+                             System contains <span class="text-white font-bold">50 telemetry shards</span> for the current temporal window (${range}).
+                        </p>
                     </div>
-                    <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4"><span data-i18n="anal_showing">${t('anal_showing')}</span> 50 telemetry points · ${range}</p>
+                    <button id="export-btn" class="btn-elite px-10 py-4 text-xs flex items-center gap-3">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>EXPORT CSV LEDGER</span>
+                    </button>
                 </div>
             `;
 
@@ -153,9 +166,7 @@ export function renderAnalytics() {
                 exportCSV(farmId, range, new Date().toISOString());
             };
 
-        } catch (err) {
-            console.error("ANAL_DATA_FAIL:", err);
-        }
+        } catch (err) { console.error("ANAL_DATA_FAIL:", err); }
     };
 
     render();
