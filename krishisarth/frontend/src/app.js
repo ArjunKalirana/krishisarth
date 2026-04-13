@@ -98,13 +98,17 @@ async function initApp() {
                 const farms = res?.data?.farms ?? [];
                 
                 if (farms.length > 0) {
-                    // VERIFY: If we have a stored farm, ensure it still exists in the list
-                    const stillExists = currentFarm ? farms.find(f => f.id === currentFarm.id) : null;
-                    const finalFarm = stillExists || farms[0];
-                    
-                    console.log('[ROUTER] Farm synced:', finalFarm.name, finalFarm.id);
-                    store.setState('currentFarm', finalFarm);
-                    telemetryWS.connect(finalFarm.id);
+                    // Always pick the farm with the most zones (freshest seeded data).
+                    // Ties broken by most recently created (farms are already sorted newest-first).
+                    const bestFarm = farms.reduce((best, f) => {
+                        const bestZones = best.zone_count ?? best.zones?.length ?? 0;
+                        const fZones   = f.zone_count   ?? f.zones?.length   ?? 0;
+                        return fZones > bestZones ? f : best;
+                    }, farms[0]);
+            
+                    console.log('[ROUTER] Farm selected:', bestFarm.name, bestFarm.id, '| zones:', bestFarm.zone_count ?? '?');
+                    store.setState('currentFarm', bestFarm);
+                    telemetryWS.connect(bestFarm.id);
                 } else {
                     console.log('[ROUTER] No farms found — auto-provisioning default...');
                     // Auto-create a default farm for a seamless experience (especially for "Demo" user)

@@ -12,7 +12,7 @@ def get_farms_for_farmer(farmer_id: str, db: Session, page: int = 1, limit: int 
     """
     query = db.query(Farm).filter(Farm.farmer_id == farmer_id)
     total = query.count()
-    farms = query.offset((page - 1) * limit).limit(limit).all()
+    farms = query.order_by(Farm.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
     
     # Calculate zone count for each farm in the list
     for farm in farms:

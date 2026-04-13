@@ -129,19 +129,22 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
                 try {
                     // FORCE CLEAR EVERYTHING MENTALLY
                     console.log('[RESCUE] Nuking local state...');
-                    const token = localStorage.getItem('ks_access_token');
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    if (token) localStorage.setItem('ks_access_token', token); // Keep auth
+                    
+                    // CRITICAL: Clear stored farm so app.js re-fetches the new farm ID
+                    store.setState('currentFarm', null);
+                    sessionStorage.removeItem('ks_current_farm');
+                    
+                    // Also clear dashboard cache so we don't show stale data
+                    for (let k of Object.keys(localStorage)) {
+                        if (k.startsWith('ks_dash_cache') || k.startsWith('ks_dash_cache_ts')) {
+                            localStorage.removeItem(k);
+                        }
+                    }
                     
                     await api('/demo/history', { method: 'POST' });
-                    showToast('Hard Reset Successful! Environment Purged.', 'success');
+                    showToast('✅ Demo farm ready! Refreshing...', 'success');
                     
-                    // Force a hard reload to the landing page to re-bootstrap
-                    setTimeout(() => {
-                        window.location.hash = '#dashboard';
-                        window.location.reload();
-                    }, 1500);
+                    setTimeout(() => window.location.reload(), 1500);
                 } catch (e) {
                     showToast('Reset failed: ' + e.message, 'error');
                     rescueBtnHeader.disabled = false;
@@ -210,7 +213,14 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
             resetBtn.onclick = async () => {
                 try {
                     await api('/demo/reset', { method: 'POST' });
-                    showToast('Simulation reset to healthy values', 'success');
+                    // Clear cache so fresh simulation data shows on next render
+                    const farmId = store.getState('currentFarm')?.id;
+                    if (farmId) {
+                        localStorage.removeItem(`ks_dash_cache:${farmId}`);
+                        localStorage.removeItem(`ks_dash_cache_ts:${farmId}`);
+                    }
+                    showToast('Simulation reset ✅ Refreshing data...', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
                 } catch (e) { showToast('Action failed', 'error'); }
             };
         }
@@ -220,14 +230,27 @@ async function loadDashboardData(farmId, mainEl, alertEl) {
         if (rescueBtn) {
             rescueBtn.onclick = async () => {
                 rescueBtn.disabled = true;
-                rescueBtn.innerHTML = '<i class="w-5 h-5 animate-spin"></i> Initializing...';
+                rescueBtn.innerHTML = '<span>⏳</span><span>Initializing...</span>';
                 try {
                     await api('/demo/history', { method: 'POST' });
-                    showToast('Farm data generated!', 'success');
-                    setTimeout(() => window.location.reload(), 2000);
+                    showToast('✅ Demo farm ready! Refreshing...', 'success');
+                    
+                    // CRITICAL: Clear stored farm so app.js re-fetches the new farm ID
+                    store.setState('currentFarm', null);
+                    sessionStorage.removeItem('ks_current_farm');
+                    
+                    // Also clear dashboard cache so we don't show stale data
+                    for (let k of Object.keys(localStorage)) {
+                        if (k.startsWith('ks_dash_cache') || k.startsWith('ks_dash_cache_ts')) {
+                            localStorage.removeItem(k);
+                        }
+                    }
+                    
+                    setTimeout(() => window.location.reload(), 1500);
                 } catch (e) {
-                    showToast('Initialization failed', 'error');
+                    showToast('Initialization failed: ' + e.message, 'error');
                     rescueBtn.disabled = false;
+                    rescueBtn.innerHTML = '<span>⚡</span><span>Try Again</span>';
                 }
             };
         }
