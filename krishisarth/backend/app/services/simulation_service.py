@@ -106,29 +106,34 @@ class SimulationEngine:
                     state = self.zone_states[zid]
                     
                     # 1. Physics Model: Check if irrigation is active
-                    # Use in-memory 'irrigating' flag as override for hardware-free demo
-                    is_irrigating = redis_client.get(f"irrigation_lock:{zid}") is not None or state.get("irrigating", False)
+                    # Use scoped lock key: irrigation_lock:{farm_id}:{zone_id}
+                    lock_key = f"irrigation_lock:{str(farm.id)}:{zid}"
+                    is_irrigating = redis_client.get(lock_key) is not None or state.get("irrigating", False)
                     
                     if is_irrigating:
                         # Rising moisture (Pump active)
-                        # In demo mode, we rise moisture by 2% until 65% saturation or manually stopped
-                        rise_amt = 2.0 if state.get("irrigating") else random.uniform(1.5, 3.5)
+                        # In demo mode, we rise moisture by 1.5% - 2.5% per 10s tick
+                        rise_amt = random.uniform(1.5, 2.5)
                         state["moisture"] = min(98.0, state["moisture"] + rise_amt)
                         
+                        # Soft Stop logic for autonomous simulation
                         if state.get("irrigating") and state["moisture"] >= 65.0:
-                            state["irrigating"] = False # Auto-stop simulation after reaching goal
+                            state["irrigating"] = False
                             
-                        state["temp"] = max(24.0, state["temp"] - random.uniform(0.2, 0.5))
+                        state["temp"] = max(24.0, state["temp"] - random.uniform(0.1, 0.3))
                     else:
                         # Natural evaporation / Evapotranspiration
-                        state["moisture"] = max(5.0, state["moisture"] - random.uniform(0.3, 0.6))
+                        # Slower, more realistic dry-down: 0.1% - 0.2% per tick (approx 1% per minute)
+                        evap_rate = random.uniform(0.1, 0.2)
                         
                         # Wheat Block specialized dry-down
                         if "wheat" in zone.name.lower() and state["moisture"] > 22:
-                            state["moisture"] -= 0.5
-
+                            evap_rate += 0.15
+                            
+                        state["moisture"] = max(5.0, state["moisture"] - evap_rate)
+                        
                         # Temperature thermal drift around 31°C
-                        state["temp"] = round(31.0 + random.uniform(-0.5, 0.5), 1)
+                        state["temp"] = round(31.0 + random.uniform(-0.3, 0.3), 1)
                         
                     # EC variance
                     state["ec"] = round(state["ec"] + random.uniform(-0.05, 0.05), 2)

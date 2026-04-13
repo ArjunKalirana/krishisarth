@@ -172,9 +172,141 @@ export function renderControl() {
             stopAllBtn.innerHTML = `<i data-lucide="stop-circle" class="w-5 h-5"></i> TERMINATE ALL`;
             if (window.lucide) window.lucide.createIcons();
         });
+        
+        // Voice Integration
+        initVoiceCommands(container);
     }, 1000);
 
     return container;
+}
+
+function initVoiceCommands(container) {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        console.log('[Voice] Web Speech API not supported');
+        return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN'; // Indian English
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    let isListening = false;
+    
+    // Add voice button to header
+    const voiceBtn = document.createElement('button');
+    voiceBtn.id = 'voice-cmd-btn';
+    voiceBtn.className = 'btn-elite flex items-center gap-2 px-6 py-3 bg-purple-500/10 text-purple-400 border-purple-500/20';
+    voiceBtn.innerHTML = `<i data-lucide="mic" class="w-5 h-5"></i><span>VOICE</span>`;
+    
+    const btnRow = container.querySelector('.flex.flex-wrap.gap-4');
+    if (btnRow) btnRow.appendChild(voiceBtn);
+    
+    if (window.lucide) window.lucide.createIcons();
+    
+    recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        console.log('[Voice] Heard:', transcript);
+        
+        showToast(`🎤 "${transcript}"`, 'info');
+        
+        // Parse commands
+        // "start zone A" / "irrigate zone B" / "turn on zone C"
+        const startMatch = transcript.match(/(?:start|irrigate|on|begin)\s+zone\s+([a-z]|\d+)/i);
+        // "stop zone A" / "turn off zone B"  
+        const stopMatch  = transcript.match(/(?:stop|off|end|halt)\s+zone\s+([a-z]|\d+)/i);
+        // "start all" / "irrigate all"
+        const allStart   = transcript.match(/(?:start|irrigate|on)\s+all/i);
+        // "stop all"
+        const allStop    = transcript.match(/(?:stop|off|halt)\s+all/i);
+        // "duration 20 minutes zone A"
+        const durMatch   = transcript.match(/duration\s+(\d+)/i);
+        
+        const farm = store.getState('currentFarm');
+        if (!farm?.id) { showToast('No farm loaded', 'error'); return; }
+        
+        try {
+            const dashRes = await api(`/farms/${farm.id}/dashboard`);
+            const zones = dashRes?.data?.zones || [];
+            
+            if (allStart) {
+                const actZones = zones.filter(z => z.control_mode === 'act');
+                if (actZones.length === 0) {
+                    showToast('⚠️ No zones in Act Mode. Switch zones to Act Mode first.', 'warning');
+                    return;
+                }
+                for (const z of actZones) {
+                    await api(`/zones/${z.id}/irrigate`, {method:'POST', body: JSON.stringify({duration_min: 20, source: 'voice'})}).catch(()=>{});
+                }
+                showToast(`💧 Started irrigation on ${actZones.length} zones`, 'success');
+                return;
+            }
+            
+            if (allStop) {
+                for (const z of zones) {
+                    await api(`/zones/${z.id}/stop`, {method:'POST'}).catch(()=>{});
+                }
+                showToast('🛑 All zones stopped', 'success');
+                return;
+            }
+            
+            const zoneLabel = startMatch?.[1] || stopMatch?.[1];
+            if (zoneLabel) {
+                const targetZone = zones.find(z => 
+                    z.name.toLowerCase().includes(zoneLabel.toLowerCase()) ||
+                    z.name.toLowerCase().endsWith(` ${zoneLabel.toLowerCase()}`)
+                );
+                
+                if (!targetZone) {
+                    showToast(`Zone "${zoneLabel}" not found`, 'error');
+                    return;
+                }
+                
+                if (startMatch) {
+                    if (targetZone.control_mode !== 'act') {
+                        showToast(`Zone ${targetZone.name} is in View Mode — cannot command`, 'warning');
+                        return;
+                    }
+                    const dur = durMatch ? parseInt(durMatch[1]) : 20;
+                    await api(`/zones/${targetZone.id}/irrigate`, {method:'POST', body: JSON.stringify({duration_min: dur, source: 'voice'})});
+                    showToast(`💧 Started ${targetZone.name} for ${dur} min`, 'success');
+                }
+                if (stopMatch) {
+                    await api(`/zones/${targetZone.id}/stop`, {method:'POST'});
+                    showToast(`🛑 Stopped ${targetZone.name}`, 'success');
+                }
+            }
+        } catch(e) {
+            showToast('Voice command failed: ' + e.message, 'error');
+        }
+    };
+    
+    recognition.onerror = (e) => {
+        isListening = false;
+        voiceBtn.innerHTML = `<i data-lucide="mic" class="w-5 h-5"></i><span>VOICE</span>`;
+        voiceBtn.className = voiceBtn.className.replace('bg-red-500/20 text-red-400 border-red-500/20', 'bg-purple-500/10 text-purple-400 border-purple-500/20');
+        if (window.lucide) window.lucide.createIcons();
+        if (e.error !== 'no-speech') showToast(`Voice error: ${e.error}`, 'error');
+    };
+    
+    recognition.onend = () => {
+        isListening = false;
+        voiceBtn.innerHTML = `<i data-lucide="mic" class="w-5 h-5"></i><span>VOICE</span>`;
+        if (window.lucide) window.lucide.createIcons();
+    };
+    
+    voiceBtn.addEventListener('click', () => {
+        if (isListening) {
+            recognition.stop();
+            return;
+        }
+        isListening = true;
+        voiceBtn.innerHTML = `<i data-lucide="mic-off" class="w-5 h-5 animate-pulse"></i><span>LISTENING...</span>`;
+        if (window.lucide) window.lucide.createIcons();
+        recognition.start();
+        showToast('🎤 Listening... Say "Start Zone A" or "Stop All"', 'info');
+    });
 }
 
 async function _loadZones(gridEl) {

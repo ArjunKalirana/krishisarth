@@ -1,8 +1,10 @@
+import math
 from typing import Any
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Body
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.db.postgres import get_db
+from app.models.zone import Zone
 from app.services import farm_service
 from app.schemas.farm_schema import FarmCreate, FarmOut, FarmListResponse
 from app.schemas.zone_schema import ZoneCreate, ZonePatch, ZoneOut
@@ -46,6 +48,65 @@ def create_farm(
     return {
         "success": True, 
         "data": FarmOut.model_validate(farm)
+    }
+
+@router.post("/{farm_id}/auto-zones", response_model=dict, status_code=201)
+def auto_create_zones(
+    *,
+    db: Session = Depends(get_db),
+    farm = Depends(deps.verify_farm_owner),
+    payload: dict = Body(...)
+) -> Any:
+    """
+    Auto-partition a farm into optimal zones based on area.
+    Each sensor node covers max 2000 sqm.
+    Body: { "total_area_sqm": float, "crop_type": str (optional), "replace_existing": bool }
+    """
+    total_area = float(payload.get("total_area_sqm", farm.area_ha * 10000 if farm.area_ha else 10000))
+    crop_type  = payload.get("crop_type", "unassigned")
+    
+    SENSOR_COVERAGE_SQM = 2000  # max area per sensor/zone
+    num_zones = max(1, math.ceil(total_area / SENSOR_COVERAGE_SQM))
+    
+    # Delete existing zones if user wants fresh partition
+    if payload.get("replace_existing", False):
+        db.query(Zone).filter(Zone.farm_id == farm.id).delete()
+        db.commit()
+    
+    zone_area = round(total_area / num_zones, 1)
+    zone_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    
+    created_zones = []
+    for i in range(num_zones):
+        label = zone_labels[i] if i < 26 else f"Z{i+1}"
+        zone = Zone(
+            farm_id=farm.id,
+            name=f"Zone {label}",
+            crop_type=crop_type,
+            crop_stage="vegetative",
+            area_sqm=zone_area,
+            is_active=True,
+            control_mode="view"  # start in view mode
+        )
+        db.add(zone)
+        db.commit()
+        db.refresh(zone)
+        created_zones.append(zone)
+    
+    # Update farm area
+    farm.area_ha = round(total_area / 10000, 4)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Created {num_zones} zones for {total_area} sqm farm",
+        "data": {
+            "total_area_sqm": total_area,
+            "sensor_coverage_sqm": SENSOR_COVERAGE_SQM,
+            "zones_created": num_zones,
+            "zone_area_sqm": zone_area,
+            "zones": [{"id": str(z.id), "name": z.name, "area_sqm": z.area_sqm} for z in created_zones]
+        }
     }
 
 @router.get("/{farm_id}", response_model=dict)

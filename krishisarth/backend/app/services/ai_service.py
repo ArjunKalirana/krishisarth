@@ -78,17 +78,21 @@ async def run_inference(zone_id: str, db: Session, influx_client=None, redis=Non
     }
 
     # 5. Rule-based decision (LSTM model not trained yet — using threshold rules)
+    # moisture_pct is already in range 0-100 (e.g. 24.5)
+    # AI_MOISTURE_RULE_THRESHOLD is typically 0.25 (25%)
+    THRESHOLD_PCT = constants.AI_MOISTURE_RULE_THRESHOLD * 100
+    
     decision_type = "skip"
     confidence    = 0.65
     reasoning     = f"Soil moisture at {moisture_pct:.1f}% — within acceptable range. No irrigation needed."
     water_saved   = 0.0
 
-    if moisture_pct < constants.AI_MOISTURE_RULE_THRESHOLD * 100:
+    if moisture_pct < THRESHOLD_PCT and moisture_pct > 0:
         decision_type = "irrigate"
         confidence    = 0.92
         reasoning     = (
             f"Critical moisture deficit detected: {moisture_pct:.1f}% "
-            f"(threshold: {constants.AI_MOISTURE_RULE_THRESHOLD * 100:.0f}%). "
+            f"(threshold: {THRESHOLD_PCT:.0f}%). "
             f"Immediate irrigation recommended for {zone.name} "
             f"({zone.crop_type}, {zone.crop_stage} stage)."
         )
@@ -109,6 +113,13 @@ async def run_inference(zone_id: str, db: Session, influx_client=None, redis=Non
             f"Irrigation skipped — estimated water saved: 20L."
         )
         water_saved = 20.0
+
+    # 5.1 Mode Check: Skip autonomous action if zone is in Act Mode
+    if zone.control_mode == "act":
+        logger.info(f"Zone {zone.name} is in Act Mode — AI skipping auto-command")
+        decision_type = "deferred"
+        reasoning = f"Zone is in Act Mode (manual control). AI decision deferred to farmer. Manual recommendation: {decision_type}."
+        # Note: We still save the decision for historical tracking but it won't trigger automation
 
     # 6. Persist the decision
     decision = AIDecision(

@@ -13,15 +13,31 @@ logger = logging.getLogger(__name__)
 
 
 async def start_irrigation(zone_id: str, duration_min: int, source: str, db: Session, redis) -> dict:
-    lock_key = f"irrigation_lock:{zone_id}"
-    if redis.get(lock_key):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PUMP_ALREADY_RUNNING")
-
     zone = db.query(Zone).filter(Zone.id == zone_id).first()
     if not zone:
         raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
+    
+    farm_id = str(zone.farm_id)
+    lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
+    
+    if redis.get(lock_key):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PUMP_ALREADY_RUNNING")
 
     farm_id = str(zone.farm_id)
+    
+    # 3. Concurrency Check: Max 2 zones per farm
+    from app.core import constants
+    try:
+        active_locks = redis.keys(f"irrigation_lock:{farm_id}:*")
+        if len(active_locks) >= constants.MAX_CONCURRENT_PUMPS:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, 
+                detail=f"CONCURRENCY_LIMIT: Farm {farm_id} already has {len(active_locks)} pumps active"
+            )
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        logger.warning(f"Redis concurrency check failed (continuing): {str(e)}")
+
     tank_level = redis.get(f"tank_level:{farm_id}")
     if tank_level and float(tank_level) < TANK_CRITICAL_PCT:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="TANK_LEVEL_CRITICAL")
@@ -38,7 +54,10 @@ async def start_irrigation(zone_id: str, duration_min: int, source: str, db: Ses
     db.commit()
     db.refresh(schedule)
 
-    redis.setex(lock_key, duration_min * 60 + 60, "1")
+    # Use scoped key: irrigation_lock:{farm_id}:{zone_id}
+    # TTL is exactly duration + small buffer
+    scoped_lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
+    redis.setex(scoped_lock_key, duration_min * 60, "1")
 
     schedule.celery_task_id = f"task_{schedule.id}"
     db.commit()
@@ -55,7 +74,13 @@ async def start_irrigation(zone_id: str, duration_min: int, source: str, db: Ses
 
 
 async def stop_irrigation(zone_id: str, db: Session, redis) -> dict:
-    lock_key = f"irrigation_lock:{zone_id}"
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(404, "ZONE_NOT_FOUND")
+    
+    farm_id = str(zone.farm_id)
+    lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
+    
     if not redis.get(lock_key):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PUMP_NOT_RUNNING")
 
@@ -86,7 +111,12 @@ async def stop_irrigation(zone_id: str, db: Session, redis) -> dict:
 
 
 async def queue_fertigation(zone_id: str, nutrient_type: str, concentration_ml: float, db: Session, redis) -> FertigationLog:
-    if not redis.get(f"irrigation_lock:{zone_id}"):
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(404, "ZONE_NOT_FOUND")
+        
+    farm_id = str(zone.farm_id)
+    if not redis.get(f"irrigation_lock:{farm_id}:{zone_id}"):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PUMP_NOT_RUNNING")
 
     log = FertigationLog(

@@ -2,6 +2,7 @@ import { store } from '../state/store.js';
 import { t }     from '../utils/i18n.js';
 import { startIrrigation, stopIrrigation } from '../api/control.js';
 import { showToast } from './toast.js';
+import { api } from '../api/client.js';
 
 // Crop emoji map (Elite Palette)
 const CROP_ICONS = {
@@ -22,6 +23,7 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
     const savedStates = store.getState('activeZoneStates') || {};
     let isOn          = savedStates[id]?.isOn ?? initialState;
     let activeDuration = savedStates[id]?.duration ?? 20;
+    let isActMode      = false; // Start in view mode
 
     const cropEmoji = CROP_ICONS[cropType?.toLowerCase()] || CROP_ICONS.default;
 
@@ -37,12 +39,25 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
     };
 
     const updateUI = () => {
-        const circumference = 2 * Math.PI * 28;
-        const offset = circumference - (moisture / 100) * circumference;
-
         card.innerHTML = `
             <div class="ks-card glass-panel p-6 flex flex-col gap-6 h-full relative overflow-hidden transition-all duration-300 hover:border-emerald-500/30">
                 
+                <!-- Mode Toggle Badge -->
+                <div class="flex items-center justify-between mb-3 pb-3 border-b border-white/5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full ${isActMode ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}"></div>
+                        <span class="text-[9px] font-black uppercase tracking-widest ${isActMode ? 'text-emerald-400' : 'text-slate-500'}">
+                            ${isActMode ? '⚡ Act Mode' : '👁 View Mode'}
+                        </span>
+                    </div>
+                    <button class="mode-toggle-btn px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border
+                                   ${isActMode ? 'bg-slate-800 text-slate-400 border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30' 
+                                               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}"
+                            data-zone-id="${id}">
+                        ${isActMode ? '→ View Mode' : '→ Act Mode'}
+                    </button>
+                </div>
+
                 <!-- ID Watermark -->
                 <div class="absolute -right-2 -bottom-2 text-7xl opacity-[0.03] pointer-events-none select-none font-black italic">
                     ${id.slice(0,2).toUpperCase()}
@@ -133,43 +148,79 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
             </div>
         `;
 
-        const toggle = card.querySelector(`#toggle-${id}`);
-        if (toggle) {
-            toggle.onclick = async (e) => {
-                e.stopPropagation();
-                toggle.disabled = true;
-                try {
-                    if (!isOn) {
-                        await startIrrigation(id, activeDuration);
-                        isOn = true;
-                        saveState();
-                        showToast(`${name}: Irrigation sequence active 💧`, 'success');
-                    } else {
-                        const res = await stopIrrigation(id);
-                        isOn = false;
-                        saveState();
-                        const used = res?.data?.water_used_l ?? 0;
-                        showToast(`Sequence terminated. ${used}L conserved.`, 'success');
-                    }
-                } catch (err) {
-                    showToast(`Hardware Conflict: ${err.message}`, 'error');
-                } finally {
-                    toggle.disabled = false;
-                    updateUI();
-                }
-            };
-        }
-
-        card.querySelectorAll('.dur-btn').forEach(btn => {
-            btn.onclick = () => {
-                activeDuration = parseInt(btn.dataset.dur);
-                saveState();
+        // Wire mode toggle
+        const modeBtn = card.querySelector('.mode-toggle-btn');
+        modeBtn?.addEventListener('click', async () => {
+            const newMode = isActMode ? 'view' : 'act';
+            modeBtn.disabled = true;
+            try {
+                await api(`/zones/${id}/mode`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({mode: newMode})
+                });
+                isActMode = !isActMode;
                 updateUI();
-            };
+                showToast(isActMode ? `⚡ Act Mode ON — you can now control ${name}` : `👁 View Mode — ${name} locked`, isActMode ? 'success' : 'info');
+            } catch(e) {
+                showToast('Mode switch failed: ' + e.message, 'error');
+            } finally {
+                modeBtn.disabled = false;
+            }
         });
+
+        // Toggle Lock Logic
+        const toggle = card.querySelector(`#toggle-${id}`);
+        if (!isActMode) {
+            if (toggle) {
+                toggle.disabled = true;
+                toggle.title = 'Switch to Act Mode to control irrigation';
+                toggle.style.opacity = '0.4';
+                toggle.style.cursor = 'not-allowed';
+            }
+            card.querySelectorAll('.dur-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+            });
+        } else {
+            if (toggle) {
+                toggle.onclick = async (e) => {
+                    e.stopPropagation();
+                    toggle.disabled = true;
+                    try {
+                        if (!isOn) {
+                            await startIrrigation(id, activeDuration);
+                            isOn = true;
+                            saveState();
+                            showToast(`${name}: Irrigation sequence active 💧`, 'success');
+                        } else {
+                            const res = await stopIrrigation(id);
+                            isOn = false;
+                            saveState();
+                            const used = res?.data?.water_used_l ?? 0;
+                            showToast(`Sequence terminated. ${used}L conserved.`, 'success');
+                        }
+                    } catch (err) {
+                        showToast(`Hardware Conflict: ${err.message}`, 'error');
+                    } finally {
+                        toggle.disabled = false;
+                        updateUI();
+                    }
+                };
+            }
+
+            card.querySelectorAll('.dur-btn').forEach(btn => {
+                btn.onclick = () => {
+                    activeDuration = parseInt(btn.dataset.dur);
+                    saveState();
+                    updateUI();
+                };
+            });
+        }
 
         const valEl = card.querySelector('.moisture-val');
         if (valEl) animateMoistureChange(valEl, 0, moisture);
+        if (window.lucide) window.lucide.createIcons();
     };
 
     updateUI();

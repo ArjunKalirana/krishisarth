@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, Boolean, Float, ForeignKey, func, text
+from sqlalchemy import Column, String, DateTime, Boolean, Float, ForeignKey, func, text, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.postgres import Base
@@ -17,6 +17,13 @@ class Zone(Base):
     crop_stage = Column(String)
     area_sqm = Column(Float)
     is_active = Column(Boolean, nullable=False, default=True)
+    
+    # Soil & Control Upgrades
+    soil_type       = Column(String, nullable=True)
+    soil_report     = Column(Text, nullable=True)    # OCR extracted text
+    soil_scan_url   = Column(String, nullable=True)  # uploaded image URL
+    control_mode    = Column(String, nullable=False, default="view")  # "view" or "act"
+    crop_suggestion = Column(String, nullable=True)  # AI suggested crop
     
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

@@ -10,6 +10,8 @@ import { renderAnalytics }   from './pages/analytics.js';
 import { renderLogin }       from './pages/login.js';
 import { renderRegister }    from './pages/register.js';
 import { renderFarm3D }      from './pages/farm-3d.js';
+import { renderFarmSetup }   from './pages/farm-setup.js';
+import { renderSupport }     from './pages/support.js';
 import { initAIAssistant }   from './components/ai-assistant.js';
 
 const BACKEND = window.__KS_API_URL__ || 'http://localhost:8000/v1';
@@ -108,6 +110,12 @@ async function initApp() {
             
                     console.log('[ROUTER] Farm selected:', bestFarm.name, bestFarm.id, '| zones:', bestFarm.zone_count ?? '?');
                     store.setState('currentFarm', bestFarm);
+                    
+                    if (bestFarm.zone_count === 0) {
+                        window.location.hash = '#setup';
+                        return;
+                    }
+                    
                     telemetryWS.connect(bestFarm.id);
                 } else {
                     console.log('[ROUTER] No farms found — auto-provisioning default...');
@@ -160,6 +168,8 @@ async function initApp() {
                 case '#control':    appRoot.appendChild(renderControl());     break;
                 case '#analytics':  appRoot.appendChild(renderAnalytics());   break;
                 case '#farm3d':     appRoot.appendChild(renderFarm3D());      break;
+                case '#setup':      appRoot.appendChild(renderFarmSetup(() => { window.location.hash = '#dashboard'; })); break;
+                case '#support':    appRoot.appendChild(renderSupport());     break;
                 default:
                     appRoot.innerHTML = `<div class="text-center py-20 font-mono text-gray-400">404: PAGE_NOT_FOUND</div>`;
             }

@@ -9,12 +9,15 @@ class ZoneCreate(BaseModel):
     crop_type: Optional[str] = None
     crop_stage: Optional[str] = None
     area_sqm: Optional[float] = Field(None, gt=0)
+    soil_report: Optional[str] = None
+    control_mode: Optional[str] = "view"
 
 class ZonePatch(BaseModel):
     """Schema for updating (patching) an existing zone."""
     crop_type: Optional[str] = None
     crop_stage: Optional[str] = None
     is_active: Optional[bool] = None
+    control_mode: Optional[str] = None
 
 class ZoneOut(BaseModel):
     """Schema for zone output data."""
@@ -25,6 +28,11 @@ class ZoneOut(BaseModel):
     crop_stage: Optional[str]
     area_sqm: Optional[float]
     is_active: bool
+    soil_type: Optional[str] = None
+    soil_report: Optional[str] = None
+    soil_scan_url: Optional[str] = None
+    control_mode: str
+    crop_suggestion: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

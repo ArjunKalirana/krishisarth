@@ -458,6 +458,44 @@ function renderHeader(data) {
                     <button id="dash-refresh-btn" class="p-3 glass-panel hover:bg-slate-700/50 transition-all border-slate-700/50 group" title="Refresh Live Data">
                         <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-colors"></i>
                     </button>
+             </div>
+
+            <!-- Premium Hero Banner -->
+            <div class="relative w-full h-80 rounded-[2.5rem] overflow-hidden mb-12 elite-card group shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
+                <img src="./assets/images/hero.png" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt="Smart Farm Hero">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f12] via-[#0a0f12]/40 to-transparent opacity-90"></div>
+                
+                <div class="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
+                    <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] animate-pulse">Live Digital Twin</span>
+                                <span class="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">v4.2.0 Neural Engine</span>
+                            </div>
+                            <h3 class="text-4xl md:text-5xl font-black text-white font-display tracking-tighter leading-none">
+                                QUANTUM <span class="text-emerald-500">INTELLIGENCE</span>
+                            </h3>
+                            <p class="text-slate-400 text-sm md:text-base font-medium max-w-lg">
+                                Real-time predictive modeling active across 14 neural sensor nodes.
+                            </p>
+                        </div>
+                        
+                        <div class="hidden lg:flex flex-col items-end space-y-4 glass-panel p-6 border-white/10 rounded-3xl">
+                             <div class="flex items-center gap-4">
+                                 <div class="text-right">
+                                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Model Accuracy</p>
+                                     <p class="text-xl font-black text-white font-display">98.4%</p>
+                                 </div>
+                                 <div class="w-12 h-12 rounded-full border-2 border-emerald-500/30 flex items-center justify-center relative">
+                                     <div class="absolute inset-0 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin"></div>
+                                     <i data-lucide="brain" class="w-5 h-5 text-emerald-400"></i>
+                                 </div>
+                             </div>
+                             <div class="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                 <div class="h-full bg-emerald-500 w-[98%] shadow-[0_0_10px_#10b981]"></div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -580,14 +618,16 @@ function renderEmptyState() {
     return `
         <div class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <!-- Elite Hero Onboarding -->
-            <div class="flex flex-col items-center justify-center py-20 glass-panel border-dashed border-slate-700/50 relative overflow-hidden">
-                <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: url('data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'80\\'><text y=\\'50\\' font-size=\\'40\\'>🌱</text></svg>');"></div>
+            <div class="flex flex-col items-center justify-center py-20 glass-panel border-white/5 relative overflow-hidden min-h-[500px]">
+                <!-- Background Image Layer -->
+                <img src="./assets/images/digital_twin.png" class="absolute inset-0 w-full h-full object-cover opacity-[0.15] mix-blend-overlay pointer-events-none" alt="">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f12]/50 to-[#0a0f12] pointer-events-none"></div>
                 
-                <div class="relative mb-8">
-                    <div class="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 relative z-10">
-                        <span class="text-5xl animate-bounce">🌾</span>
+                <div class="relative mb-10">
+                    <div class="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 relative z-10 overflow-hidden">
+                        <img src="./assets/images/sensor.png" class="w-full h-full object-cover scale-110" alt="Sensor Icon">
                     </div>
-                    <div class="absolute inset-0 blur-3xl bg-emerald-500/20 rounded-full"></div>
+                    <div class="absolute inset-0 blur-3xl bg-emerald-500/30 rounded-full animate-pulse"></div>
                 </div>
 
                 <h2 class="text-3xl font-black text-white mb-3 text-center font-display tracking-tight">

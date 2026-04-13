@@ -45,6 +45,7 @@ export function renderNavbar() {
                         { hash: '#ai',        icon: 'brain',            label: t('nav_ai') },
                         { hash: '#control',   icon: 'sliders',          label: t('nav_control') },
                         { hash: '#analytics', icon: 'bar-chart-2',      label: t('nav_analytics') },
+                        { hash: '#support',   icon: 'headphones',       label: 'Support' },
                     ].map(link => {
                         const isActive = activePage === link.hash;
                         return `
@@ -116,6 +117,7 @@ export function renderNavbar() {
                         { hash: '#ai',        icon: 'brain',            label: t('nav_ai') },
                         { hash: '#control',   icon: 'sliders',          label: t('nav_control') },
                         { hash: '#analytics', icon: 'bar-chart-2',      label: t('nav_analytics') },
+                        { hash: '#support',   icon: 'headphones',       label: 'Support' },
                     ].map(link => {
                         const isActive = activePage === link.hash;
                         return `
@@ -134,6 +136,32 @@ export function renderNavbar() {
                     </div>
                 </div>
             </div>
+
+            <!-- Mobile Fixed Bottom Nav -->
+            <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0f0d]/95 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <div class="flex items-center justify-around px-2 py-4">
+                    ${[
+                        { hash: '#dashboard', icon: 'layout-dashboard', label: 'Home' },
+                        { hash: '#ai',        icon: 'brain',            label: 'AI' },
+                        { hash: '#control',   icon: 'sliders',          label: 'Control' },
+                        { hash: '#analytics', icon: 'bar-chart-2',      label: 'Stats' },
+                        { hash: '#support',   icon: 'headphones',       label: 'Help' },
+                    ].map(link => {
+                        const isActive = activePage === link.hash;
+                        return `
+                            <a href="${link.hash}" class="flex flex-col items-center gap-1.5 transition-all duration-300">
+                                <div class="relative">
+                                    <i data-lucide="${link.icon}" class="w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-500'} transition-colors"></i>
+                                    ${isActive ? '<div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></div>' : ''}
+                                </div>
+                                <span class="text-[9px] font-black uppercase tracking-widest ${isActive ? 'text-emerald-400' : 'text-slate-500'} transition-colors">
+                                    ${link.label}
+                                </span>
+                            </a>
+                        `;
+                    }).join('')}
+                </div>
+            </nav>
         </nav>
     `;
 

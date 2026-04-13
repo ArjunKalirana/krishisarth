@@ -1,5 +1,5 @@
 from typing import Any
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException, Body
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.db.postgres import get_db
@@ -8,6 +8,7 @@ from app.services import irrigation_service
 from app.schemas.control_schema import IrrigateRequest, FertigationRequest
 from app.mqtt.client import mqtt_manager
 from app.services.simulation_service import simulation_engine
+from app.models.zone import Zone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,14 +25,28 @@ async def start_zone_irrigation(
     current_farmer=Depends(deps.get_current_farmer),
     _=Depends(deps.verify_zone_owner),
 ) -> Any:
+    # 1. Mode Guard: Only allow irrigation if zone is in Act Mode
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(404, "ZONE_NOT_FOUND")
+    
+    if zone.control_mode != "act":
+        raise HTTPException(
+            status_code=403,
+            detail="ZONE_IN_VIEW_MODE: Switch zone to Act Mode before sending commands"
+        )
+
     try:
-        # Physical Hardware Trigger (MQTT)
-        topic = f"krishisarth/zone/{zone_id}/pump/on"
-        mqtt_manager.client.publish(topic, "ON", qos=1)
-        
+        # 2. Register intent and state in DB/Redis BEFORE physical trigger
         result = await irrigation_service.start_irrigation(
             zone_id=zone_id, duration_min=req.duration_min, source=req.source, db=db, redis=redis
         )
+
+        # 3. Physical Hardware Trigger (MQTT)
+        # If MQTT fails, the pump didn't start, but the lock is already set (safety first)
+        topic = f"krishisarth/zone/{zone_id}/pump/on"
+        mqtt_manager.client.publish(topic, "ON", qos=1)
+        
         return {"success": True, "data": result}
     except Exception:
         logger.warning("MQTT unavailable — returning simulation success for demo mode")
@@ -60,12 +75,25 @@ async def stop_zone_irrigation(
     current_farmer=Depends(deps.get_current_farmer),
     _=Depends(deps.verify_zone_owner),
 ) -> Any:
+    # 1. Mode Guard
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(404, "ZONE_NOT_FOUND")
+    
+    if zone.control_mode != "act":
+        raise HTTPException(
+            status_code=403,
+            detail="ZONE_IN_VIEW_MODE: Switch zone to Act Mode before sending commands"
+        )
+
     try:
-        # Physical Hardware Trigger (MQTT)
+        # 2. Update state in DB/Redis BEFORE stopping hardware
+        result = await irrigation_service.stop_irrigation(zone_id=zone_id, db=db, redis=redis)
+
+        # 3. Physical Hardware Trigger (MQTT)
         topic = f"krishisarth/zone/{zone_id}/pump/off"
         mqtt_manager.client.publish(topic, "OFF", qos=1)
         
-        result = await irrigation_service.stop_irrigation(zone_id=zone_id, db=db, redis=redis)
         return {"success": True, "data": result}
     except Exception:
         logger.warning("MQTT unavailable — returning simulation success for demo mode")
@@ -108,4 +136,50 @@ async def queue_zone_fertigation(
             "status": log.status,
             "warning": warning,
         },
+    }
+
+
+@router.patch("/{zone_id}/mode", response_model=dict)
+async def set_zone_mode(
+    zone_id: str,
+    db: Session = Depends(get_db),
+    redis=Depends(get_redis),
+    current_farmer=Depends(deps.get_current_farmer),
+    _=Depends(deps.verify_zone_owner),
+    payload: dict = Body(...)
+) -> Any:
+    """Switch zone between 'view' and 'act' mode."""
+    mode = payload.get("mode", "view")
+    if mode not in ("view", "act"):
+        raise HTTPException(status_code=400, detail="INVALID_MODE: must be 'view' or 'act'")
+    
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
+        
+    old_mode = zone.control_mode
+    zone.control_mode = mode
+    db.commit()
+    
+    # If switching to view mode, stop any running irrigation on this zone for safety
+    if mode == "view":
+        lock_key = f"irrigation_lock:{zone_id}"
+        try:
+            if redis.get(lock_key):
+                redis.delete(lock_key)
+                # Publish MQTT stop command
+                topic = f"krishisarth/zone/{zone_id}/pump/off"
+                mqtt_manager.client.publish(topic, "OFF", qos=1)
+                logger.info(f"Switching to View Mode: Auto-stopped irrigation on {zone_id}")
+        except Exception as e:
+            logger.error(f"Error stopping irrigation on mode switch: {str(e)}")
+    
+    return {
+        "success": True,
+        "data": {
+            "zone_id": zone_id,
+            "previous_mode": old_mode,
+            "current_mode": mode,
+            "message": "Act Mode activated — you can now send commands" if mode == "act" else "View Mode — observation only"
+        }
     }

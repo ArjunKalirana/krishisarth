@@ -29,7 +29,7 @@ async def get_dashboard(farm_id: str, db: Session, influx_client, redis) -> dict
     except Exception:
         pass
 
-    zones = db.query(Zone).filter(Zone.farm_id == farm_id).all()
+    zones = db.query(Zone).filter(Zone.farm_id == farm_id).order_by(Zone.id).all()
 
     # Return empty-but-valid dashboard when farm has no zones yet
     if not zones:

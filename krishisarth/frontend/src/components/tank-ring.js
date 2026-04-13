@@ -9,37 +9,38 @@ export function createTankRing(percentage) {
     const offset = circumference - (percentage / 100) * circumference;
     
     const container = document.createElement('div');
-    container.className = "relative flex items-center justify-center";
+    container.className = "relative flex items-center justify-center p-4 glass-panel rounded-full border-white/5 shadow-2xl";
     
     container.innerHTML = `
-        <svg class="w-32 h-32 transform -rotate-90">
+        <svg class="w-40 h-40 transform -rotate-90">
             <!-- Background Circle -->
             <circle
-                class="text-gray-100"
-                stroke-width="8"
+                class="text-white/5"
+                stroke-width="12"
                 stroke="currentColor"
                 fill="transparent"
                 r="${radius}"
-                cx="64"
-                cy="64"
+                cx="80"
+                cy="80"
             />
             <!-- Progress Circle -->
             <circle
-                class="text-primary-light transition-all duration-1000 ease-out"
-                stroke-width="8"
+                class="text-emerald-500 transition-all duration-1000 ease-out"
+                stroke-width="12"
                 stroke-dasharray="${circumference} ${circumference}"
                 stroke-dashoffset="${offset}"
                 stroke-linecap="round"
                 stroke="currentColor"
                 fill="transparent"
                 r="${radius}"
-                cx="64"
-                cy="64"
+                cx="80"
+                cy="80"
+                style="filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))"
             />
         </svg>
         <div class="absolute flex flex-col items-center">
-            <span class="text-2xl font-black text-gray-800">${percentage}%</span>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter" data-i18n="tank_reservoir">${t('tank_reservoir') || 'RESERVOIR'}</span>
+            <span class="text-4xl font-black text-white font-display">${percentage}%</span>
+            <span class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-1" data-i18n="tank_reservoir">${t('tank_reservoir') || 'RESERVOIR'}</span>
         </div>
     `;
     
