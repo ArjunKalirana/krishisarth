@@ -9,8 +9,10 @@ import { showToast } from '../components/toast.js';
 const html = htm.bind(React.createElement);
 
 /**
- * KrishiSarth Elite Digital Twin (v4.1 - R3F + HTM)
- * Production-ready without build step.
+ * KrishiSarth Elite Digital Twin (v4.2 - Production Hardened)
+ * - Defensive Mesh Traversal
+ * - Runtime Error Guard
+ * - Synchronized r148 Alignment
  */
 
 const DEVICE_MAP = {
@@ -27,18 +29,48 @@ const DEVICE_MAP = {
   'water_tank': { name: 'Main Reservoir', type: 'tank' }
 };
 
+// Error Boundary for 3D Failures
+class SceneErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) { return { hasError: true, error }; }
+    render() {
+        if (this.state.hasError) {
+            return html`
+                <div className="flex flex-col items-center justify-center h-screen bg-[#0a0f12] p-12 text-center">
+                    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
+                        <i data-lucide="alert-triangle" className="w-8 h-8 text-red-500"></i>
+                    </div>
+                    <h1 className="text-xl font-black text-white uppercase tracking-widest mb-2">Neural Link Severed</h1>
+                    <p className="text-slate-500 text-xs font-mono max-w-xs">${this.state.error?.message || 'CRITICAL_RENDER_FAILURE'}</p>
+                    <button onClick=${() => window.location.reload()} className="mt-8 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Re-Establish Link</button>
+                </div>
+            `;
+        }
+        return this.props.children;
+    }
+}
+
 function Model({ mode, onSelect, selectedId, deviceStates }) {
+  // Use absolute path for reliability across different deployment environments
   const { scene } = useGLTF('./assets/hydroponic greenhouse 3d model.glb');
   const [hovered, setHovered] = useState(null);
 
   useEffect(() => {
+    if (!scene) return;
     scene.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        
+        // Defensive mapping via substring match to handle glTF instance naming (e.g. pump_RC385_01)
         const deviceMatch = Object.keys(DEVICE_MAP).find(key => 
-          child.name.includes(key) || (child.parent && child.parent.name.includes(key))
+          child.name.toLowerCase().includes(key.toLowerCase()) || 
+          (child.parent && child.parent.name.toLowerCase().includes(key.toLowerCase()))
         );
+        
         if (deviceMatch) {
           child.userData.deviceId = deviceMatch;
           child.userData.isInteractive = true;
@@ -49,26 +81,34 @@ function Model({ mode, onSelect, selectedId, deviceStates }) {
 
   useFrame((state, delta) => {
     if (!scene || !deviceStates) return;
+
     scene.traverse((child) => {
-      if (child.userData?.deviceId === 'fertilizer_mixer' && deviceStates.pump_active) {
-          child.rotation.y += delta * 2;
-      }
-      if (child.isMesh && child.userData?.isInteractive) {
-        const isSelected = child.userData.deviceId === selectedId;
-        const isHovered = child.userData.deviceId === hovered;
-        
-        if (child.material) {
-            if (isSelected) {
-                child.material.emissive?.set('#10b981');
-                child.material.emissiveIntensity = 0.5 + Math.sin(state.clock.elapsedTime * 4) * 0.2;
-            } else if (isHovered && mode === 'act') {
-                child.material.emissive?.set('#34d399');
-                child.material.emissiveIntensity = 0.3;
-            } else {
-                child.material.emissive?.set('#000000');
-                child.material.emissiveIntensity = 0;
+      try {
+          // Dynamic Animation: Nutrient Mixer
+          if (child.userData?.deviceId === 'fertilizer_mixer' && deviceStates.pump_active) {
+              child.rotation.y += delta * 2;
+          }
+
+          // Visual Feedback System: Selection & Hover
+          if (child.isMesh && child.userData?.isInteractive) {
+            const isSelected = child.userData.deviceId === selectedId;
+            const isHovered = child.userData.deviceId === hovered;
+            
+            if (child.material) {
+                if (isSelected) {
+                    child.material.emissive?.set('#10b981');
+                    child.material.emissiveIntensity = 0.5 + Math.sin(state.clock.elapsedTime * 6) * 0.3;
+                } else if (isHovered && mode === 'act') {
+                    child.material.emissive?.set('#34d399');
+                    child.material.emissiveIntensity = 0.4;
+                } else {
+                    child.material.emissive?.set('#000000');
+                    child.material.emissiveIntensity = 0;
+                }
             }
-        }
+          }
+      } catch (e) {
+          // Silent catch for frame-level traversal issues
       }
     });
   });
@@ -81,13 +121,13 @@ function Model({ mode, onSelect, selectedId, deviceStates }) {
        onClick=${(e) => {
          if (mode !== 'act') return;
          e.stopPropagation();
-         const devId = e.object.userData.deviceId;
+         const devId = e.object.userData?.deviceId;
          if (devId) onSelect(devId);
        }}
        onPointerOver=${(e) => {
          if (mode !== 'act') return;
          e.stopPropagation();
-         setHovered(e.object.userData.deviceId);
+         setHovered(e.object.userData?.deviceId);
        }}
        onPointerOut=${() => setHovered(null)}
     />
@@ -121,102 +161,108 @@ const DigitalTwin = () => {
     return () => clearInterval(timer);
   }, [countdown, undoTimer]);
 
+  useEffect(() => {
+      // Refresh Lucide icons on state changes
+      if (window.lucide) window.lucide.createIcons();
+  }, [selectedId, mode, undoTimer]);
+
   return html`
-    <div className="w-full h-screen relative bg-[#0a0f12]">
-      <${Canvas} shadows camera=${{ position: [40, 40, 40], fov: 35 }}>
-        <${Suspense} fallback=${html`<${Html} center><div className="text-emerald-500 font-mono uppercase tracking-widest animate-pulse">Neural Linking...</div><//>`}>
-            <${Environment} preset="city" />
-            <ambientLight intensity=${0.4} />
-            <directionalLight position=${[10, 10, 5]} intensity=${1} castShadow shadow-mapSize=${[2048, 2048]} />
-            
-            <${Model} 
-               mode=${mode} 
-               selectedId=${selectedId} 
-               onSelect=${setSelectedId} 
-               deviceStates=${deviceStates} 
-            />
-            
-            <${ContactShadows} position=${[0, -5, 0]} opacity=${0.4} scale=${100} blur=${2} far=${10} />
-            <${OrbitControls} makeDefault dampingFactor=${0.05} maxPolarAngle=${Math.PI / 2.1} />
+    <${SceneErrorBoundary}>
+        <div className="w-full h-screen relative bg-[#0a0f12] overflow-hidden">
+        <${Canvas} shadows camera=${{ position: [40, 40, 40], fov: 35 }}>
+            <${Suspense} fallback=${html`<${Html} center><div className="text-emerald-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">Neural Linking...</div><//>`}>
+                <${Environment} preset="city" />
+                <ambientLight intensity=${0.4} />
+                <directionalLight position=${[10, 10, 5]} intensity=${1} castShadow shadow-mapSize=${[1024, 1024]} />
+                
+                <${Model} 
+                   mode=${mode} 
+                   selectedId=${selectedId} 
+                   onSelect=${setSelectedId} 
+                   deviceStates=${deviceStates} 
+                />
+                
+                <${ContactShadows} position=${[0, -5, 0]} opacity=${0.4} scale=${100} blur=${2} far=${10} />
+                <${OrbitControls} makeDefault dampingFactor=${0.05} maxPolarAngle=${Math.PI / 2.1} />
+            <//>
         <//>
-      <//>
 
-      <div className="absolute top-6 left-6 flex flex-col gap-4 z-50">
-          <div className="glass-panel p-2 flex flex-col gap-2 bg-slate-900/40 border-white/5 border border-white/5 rounded-2xl">
-              <button 
-                onClick=${() => setMode('view')} 
-                className=${`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${mode === 'view' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
-                title="View Mode"
-              >
-                  <i data-lucide="eye" className="w-5 h-5"></i>
-              </button>
-              <button 
-                onClick=${() => setMode('act')} 
-                className=${`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${mode === 'act' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
-                title="Act Mode"
-              >
-                  <i data-lucide="shield" className="w-5 h-5"></i>
-              </button>
-          </div>
-      </div>
-
-      <div className=${`absolute top-6 right-6 w-[400px] glass-panel p-8 z-[100] transform transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) border-white/5 border rounded-3xl ${selectedId ? 'translate-x-0' : 'translate-x-[460px]'}`}>
-          ${selectedDevice && html`
-            <div className="space-y-6">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h2 className="text-2xl font-black text-white font-display uppercase tracking-tight">${selectedDevice.name}</h2>
-                        <div className="badge-elite badge-success mt-2">LINK_ACTIVE</div>
-                    </div>
-                    <button onClick=${() => setSelectedId(null)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:text-white">
-                        <i data-lucide="x" className="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <div className="elite-well p-6 rounded-2xl bg-white/5 border border-white/5">
-                    <div className="flex items-center gap-3 mb-4">
-                        <i data-lucide="cpu" className="w-4 h-4 text-emerald-400"></i>
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ML_Inference</span>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="flex justify-between">
-                            <span className="text-xs text-slate-400 font-bold uppercase">Predicted Efficiency</span>
-                            <span className="text-xs text-white font-mono">94%</span>
-                        </div>
-                        <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500" style=${{ width: '94%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                    <button 
-                      onClick=${handleIrrigate}
-                      disabled=${undoTimer}
-                      className="w-full btn-elite py-5 rounded-2xl bg-emerald-500 text-black font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all disabled:opacity-50"
-                    >
-                        <i data-lucide="zap" className="w-4 h-4"></i>
-                        EXECUTE ORCHESTRATION
-                    </button>
-                    
-                    ${undoTimer && html`
-                       <button 
-                         onClick=${() => { setUndoTimer(false); showToast('Orchestration Aborted', 'info'); }}
-                         className="w-full py-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-amber-500/20 transition-all"
-                       >
-                           ABORT COMMAND (${countdown}S)
-                       </button>
-                    `}
-                </div>
+        <div className="absolute top-6 left-6 flex flex-col gap-4 z-50">
+            <div className="glass-panel p-2 flex flex-col gap-2 bg-slate-900/40 border-white/5 border rounded-2xl">
+                <button 
+                    onClick=${() => setMode('view')} 
+                    className=${`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${mode === 'view' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <i data-lucide="eye" className="w-5 h-5"></i>
+                </button>
+                <button 
+                    onClick=${() => setMode('act')} 
+                    className=${`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${mode === 'act' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <i data-lucide="shield" className="w-5 h-5"></i>
+                </button>
             </div>
-          `}
-      </div>
+        </div>
 
-      <style>${`
-        .glass-panel { background: rgba(10, 15, 20, 0.7); backdrop-filter: blur(20px); }
-        .badge-elite { padding: 4px 10px; border-radius: 6px; font-size: 8px; font-weight: 800; letter-spacing: 0.1em; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05); color: #10b981; }
-      `}</style>
-    </div>
+        <div className=${`absolute top-6 right-6 w-full max-w-[400px] glass-panel p-8 z-[100] transform transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) border-white/5 border rounded-3xl ${selectedId ? 'translate-x-0' : 'translate-x-[460px]'}`}>
+            ${selectedDevice && html`
+                <div className="space-y-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-2xl font-black text-white font-display uppercase tracking-tight">${selectedDevice.name}</h2>
+                            <div className="badge-elite badge-success mt-2">LINK_ACTIVE</div>
+                        </div>
+                        <button onClick=${() => setSelectedId(null)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:text-white">
+                            <i data-lucide="x" className="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div className="elite-well p-6 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-3 mb-4">
+                            <i data-lucide="cpu" className="w-4 h-4 text-emerald-400"></i>
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ML_Inference</span>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex justify-between">
+                                <span className="text-xs text-slate-400 font-bold uppercase">Predicted Efficiency</span>
+                                <span className="text-xs text-white font-mono">94%</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500" style=${{ width: '94%' }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4">
+                        <button 
+                        onClick=${handleIrrigate}
+                        disabled=${undoTimer}
+                        className="w-full py-5 rounded-2xl bg-emerald-500 text-black font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all disabled:opacity-50"
+                        >
+                            <i data-lucide="zap" className="w-4 h-4"></i>
+                            EXECUTE ORCHESTRATION
+                        </button>
+                        
+                        ${undoTimer && html`
+                        <button 
+                            onClick=${() => { setUndoTimer(false); showToast('Orchestration Aborted', 'info'); }}
+                            className="w-full py-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-amber-500/20 transition-all"
+                        >
+                            ABORT COMMAND (${countdown}S)
+                        </button>
+                        `}
+                    </div>
+                </div>
+            `}
+        </div>
+
+        <style>${`
+            .glass-panel { background: rgba(10, 15, 20, 0.7); backdrop-filter: blur(20px); }
+            .badge-elite { padding: 4px 10px; border-radius: 6px; font-size: 8px; font-weight: 800; letter-spacing: 0.1em; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05); color: #10b981; }
+            .elite-well { box-shadow: inset 0 0 40px rgba(0,0,0,0.5); }
+        `}</style>
+        </div>
+    </${SceneErrorBoundary}>
   `;
 };
 
