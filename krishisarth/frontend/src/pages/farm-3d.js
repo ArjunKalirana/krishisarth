@@ -5,34 +5,49 @@ import { showToast } from '../components/toast.js';
 import { store } from '../state/store.js';
 
 /**
- * KrishiSarth Digital Twin v7.0 — Single Model with Component Labels
+ * KrishiSarth Digital Twin v8.0 — Multi-Zone with Deep Clone Fix
  *
- * The GLB model is ONE integrated farm system containing all zones,
- * pipes, valves, pumps, etc. We load it once (no cloning) and overlay
- * 3D label sprites to identify each component.
- *
- * FIX: Previous version cloned the model per zone which broke pipes
- * and other connected geometry. This version uses the model as-is.
+ * FIX: Standard clone() breaks Lines/LineSegments (pipes).
+ * This version manually deep-clones geometry + materials for
+ * ALL renderable types (Mesh, Line, LineSegments, Points).
  */
 
 const MODEL_PATH = './assets/model.glb';
 
-// ── Component labels to overlay on the 3D model ─────────────────────
-// Positions are relative to model center — will be tuned after loading.
-const COMPONENT_LABELS = [
-    { name: 'Greenhouse',         sub: 'Polyhouse Zone',    pos: [-12, 8, -8],   color: '#10b981' },
-    { name: 'Water Tank',         sub: 'Main Reservoir',    pos: [12, 8, -10],   color: '#3b82f6' },
-    { name: 'Leafy Greens Zone',  sub: 'Zone B',            pos: [4, 4, -5],     color: '#10b981' },
-    { name: 'Root Vegetables',    sub: 'Zone C',            pos: [0, 4, 0],      color: '#f59e0b' },
-    { name: 'Herbs Zone',         sub: 'Zone D',            pos: [-6, 4, 2],     color: '#10b981' },
-    { name: 'RC385 Pump',         sub: 'Main Pump',         pos: [12, 5, 0],     color: '#ef4444' },
-    { name: 'Fertilizer Mixer',   sub: 'Nutrient Injector', pos: [10, 5, 3],     color: '#a855f7' },
-    { name: 'Valve B',            sub: 'Leafy Greens',      pos: [6, 3, 4],      color: '#f97316' },
-    { name: 'Valve D',            sub: 'Herbs',             pos: [0, 3, 6],      color: '#f97316' },
-    { name: 'Valve Greenhouse',   sub: 'Polyhouse',         pos: [-12, 3, 6],    color: '#f97316' },
-    { name: 'Moisture Sensor',    sub: 'IoT Node',          pos: [2, 6, -8],     color: '#06b6d4' },
-    { name: 'ESP32 Controller',   sub: 'MCU Hub',           pos: [0, 3, 10],     color: '#64748b' },
+// Grid positions for up to 9 zones
+const ZONE_GRID = [
+    { x:   0, z:   0 },
+    { x:  50, z:   0 },
+    { x: -50, z:   0 },
+    { x:   0, z:  50 },
+    { x:  50, z:  50 },
+    { x: -50, z:  50 },
+    { x:   0, z: -50 },
+    { x:  50, z: -50 },
+    { x: -50, z: -50 },
 ];
+
+/** Deep-clone a scene graph preserving ALL renderable types (Mesh, Line, etc.) */
+function deepCloneModel(source) {
+    const clone = source.clone(true);
+
+    clone.traverse((node) => {
+        // Clone geometry for Mesh, Line, LineSegments, Points — everything renderable
+        if (node.geometry) {
+            node.geometry = node.geometry.clone();
+        }
+        // Clone materials so changes don't bleed
+        if (node.material) {
+            if (Array.isArray(node.material)) {
+                node.material = node.material.map(m => m.clone());
+            } else {
+                node.material = node.material.clone();
+            }
+        }
+    });
+
+    return clone;
+}
 
 export function renderFarm3D() {
     // ─── Container ──────────────────────────────────────────────
@@ -40,15 +55,14 @@ export function renderFarm3D() {
     container.id = 'farm3d-root';
     container.style.cssText = 'position:relative;width:100%;height:100vh;background:#0a0f12;overflow:hidden;';
 
-    // ─── Canvas (created explicitly — never use innerHTML on container) ─
+    // ─── Canvas ─────────────────────────────────────────────────
     const canvas = document.createElement('canvas');
     container.appendChild(canvas);
 
-    // ─── HUD overlay (separate div, never touches the canvas) ───
+    // ─── HUD (separate div — never touches canvas) ──────────────
     const hud = document.createElement('div');
     hud.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:10;';
     hud.innerHTML = `
-        <!-- Loading -->
         <div id="twin-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;background:#0a0f12;z-index:40;">
             <div style="position:relative;width:96px;height:96px;">
                 <div style="position:absolute;inset:0;border:4px solid rgba(16,185,129,0.1);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;"></div>
@@ -66,44 +80,42 @@ export function renderFarm3D() {
             </div>
         </div>
 
-        <!-- Toggle Labels Button -->
-        <div style="position:absolute;top:24px;left:24px;z-index:50;pointer-events:auto;display:flex;flex-direction:column;gap:8px;">
+        <!-- Mode Toggle -->
+        <div style="position:absolute;top:24px;left:24px;z-index:50;pointer-events:auto;">
             <div style="background:rgba(10,15,20,0.8);backdrop-filter:blur(20px);padding:8px;display:flex;flex-direction:column;gap:8px;border:1px solid rgba(255,255,255,0.05);border-radius:16px;">
-                <button id="twin-toggle-labels" title="Toggle Labels" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.1);color:#10b981;cursor:pointer;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/><circle cx="6" cy="6" r="0.5" fill="currentColor"/></svg>
+                <button id="twin-mode-view" title="View Mode" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.1);color:#10b981;cursor:pointer;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button id="twin-reset-cam" title="Reset Camera" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:#64748b;cursor:pointer;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                <button id="twin-mode-act" title="Act Mode" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:#64748b;cursor:pointer;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </button>
             </div>
         </div>
 
-        <!-- Component Info (shown on click) -->
-        <div id="twin-info" style="position:absolute;bottom:24px;left:24px;z-index:50;pointer-events:auto;display:none;">
+        <!-- Zone Info Panel -->
+        <div id="twin-zone-info" style="position:absolute;bottom:24px;left:24px;z-index:50;pointer-events:auto;display:none;">
             <div style="background:rgba(10,15,20,0.9);backdrop-filter:blur(20px);padding:20px 28px;border:1px solid rgba(255,255,255,0.05);border-radius:20px;min-width:240px;">
-                <div id="twin-info-name" style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:800;color:#fff;"></div>
-                <div id="twin-info-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;"></div>
-            </div>
-        </div>
-
-        <!-- Legend -->
-        <div style="position:absolute;bottom:24px;right:24px;z-index:50;pointer-events:auto;">
-            <div style="background:rgba(10,15,20,0.85);backdrop-filter:blur(20px);padding:16px 20px;border:1px solid rgba(255,255,255,0.05);border-radius:16px;font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;">
-                <div style="margin-bottom:8px;color:#fff;font-weight:800;font-size:10px;">LEGEND</div>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#10b981;"></div> Grow Zones</div>
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;"></div> Water System</div>
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#f97316;"></div> Valves</div>
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div> Pump</div>
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#a855f7;"></div> Mixer</div>
-                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#06b6d4;"></div> Sensors</div>
+                <div id="twin-zone-name" style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:800;color:#fff;"></div>
+                <div id="twin-zone-crop" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;"></div>
+                <div style="display:flex;gap:24px;margin-top:16px;">
+                    <div>
+                        <div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Moisture</div>
+                        <div id="twin-zone-moisture" style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#fff;">--%</div>
+                    </div>
+                    <div>
+                        <div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Temp</div>
+                        <div id="twin-zone-temp" style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#fff;">--°C</div>
+                    </div>
+                    <div>
+                        <div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">EC</div>
+                        <div id="twin-zone-ec" style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#fff;">--</div>
+                    </div>
                 </div>
             </div>
         </div>
     `;
     container.appendChild(hud);
 
-    // ─── Inline styles ──────────────────────────────────────────
     const style = document.createElement('style');
     style.textContent = `
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -112,10 +124,12 @@ export function renderFarm3D() {
     container.appendChild(style);
 
     // ─── State ──────────────────────────────────────────────────
-    let labelsVisible = true;
-    const labelSprites = [];
+    let mode = 'view';
+    let selectedZoneIdx = -1;
+    const zoneModels = [];
+    const allInteractives = [];
 
-    // ─── Three.js Core ──────────────────────────────────────────
+    // ─── Three.js ───────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -125,18 +139,18 @@ export function renderFarm3D() {
     renderer.setClearColor(0x0a0f12);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0f12, 0.003);
+    scene.fog = new THREE.FogExp2(0x0a0f12, 0.002);
 
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
-    camera.position.set(60, 50, 60);
+    camera.position.set(80, 70, 80);
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2.1;
-    controls.target.set(0, 5, 0);
+    controls.target.set(0, 0, 0);
     controls.minDistance = 20;
-    controls.maxDistance = 300;
+    controls.maxDistance = 400;
 
     // ─── Lighting ───────────────────────────────────────────────
     scene.add(new THREE.HemisphereLight(0x87ceeb, 0x362907, 0.7));
@@ -147,18 +161,20 @@ export function renderFarm3D() {
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 200;
-    sun.shadow.camera.left = -60;
-    sun.shadow.camera.right = 60;
-    sun.shadow.camera.top = 60;
-    sun.shadow.camera.bottom = -60;
+    sun.shadow.camera.far = 300;
+    sun.shadow.camera.left = -100;
+    sun.shadow.camera.right = 100;
+    sun.shadow.camera.top = 100;
+    sun.shadow.camera.bottom = -100;
     scene.add(sun);
 
-    scene.add(new THREE.DirectionalLight(0x8eb4d4, 0.5).translateX(-20).translateY(15));
+    const fill = new THREE.DirectionalLight(0x8eb4d4, 0.4);
+    fill.position.set(-20, 15, -10);
+    scene.add(fill);
 
     // Ground
     const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(500, 500),
+        new THREE.PlaneGeometry(600, 600),
         new THREE.MeshStandardMaterial({ color: 0x1a2520, roughness: 0.95 })
     );
     ground.rotation.x = -Math.PI / 2;
@@ -167,154 +183,135 @@ export function renderFarm3D() {
     scene.add(ground);
 
     // Grid
-    const grid = new THREE.GridHelper(200, 40, 0x10b981, 0x0a1510);
+    const grid = new THREE.GridHelper(300, 60, 0x10b981, 0x0a1510);
     grid.material.opacity = 0.12;
     grid.material.transparent = true;
     scene.add(grid);
 
-    // ─── Create label sprite ────────────────────────────────────
-    function createLabel(name, sub, color) {
+    // ─── Raycaster ──────────────────────────────────────────────
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    // ─── Get zone data ──────────────────────────────────────────
+    function getZones() {
+        const dashData = store.getState('currentFarmDashboard');
+        if (dashData?.zones?.length > 0) return dashData.zones;
+        return [
+            { id: 'z1', name: 'Zone Alpha', crop_type: 'Tomato', moisture_pct: 65, temp_c: 28, ec_ds_m: 1.2 },
+            { id: 'z2', name: 'Zone Beta',  crop_type: 'Wheat',  moisture_pct: 42, temp_c: 31, ec_ds_m: 0.8 },
+            { id: 'z3', name: 'Zone Gamma', crop_type: 'Rice',   moisture_pct: 78, temp_c: 26, ec_ds_m: 1.5 },
+            { id: 'z4', name: 'Zone Delta', crop_type: 'Cotton', moisture_pct: 35, temp_c: 33, ec_ds_m: 0.6 },
+        ];
+    }
+
+    // ─── Zone label sprite ──────────────────────────────────────
+    function createLabel(text, subtext) {
         const c = document.createElement('canvas');
-        c.width = 512;
-        c.height = 140;
+        c.width = 512; c.height = 160;
         const ctx = c.getContext('2d');
-
-        // Background
-        ctx.fillStyle = 'rgba(10, 15, 18, 0.88)';
-        ctx.beginPath();
-        ctx.roundRect(0, 0, 512, 140, 16);
-        ctx.fill();
-
-        // Left color bar
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.roundRect(0, 0, 6, 140, [16, 0, 0, 16]);
-        ctx.fill();
-
-        // Name
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(name, 24, 58);
-
-        // Sub
-        ctx.fillStyle = color;
-        ctx.font = '600 22px sans-serif';
-        ctx.fillText(sub, 24, 100);
-
-        const texture = new THREE.CanvasTexture(c);
-        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
-        const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(10, 2.75, 1);
-
-        // Add a thin line from label down to the component
-        const lineGeo = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, -3, 0),
-        ]);
-        const lineMat = new THREE.LineBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.4 });
-        const line = new THREE.Line(lineGeo, lineMat);
-        sprite.add(line);
-
+        ctx.fillStyle = 'rgba(10,15,18,0.85)';
+        ctx.beginPath(); ctx.roundRect(0, 0, 512, 160, 20); ctx.fill();
+        ctx.strokeStyle = 'rgba(16,185,129,0.3)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(0, 0, 512, 160, 20); ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 42px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(text, 256, 65);
+        ctx.fillStyle = '#10b981'; ctx.font = '600 28px sans-serif';
+        ctx.fillText(subtext, 256, 115);
+        const tex = new THREE.CanvasTexture(c);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(14, 4.4, 1);
         return sprite;
     }
 
-    // ─── Load Model ─────────────────────────────────────────────
+    // ─── Load model ─────────────────────────────────────────────
     const loader = new GLTFLoader();
     console.log('[DigitalTwin] Loading:', MODEL_PATH);
 
     loader.load(
         MODEL_PATH,
         (gltf) => {
-            console.log('[DigitalTwin] Model loaded!');
-            const model = gltf.scene;
+            console.log('[DigitalTwin] Model loaded OK');
+            const zones = getZones();
+            const sourceModel = gltf.scene;
 
-            // Scale the model to fill the view — single instance, no cloning
-            model.scale.setScalar(25);
-            model.position.set(0, 0, 0);
+            zones.forEach((zone, i) => {
+                const pos = ZONE_GRID[i] || { x: i * 50, z: 0 };
 
-            // Log mesh names for future fine-tuning
-            console.log('[DigitalTwin] Model hierarchy:');
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    console.log('  Mesh:', child.name, 'Parent:', child.parent?.name);
-                }
-            });
+                // Use deepCloneModel for zones 1+ (zone 0 uses the original)
+                const model = i === 0 ? sourceModel : deepCloneModel(sourceModel);
+                model.scale.setScalar(25);
 
-            scene.add(model);
+                const group = new THREE.Group();
+                group.position.set(pos.x, 0, pos.z);
 
-            // ── Add component labels ────────────────────────────
-            // After the model is added, compute its bounding box to
-            // position labels relative to the actual model size
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            console.log('[DigitalTwin] Model bounds — center:', center, 'size:', size);
-
-            // Position labels relative to model center
-            COMPONENT_LABELS.forEach((comp) => {
-                const sprite = createLabel(comp.name, comp.sub, comp.color);
-
-                // Scale label positions based on actual model size
-                const sx = size.x / 30;
-                const sy = size.y / 15;
-                const sz = size.z / 30;
-
-                sprite.position.set(
-                    center.x + comp.pos[0] * sx,
-                    center.y + comp.pos[1] * sy + 2,
-                    center.z + comp.pos[2] * sz
+                // Platform
+                const platform = new THREE.Mesh(
+                    new THREE.CylinderGeometry(22, 22, 0.3, 48),
+                    new THREE.MeshStandardMaterial({
+                        color: new THREE.Color().setHSL(0.38 + (i * 0.05), 0.4, 0.1),
+                        roughness: 0.85, transparent: true, opacity: 0.5
+                    })
                 );
+                platform.position.y = -0.15;
+                platform.receiveShadow = true;
+                group.add(platform);
 
-                scene.add(sprite);
-                labelSprites.push(sprite);
+                // Model
+                model.position.set(0, 0, 0);
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.userData.zoneIndex = i;
+                        allInteractives.push(child);
+                    }
+                });
+                group.add(model);
+
+                // Label
+                const label = createLabel(zone.name, zone.crop_type || 'Crop');
+                label.position.set(0, 30, 0);
+                group.add(label);
+
+                scene.add(group);
+                zoneModels.push({ group, zone, label });
             });
 
-            // Auto-frame the camera to see the whole model
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const dist = maxDim * 1.2;
-            camera.position.set(
-                center.x + dist * 0.6,
-                center.y + dist * 0.5,
-                center.z + dist * 0.6
-            );
-            controls.target.copy(center);
-            controls.update();
-
-            // Hide loading
-            const loadingEl = hud.querySelector('#twin-loading');
-            if (loadingEl) {
-                loadingEl.style.transition = 'opacity 0.8s ease-out';
-                loadingEl.style.opacity = '0';
-                setTimeout(() => { loadingEl.style.display = 'none'; }, 800);
+            // Auto-frame camera
+            if (zones.length > 1) {
+                const d = Math.max(zones.length * 18, 80);
+                camera.position.set(d * 0.7, d * 0.55, d * 0.7);
+                controls.target.set(0, 5, 0);
             }
 
-            showToast('Digital Twin Synchronized', 'success');
+            // Hide loading
+            const el = hud.querySelector('#twin-loading');
+            if (el) {
+                el.style.transition = 'opacity 0.8s';
+                el.style.opacity = '0';
+                setTimeout(() => el.style.display = 'none', 800);
+            }
+            showToast(`Digital Twin Active — ${zones.length} zone(s)`, 'success');
         },
         (progress) => {
             if (progress.total > 0) {
                 const pct = Math.round((progress.loaded / progress.total) * 100);
-                const pctEl = hud.querySelector('#twin-loading-pct');
-                const barEl = hud.querySelector('#twin-loading-bar');
-                if (pctEl) pctEl.textContent = `${pct}%`;
-                if (barEl) barEl.style.width = `${pct}%`;
+                const p = hud.querySelector('#twin-loading-pct');
+                const b = hud.querySelector('#twin-loading-bar');
+                if (p) p.textContent = `${pct}%`;
+                if (b) b.style.width = `${pct}%`;
             }
         },
         (err) => {
             console.error('[DigitalTwin] LOAD ERROR:', err);
-            const loadingEl = hud.querySelector('#twin-loading');
-            if (loadingEl) {
-                loadingEl.innerHTML = `
-                    <div style="background:rgba(10,15,20,0.9);padding:48px;border-radius:24px;border:1px solid rgba(239,68,68,0.2);text-align:center;max-width:400px;">
-                        <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#ef4444;margin-bottom:8px;">MODEL LOAD FAILED</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#64748b;margin-bottom:24px;">
-                            Path: ${MODEL_PATH}<br/>Error: ${err.message || 'Unknown'}
-                        </div>
-                        <button onclick="window.location.reload()" style="padding:12px 32px;background:#ef4444;color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;">RETRY</button>
-                    </div>`;
-            }
+            const el = hud.querySelector('#twin-loading');
+            if (el) el.innerHTML = `
+                <div style="background:rgba(10,15,20,0.9);padding:48px;border-radius:24px;border:1px solid rgba(239,68,68,0.2);text-align:center;">
+                    <div style="font-size:20px;font-weight:800;color:#ef4444;margin-bottom:8px;">MODEL LOAD FAILED</div>
+                    <div style="font-size:11px;color:#64748b;margin-bottom:24px;">${err.message}</div>
+                    <button onclick="location.reload()" style="padding:12px 32px;background:#ef4444;color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;">RETRY</button>
+                </div>`;
         }
     );
 
@@ -327,9 +324,21 @@ export function renderFarm3D() {
         const elapsed = clock.getElapsedTime();
         controls.update();
 
-        // Gentle label bobbing
-        labelSprites.forEach((s, i) => {
-            s.position.y += Math.sin(elapsed * 1.2 + i * 0.7) * 0.003;
+        // Hover glow
+        for (const mesh of allInteractives) {
+            if (!mesh.material?.emissive) continue;
+            if (mesh.userData.zoneIndex === selectedZoneIdx) {
+                mesh.material.emissive.setHex(0x10b981);
+                mesh.material.emissiveIntensity = 0.3 + Math.sin(elapsed * 4) * 0.15;
+            } else {
+                mesh.material.emissive.setHex(0x000000);
+                mesh.material.emissiveIntensity = 0;
+            }
+        }
+
+        // Label bob
+        zoneModels.forEach((zm, i) => {
+            if (zm.label) zm.label.position.y = 30 + Math.sin(elapsed * 1.2 + i) * 0.4;
         });
 
         renderer.render(scene, camera);
@@ -339,62 +348,69 @@ export function renderFarm3D() {
     function onResize() {
         const w = container.clientWidth || window.innerWidth;
         const h = container.clientHeight || window.innerHeight;
-        if (w === 0 || h === 0) return;
+        if (!w || !h) return;
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
     }
 
-    // ─── Raycaster for label clicks ─────────────────────────────
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
+    // ─── Interaction ────────────────────────────────────────────
     function onClick(e) {
+        if (mode !== 'act') return;
         const rect = canvas.getBoundingClientRect();
         pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects(labelSprites, false);
+        const hits = raycaster.intersectObjects(allInteractives, false);
+        const info = hud.querySelector('#twin-zone-info');
 
-        const infoPanel = hud.querySelector('#twin-info');
         if (hits.length > 0) {
-            const idx = labelSprites.indexOf(hits[0].object);
-            if (idx >= 0 && COMPONENT_LABELS[idx]) {
-                const comp = COMPONENT_LABELS[idx];
-                infoPanel.style.display = 'block';
-                hud.querySelector('#twin-info-name').textContent = comp.name;
-                hud.querySelector('#twin-info-sub').textContent = comp.sub;
+            const zi = hits[0].object.userData.zoneIndex;
+            selectedZoneIdx = zi;
+            const zm = zoneModels[zi];
+            if (zm && info) {
+                info.style.display = 'block';
+                hud.querySelector('#twin-zone-name').textContent = zm.zone.name;
+                hud.querySelector('#twin-zone-crop').textContent = zm.zone.crop_type || '';
+                hud.querySelector('#twin-zone-moisture').textContent = `${zm.zone.moisture_pct ?? '--'}%`;
+                hud.querySelector('#twin-zone-temp').textContent = `${zm.zone.temp_c ?? '--'}°C`;
+                hud.querySelector('#twin-zone-ec').textContent = `${zm.zone.ec_ds_m ?? '--'}`;
             }
         } else {
-            if (infoPanel) infoPanel.style.display = 'none';
+            selectedZoneIdx = -1;
+            if (info) info.style.display = 'none';
         }
+    }
+
+    function onPointerMove(e) {
+        if (mode !== 'act') return;
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(allInteractives, false);
+        canvas.style.cursor = hits.length ? 'pointer' : 'grab';
+    }
+
+    // ─── Mode Toggle ────────────────────────────────────────────
+    function setMode(m) {
+        mode = m;
+        const v = hud.querySelector('#twin-mode-view');
+        const a = hud.querySelector('#twin-mode-act');
+        if (v) { v.style.background = m === 'view' ? 'rgba(16,185,129,0.1)' : 'transparent'; v.style.color = m === 'view' ? '#10b981' : '#64748b'; v.style.border = m === 'view' ? '1px solid rgba(16,185,129,0.2)' : 'none'; }
+        if (a) { a.style.background = m === 'act' ? 'rgba(16,185,129,0.1)' : 'transparent'; a.style.color = m === 'act' ? '#10b981' : '#64748b'; a.style.border = m === 'act' ? '1px solid rgba(16,185,129,0.2)' : 'none'; }
+        if (m === 'view') { selectedZoneIdx = -1; const info = hud.querySelector('#twin-zone-info'); if (info) info.style.display = 'none'; }
     }
 
     // ─── Boot ───────────────────────────────────────────────────
     setTimeout(() => {
         onResize();
         animate();
-
         window.addEventListener('resize', onResize);
         canvas.addEventListener('click', onClick);
-
-        // Toggle labels button
-        hud.querySelector('#twin-toggle-labels')?.addEventListener('click', () => {
-            labelsVisible = !labelsVisible;
-            labelSprites.forEach(s => { s.visible = labelsVisible; });
-            const btn = hud.querySelector('#twin-toggle-labels');
-            if (btn) {
-                btn.style.background = labelsVisible ? 'rgba(16,185,129,0.1)' : 'transparent';
-                btn.style.color = labelsVisible ? '#10b981' : '#64748b';
-            }
-        });
-
-        // Reset camera button
-        hud.querySelector('#twin-reset-cam')?.addEventListener('click', () => {
-            camera.position.set(60, 50, 60);
-            controls.target.set(0, 5, 0);
-            controls.update();
-        });
+        canvas.addEventListener('pointermove', onPointerMove);
+        hud.querySelector('#twin-mode-view')?.addEventListener('click', () => setMode('view'));
+        hud.querySelector('#twin-mode-act')?.addEventListener('click', () => setMode('act'));
     }, 50);
 
     // ─── Cleanup ────────────────────────────────────────────────
@@ -402,9 +418,7 @@ export function renderFarm3D() {
         if (!document.body.contains(container)) {
             if (animId) cancelAnimationFrame(animId);
             window.removeEventListener('resize', onResize);
-            renderer.dispose();
-            controls.dispose();
-            observer.disconnect();
+            renderer.dispose(); controls.dispose(); observer.disconnect();
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
