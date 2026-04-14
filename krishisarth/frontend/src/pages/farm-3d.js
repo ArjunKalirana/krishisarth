@@ -280,7 +280,7 @@ export function renderFarm3D() {
 
                 // Clone the model for each zone
                 const modelClone = sourceModel.clone(true);
-                modelClone.scale.setScalar(10);
+                modelClone.scale.setScalar(25);
 
                 // Create a group to hold model + label + platform
                 const group = new THREE.Group();
@@ -309,7 +309,7 @@ export function renderFarm3D() {
 
                 // Floating label
                 const label = createLabel(zone.name, zone.crop_type || 'Unknown Crop');
-                label.position.set(0, 25, 0);
+                label.position.set(0, 50, 0);
                 group.add(label);
 
                 scene.add(group);
@@ -385,7 +385,7 @@ export function renderFarm3D() {
         // Gentle model bobbing
         zoneModels.forEach((zm, i) => {
             if (zm.label) {
-                zm.label.position.y = 25 + Math.sin(elapsed * 1.5 + i) * 0.3;
+                zm.label.position.y = 50 + Math.sin(elapsed * 1.5 + i) * 0.3;
             }
         });
 
