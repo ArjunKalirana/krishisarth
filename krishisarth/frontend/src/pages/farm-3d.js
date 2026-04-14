@@ -4,18 +4,17 @@ import { api }   from '../api/client.js';
 import { showToast } from '../components/toast.js';
 
 /**
- * Elite Digital Twin Interface (v2.0)
- * A high-fidelity, simulation-driven 3D agricultural core.
+ * KrishiSarth Elite Digital Twin (v3.0)
+ * High-fidelity real-time 3D field simulation & hydraulic orchestration.
  */
 export function renderFarm3D() {
     const container = document.createElement('div');
     container.className = 'w-full h-full relative bg-[#0a0f12] overflow-hidden animate-in fade-in duration-1000';
 
-    // Premium UI Overlays (Elite HUD)
     container.innerHTML = `
-        <div id="farm3d-canvas-container" class="w-full h-[calc(100vh-80px)] relative">
+        <div id="farm3d-canvas-container" class="w-full h-screen relative">
             
-            <!-- Weather Command Orbit -->
+            <!-- System Interface Orbit -->
             <div class="absolute top-6 left-6 flex flex-col gap-4 z-50">
                 <div class="glass-panel p-2 flex flex-col gap-2 bg-slate-900/40 border-white/5">
                     <button id="btn-sun" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:bg-white/5 active:scale-95" title="Sunny">
@@ -24,43 +23,35 @@ export function renderFarm3D() {
                     <button id="btn-rain" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:bg-white/5 active:scale-95" title="Rain">
                         <i data-lucide="cloud-rain" class="w-5 h-5 text-blue-400"></i>
                     </button>
-                </div>
-                <div id="instruction-tag" class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1">
-                    Direct_Simulation_Link
-                </div>
-            </div>
-
-            <!-- Global Telemetry HUD (Bottom) -->
-            <div id="farm-status-bar" class="absolute bottom-6 left-6 right-6 lg:right-auto glass-panel p-6 flex flex-wrap gap-8 z-50 animate-in slide-in-from-bottom-6 duration-1000 delay-300">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                        <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
-                    </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Global Health</p>
-                        <span id="global-health" class="text-xl font-black text-emerald-500 font-display">98%</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 border-l border-white/5 pl-8">
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Inference State</p>
-                        <span id="sim-status" class="text-xl font-black text-white font-display uppercase italic">ACTIVE</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 border-l border-white/5 pl-8">
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Runtime Index</p>
-                        <span id="sim-time" class="text-xl font-black text-white font-mono">00:00:00</span>
-                    </div>
+                    <div class="w-full h-px bg-white/5 my-1"></div>
+                    <button id="btn-mode-toggle" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:bg-white/5 active:scale-95" title="Act Mode Toggle">
+                        <i data-lucide="shield" class="w-5 h-5 text-slate-400"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Detail Analysis Panel (Right) -->
-            <div id="zone-side-panel" class="absolute top-6 right-6 w-[360px] max-w-[calc(100vw-3rem)] glass-panel p-8 z-[100] transform translate-x-[420px] transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1)">
+            <!-- Global Status Bar -->
+            <div id="farm-status-bar" class="absolute bottom-6 left-6 glass-panel p-6 flex gap-12 z-50 animate-in slide-in-from-bottom-12 duration-1000">
+                <div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Health Index</p>
+                    <span id="global-health" class="text-2xl font-black text-emerald-500 font-display">--</span>
+                </div>
+                <div class="w-px h-10 bg-white/5"></div>
+                <div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Sim Latency</p>
+                    <span class="text-2xl font-black text-white font-display uppercase italic">LIVE</span>
+                </div>
+            </div>
+
+            <!-- Predictive Command Drawer (Act Mode) -->
+            <div id="zone-side-panel" class="absolute top-6 right-6 w-[420px] max-w-[calc(100vw-3rem)] glass-panel p-10 z-[100] transform translate-x-[480px] transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1)">
                 <div class="flex justify-between items-start mb-8">
                     <div>
-                        <h2 id="panel-zone-name" class="text-2xl font-black text-white font-display uppercase tracking-tight">Zone Alpha</h2>
-                        <div class="badge-elite badge-success mt-2" id="panel-crop-type">WHEAT_NODE</div>
+                        <h2 id="panel-zone-name" class="text-3xl font-black text-white font-display uppercase tracking-tight">Select Input</h2>
+                        <div class="flex items-center gap-2 mt-2">
+                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                             <span id="panel-status-tag" class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Operational_Node</span>
+                        </div>
                     </div>
                     <button id="close-panel" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:text-white transition-all">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -68,59 +59,87 @@ export function renderFarm3D() {
                 </div>
 
                 <div class="space-y-8">
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-end">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Vegetative Growth</span>
-                            <span id="val-growth" class="text-xs font-black text-emerald-400 font-mono">0%</span>
+                    <!-- Sensor Readouts -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="elite-well p-4">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] mb-1">Surface Hydration</p>
+                            <span id="val-water" class="text-2xl font-black text-blue-400 font-mono">--</span>
                         </div>
-                        <div class="h-2 bg-slate-900 rounded-full border border-white/5">
-                            <div id="bar-growth" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-end">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hydration Level</span>
-                            <span id="val-water" class="text-xs font-black text-blue-400 font-mono">0%</span>
-                        </div>
-                        <div class="h-2 bg-slate-900 rounded-full border border-white/5">
-                            <div id="bar-water" class="h-full bg-blue-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        <div class="elite-well p-4">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] mb-1">Growth Matrix</p>
+                            <span id="val-growth" class="text-2xl font-black text-emerald-400 font-mono">--</span>
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-end">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Anomaly Risk</span>
-                            <span id="val-health" class="text-xs font-black text-amber-400 font-mono">0%</span>
+                    <!-- ML Prediction Engine -->
+                    <div class="bg-emerald-500/5 border border-emerald-500/10 rounded-3xl p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-5">
+                            <i data-lucide="brain" class="w-16 h-16 text-emerald-500"></i>
                         </div>
-                        <div class="h-2 bg-slate-900 rounded-full border border-white/5">
-                            <div id="bar-health" class="h-full bg-amber-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        
+                        <div class="relative z-10 space-y-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/20">
+                                    <i data-lucide="cpu" class="w-4 h-4 text-emerald-400"></i>
+                                </div>
+                                <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Inference_Forecast</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase mb-1">Efficiency Score</p>
+                                    <span id="ml-efficiency" class="text-lg font-black text-white">9.4/10</span>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase mb-1">Yield Delta</p>
+                                    <span id="ml-yield" class="text-lg font-black text-emerald-400 font-mono">+12.2%</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-white/5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-2">24H Moisture Projection</p>
+                                <div class="h-10 flex items-end gap-1">
+                                    ${Array(12).fill(0).map(() => `<div class="flex-1 bg-white/5 rounded-t-sm transition-all duration-700 hover:bg-emerald-500/30" style="height: ${Math.random()*80+20}%"></div>`).join('')}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 pt-6">
-                        <button id="btn-irrigate" class="btn-elite flex items-center justify-center gap-2 py-4">
-                            <i data-lucide="droplets" class="w-4 h-4"></i>
-                            <span>IRRIGATE</span>
+                    <!-- Timer Orchestration -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em]">Target Duration</p>
+                            <span id="slider-val" class="text-xl font-black text-white font-display">20m</span>
+                        </div>
+                        <input type="range" id="timer-slider" min="5" max="60" step="5" value="20" class="w-full accent-emerald-500">
+                        <div class="text-[9px] font-medium text-slate-500 text-center uppercase tracking-widest italic">
+                            Approx Volume: <span id="vol-calc" class="text-white">--</span> Litres
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 pt-4">
+                        <button id="btn-cancel" class="btn-elite secondary py-5 uppercase font-black tracking-widest text-[10px]">Decline</button>
+                        <button id="btn-irrigate" class="btn-elite py-5 uppercase font-black tracking-widest text-[10px] flex items-center justify-center gap-2">
+                             <i data-lucide="zap" class="w-4 h-4"></i>
+                             <span>Execute</span>
                         </button>
-                        <button id="btn-change-crop" class="btn-elite secondary flex items-center justify-center gap-2 py-4">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                            <span>SWAP GEN</span>
-                        </button>
+                    </div>
+
+                    <!-- Execution Guard (Undo) -->
+                    <div id="undo-container" class="hidden">
+                         <button id="btn-undo" class="w-full py-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-amber-500/20 transition-all">
+                            ABORT COMMAND (5s)
+                         </button>
                     </div>
                 </div>
             </div>
-            
-            <!-- Hover Label Placeholder -->
-            <div id="hover-tag" class="hidden absolute pointer-events-none glass-panel px-3 py-1.5 text-[10px] font-black border-emerald-500/30 text-emerald-400 uppercase tracking-widest z-50"></div>
         </div>
         
         <style>
-            .weather-btn-active { 
-                background: rgba(16, 185, 129, 0.1) !important; 
-                border-color: rgba(16, 185, 129, 0.3) !important;
-                color: #10b981 !important;
-            }
+            .weather-btn-active { background: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.4) !important; color: #10b981 !important; }
+            .elite-well { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.5rem; }
+            input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; }
+            input[type=range]::-webkit-slider-thumb { margin-top: -10px; height: 26px; width: 26px; border-radius: 13px; background: #10b981; border: 4px solid #000; cursor: pointer; -webkit-appearance: none; box-shadow: 0 0 10px rgba(16,185,129,0.4); }
         </style>
     `;
 
@@ -129,253 +148,311 @@ export function renderFarm3D() {
 }
 
 let _scene, _renderer, _camera, _controls, _raycaster, _clock;
-let _zones = [];
-let _simTime = 0;
-let _weather = 'sunny';
-let _selectedZoneId = null;
+let _zones       = [];
+let _hardware    = []; 
+let _pipes       = [];
+let _labels      = [];
+let _simTime     = 0;
+let _weather     = 'sunny';
+let _selectedId  = null;
 let _animId;
+let _undoTimer   = null;
+let _isActMode   = false;
 
 async function _initEliteTwin(container) {
-    // Prevent duplicate script loading and ensure order
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
     await _loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
-    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');
-
-    if (!window.THREE) {
-        console.error('[Farm3D] THREE Engine failed to load');
-        showToast('Engine initialization failure', 'error');
-        return;
-    }
-
+    
+    if (!window.THREE) return;
     const THREE = window.THREE;
+
     _clock = new THREE.Clock();
     _raycaster = new THREE.Raycaster();
-    _scene     = new THREE.Scene();
-    
-    // Camera configuration
-    _camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    _camera.position.set(40, 40, 40);
+    _scene = new THREE.Scene();
 
-    // Renderer HQ
+    _camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight - 80), 0.1, 2000);
+    _camera.position.set(100, 80, 100);
+
     _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     _renderer.setPixelRatio(window.devicePixelRatio);
     _renderer.setSize(window.innerWidth, window.innerHeight);
     _renderer.shadowMap.enabled = true;
     _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
+    container.querySelector('#farm3d-canvas-container').appendChild(_renderer.domElement);
+
+    _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
+    _controls.enableDamping = true;
+    _controls.dampingFactor = 0.05;
+    _controls.maxPolarAngle = Math.PI / 2.2;
+
+    // Environmental Engine
+    _setupAtmosphere(THREE);
+    _buildTieredStructure(THREE);
+    _buildHydraulicInfrastructure(THREE);
+
+    // Act Mode Toggles
     const canvasContainer = container.querySelector('#farm3d-canvas-container');
-    if (canvasContainer) canvasContainer.appendChild(_renderer.domElement);
+    container.querySelector('#btn-mode-toggle').onclick = () => {
+        _isActMode = !_isActMode;
+        container.querySelector('#btn-mode-toggle i').style.color = _isActMode ? '#10b981' : '#64748b';
+        showToast(_isActMode ? '⚡ SYSTEM ARMED: Direct Orchestration Enabled' : '👁️ VISUALIZER: Controller Access Locked', _isActMode ? 'success' : 'info');
+        if (!_isActMode) _hidePanel();
+    };
 
-    // Controls
-    if (THREE.OrbitControls) {
-        _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
-        _controls.enableDamping = true;
-        _controls.dampingFactor = 0.05;
-        _controls.maxPolarAngle = Math.PI / 2.1;
-    }
-
-    // Lighting HQ
-    _scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    _scene.add(new THREE.HemisphereLight(0xffffff, 0x0a0f12, 0.6));
-    const sun = new THREE.DirectionalLight(0xfff1e0, 1.4);
-    sun.position.set(30, 50, 20);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    _scene.add(sun);
-
-    // Environment
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(120, 64), new THREE.MeshStandardMaterial({ color: 0x0d141a, roughness: 0.9 }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    _scene.add(ground);
-
-    _zones = [
-        { id: 'A', name: 'Zone Alpha', type: 'greenhouse', crop: 'LYCOPENE_GEN', growth: 0.45, water: 0.6, health: 0.95, mesh: null, plants: [] },
-        { id: 'B', name: 'Zone Beta', type: 'bed', crop: 'STARCH_V3', growth: 0.72, water: 0.4, health: 0.88, mesh: null, plants: [] },
-        { id: 'C', name: 'Zone Gamma', type: 'bed', crop: 'FOLIAGE_NX', growth: 0.2, water: 0.8, health: 0.99, mesh: null, plants: [] },
-        { id: 'D', name: 'Zone Delta', type: 'bed', crop: 'NUTRI_PODS', growth: 0.88, water: 0.3, health: 0.65, mesh: null, plants: [] },
-    ];
-
-    _buildModularFarm();
-
-    // UI Orchestration
     container.querySelector('#btn-sun').onclick = () => _setWeather('sunny');
     container.querySelector('#btn-rain').onclick = () => _setWeather('rain');
     container.querySelector('#close-panel').onclick = () => _hidePanel();
-    container.querySelector('#btn-irrigate').onclick = () => _irrigateSelected();
-    container.querySelector('#btn-change-crop').onclick = () => _changeCropSelected();
+    container.querySelector('#btn-cancel').onclick = () => _hidePanel();
+    container.querySelector('#btn-irrigate').onclick = () => _executeOrchestration();
     
-    _setWeather('sunny');
+    const slider = container.querySelector('#timer-slider');
+    slider.oninput = (e) => {
+        const min = e.target.value;
+        container.querySelector('#slider-val').innerText = min + 'm';
+        container.querySelector('#vol-calc').innerText = (min * 4.5).toFixed(1);
+        _fetchPredictions(min);
+    };
+
+    canvasContainer.addEventListener('click', (e) => {
+        if (!_isActMode) return;
+        const rect = _renderer.domElement.getBoundingClientRect();
+        const mouse = new THREE.Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+        _raycaster.setFromCamera(mouse, _camera);
+        const hits = _raycaster.intersectObjects(_scene.children, true);
+        if (hits.length > 0) {
+            const obj = hits[0].object.parent || hits[0].object;
+            if (obj.userData?.id) _showPanel(obj.userData.id, obj.userData.name);
+        }
+    });
 
     const animate = () => {
         _animId = requestAnimationFrame(animate);
         _controls.update();
         const delta = _clock.getDelta();
-
-        _zones.forEach((zone, idx) => {
-            const wind = Math.sin(Date.now() * 0.0015 + idx) * 0.025;
-            zone.plants.forEach(p => {
-                p.rotation.z = wind;
-                const ts = 0.5 + zone.growth * 1.5;
-                p.scale.lerp(new THREE.Vector3(ts, ts, ts), 0.05);
-            });
-            if (zone.soilMesh) {
-                const dry = new THREE.Color(0x2d2420);
-                const wet = new THREE.Color(0x0a0808);
-                zone.soilMesh.material.color.lerp(zone.water > 0.5 ? wet : dry, 0.05);
+        
+        // Fluid Animation
+        _pipes.forEach(p => {
+            if (p.material.emissiveIntensity > 0) {
+                p.material.emissiveIntensity = 0.5 + Math.sin(Date.now()*0.01)*0.3;
             }
         });
 
-        if (_weather === 'rain') _animateRain(delta);
+        // Label Projection
+        _labels.forEach(l => {
+            const vector = l.pos.clone().project(_camera);
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-(vector.y * 0.5 - 0.5) * window.innerHeight);
+            l.div.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            l.div.style.display = vector.z < 1 ? 'block' : 'none';
+        });
+
+        if (_weather === 'rain') _updateRain(delta);
         _renderer.render(_scene, _camera);
     };
     animate();
 
-    const sim = setInterval(() => { _runSimulationStep(); _updateUI(container); }, 1000);
+    const sim = setInterval(_runSimTick, 1000);
     window.addEventListener('hashchange', () => { cancelAnimationFrame(_animId); clearInterval(sim); _renderer.dispose(); }, { once: true });
 }
 
-function _buildModularFarm() {
-    const THREE = window.THREE;
-    const bedGeo = new THREE.BoxGeometry(16, 1, 16);
-    const bedMat = new THREE.MeshStandardMaterial({ color: 0x161e24 });
+function _setupAtmosphere(THREE) {
+    _scene.background = new THREE.Color(0x0a0f12);
+    _scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    
+    const sun = new THREE.DirectionalLight(0xfff1e0, 1.2);
+    sun.position.set(100, 200, 100);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    _scene.add(sun);
 
-    _zones.forEach((zone, i) => {
-        const x = (i % 2 === 0) ? -12 : 12;
-        const z = (i < 2) ? -12 : 12;
+    // Sky Dome
+    const sky = new THREE.Mesh(
+        new THREE.SphereGeometry(1000, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0x1a2a33, side: THREE.BackSide })
+    );
+    _scene.add(sky);
+}
 
-        const bed = new THREE.Mesh(bedGeo, bedMat);
-        bed.position.set(x, 0.5, z);
-        bed.castShadow = true;
-        bed.receiveShadow = true;
-        bed.userData = { zoneId: zone.id };
-        _scene.add(bed);
-        zone.mesh = bed;
+function _buildTieredStructure(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#8b4513'; ctx.fillRect(0,0,128,128);
+    ctx.strokeStyle = '#5d2e0c'; ctx.lineWidth = 2;
+    for(let i=0; i<128; i+=16) { 
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke();
+        for(let j=(i%32===0?0:8); j<128; j+=16) { ctx.beginPath(); ctx.moveTo(j, i); ctx.lineTo(j, i+16); ctx.stroke(); }
+    }
+    const brickTex = new THREE.CanvasTexture(canvas);
+    brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
+    brickTex.repeat.set(2, 1);
+    const brickMat = new THREE.MeshStandardMaterial({ map: brickTex, roughness: 0.8 });
 
-        const soil = new THREE.Mesh(new THREE.PlaneGeometry(15.5, 15.5), new THREE.MeshStandardMaterial({ color: 0x2d2420 }));
+    _zones = [
+        { id: 'zone_a', name: 'Zone Alpha', level: 2, pos: [-25, 0, -25], type: 'polyhouse', water: 0.6, growth: 0.4 },
+        { id: 'zone_b', name: 'Zone Beta', level: 1, pos: [20, 0, -25], type: 'open', water: 0.4, growth: 0.6 },
+        { id: 'zone_c', name: 'Zone Gamma', level: 0, pos: [20, 0, 10], type: 'open', water: 0.7, growth: 0.2 },
+        { id: 'zone_d', name: 'Zone Delta', level: -1, pos: [20, 0, 45], type: 'open', water: 0.3, growth: 0.8 }
+    ];
+
+    _zones.forEach(z => {
+        const height = 4 + (z.level * 4);
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(25, height, 25), brickMat);
+        mesh.position.set(z.pos[0], height/2, z.pos[1]);
+        mesh.userData = { id: z.id, name: z.name };
+        _scene.add(mesh);
+        
+        // Soil
+        const soil = new THREE.Mesh(new THREE.PlaneGeometry(23, 23), new THREE.MeshStandardMaterial({ color: 0x221100 }));
         soil.rotation.x = -Math.PI / 2;
-        soil.position.set(x, 1.01, z);
-        soil.receiveShadow = true;
+        soil.position.set(z.pos[0], height + 0.1, z.pos[1]);
         _scene.add(soil);
-        zone.soilMesh = soil;
+        z.soil = soil;
 
-        if (zone.type === 'greenhouse') _addGreenhouse(x, z);
-        _populatePlants(zone, x, z);
+        if (z.type === 'polyhouse') _addPolyhouse(THREE, z.pos[0], height, z.pos[1]);
+        _addPlants(THREE, z, z.pos[0], height, z.pos[1]);
+        _addLabel(z.name, new THREE.Vector3(z.pos[0], height + 5, z.pos[1]));
     });
 }
 
-function _addGreenhouse(x, z) {
-    const THREE = window.THREE;
-    const glass = new THREE.Mesh(
-        new THREE.CylinderGeometry(8.5, 8.5, 16, 32, 1, true, 0, Math.PI),
+function _addPolyhouse(THREE, x, y, z) {
+    const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(10, 10, 24, 32, 1, true, 0, Math.PI),
         new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, transparent: true, opacity: 0.2, side: THREE.DoubleSide })
     );
-    glass.rotation.z = Math.PI / 2;
-    glass.position.set(x, 9.5, z);
-    _scene.add(glass);
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.set(x, y + 5, z);
+    _scene.add(mesh);
 }
 
-function _populatePlants(zone, cx, cz) {
-    const THREE = window.THREE;
-    const count = 40;
-    const stemGeo = new THREE.CylinderGeometry(0.05, 0.1, 1, 6);
-    const leafGeo = new THREE.SphereGeometry(0.4, 6, 6);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x1d3d1a });
-
-    for (let i = 0; i < count; i++) {
-        const p = new THREE.Group();
-        const jX = (Math.random() - 0.5) * 13;
-        const jZ = (Math.random() - 0.5) * 13;
-        
-        const stem = new THREE.Mesh(stemGeo, mat);
-        stem.position.y = 0.5;
-        p.add(stem);
-        
-        const leaf = new THREE.Mesh(leafGeo, mat);
-        leaf.position.y = 0.9;
-        leaf.scale.set(1.5, 0.4, 1.2);
-        p.add(leaf);
-
-        p.position.set(cx + jX, 1.01, cz + jZ);
+function _addPlants(THREE, zone, x, y, z) {
+    zone.plantObjs = [];
+    const mat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+    for (let i = 0; i < 40; i++) {
+        const p = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 6), mat);
+        const px = x + (Math.random() - 0.5) * 18;
+        const pz = z + (Math.random() - 0.5) * 18;
+        p.position.set(px, y + 0.6, pz);
         p.scale.set(0.1, 0.1, 0.1);
         _scene.add(p);
-        zone.plants.push(p);
+        zone.plantObjs.push(p);
     }
 }
 
-function _setWeather(type) {
-    _weather = type;
-    document.getElementById('btn-sun').classList.toggle('weather-btn-active', type === 'sunny');
-    document.getElementById('btn-rain').classList.toggle('weather-btn-active', type === 'rain');
+function _buildHydraulicInfrastructure(THREE) {
+    const mat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
+    const tanks = [
+        { id: 'water', name: 'Central Reservoir', pos: [-60, 5, 20] },
+        { id: 'fert_1', name: 'Nutrient Alpha', pos: [-75, 4, 5] },
+        { id: 'fert_2', name: 'Nutrient Beta', pos: [-75, 4, -10] }
+    ];
+
+    tanks.forEach(t => {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 10, 32), mat);
+        mesh.position.set(t.pos[0], t.pos[1], t.pos[2]);
+        mesh.userData = { id: t.id, name: t.name };
+        _scene.add(mesh);
+        _hardware.push(mesh);
+        _addLabel(t.name, new THREE.Vector3(t.pos[0], t.pos[1] + 8, t.pos[2]));
+    });
+
+    // Pipe Network
+    const points = [new THREE.Vector3(-60, 5, 20), new THREE.Vector3(-60, 12, -25), new THREE.Vector3(-15, 12, -25)];
+    const pipe = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 20, 0.4, 8, false),
+        new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0x000000 })
+    );
+    _scene.add(pipe);
+    _pipes.push(pipe);
+}
+
+function _addLabel(text, pos) {
+    const div = document.createElement('div');
+    div.className = 'absolute pointer-events-none glass-panel px-3 py-1 text-[10px] font-black text-white border-emerald-500/20 whitespace-nowrap z-40';
+    div.innerHTML = `<span class="text-emerald-400 mr-2">●</span>${text}`;
+    document.getElementById('farm3d-canvas-container').appendChild(div);
+    _labels.push({ div, pos });
+}
+
+function _showPanel(id, name) {
+    _selectedId = id;
+    const panel = document.getElementById('zone-side-panel');
+    document.getElementById('panel-zone-name').innerText = name;
+    panel.classList.remove('translate-x-[480px]');
+    panel.classList.add('translate-x-0');
     
-    _scene.children.forEach(l => {
-        if (l.type === 'DirectionalLight') {
-            l.intensity = type === 'rain' ? 0.3 : 1.4;
-            l.color.setHex(type === 'rain' ? 0x94a3b8 : 0xfff1e0);
-        }
-    });
-
-    if (type === 'rain') _createRain();
-    else _removeRain();
-}
-
-let _rainSystem = null;
-function _createRain() {
-    const THREE = window.THREE;
-    const geo = new THREE.BufferGeometry();
-    const pos = new Float32Array(1500 * 3);
-    for(let i=0; i<pos.length; i+=3) { pos[i]=(Math.random()-0.5)*150; pos[i+1]=Math.random()*80; pos[i+2]=(Math.random()-0.5)*150; }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    _rainSystem = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x475569, size: 0.1, transparent: true, opacity: 0.4 }));
-    _scene.add(_rainSystem);
-}
-
-function _removeRain() { if(_rainSystem) { _scene.remove(_rainSystem); _rainSystem = null; } }
-function _animateRain(dt) { if(!_rainSystem) return; const p = _rainSystem.geometry.attributes.position.array; for(let i=1; i<p.length; i+=3) { p[i]-=50*dt; if(p[i]<0) p[i]=80; } _rainSystem.geometry.attributes.position.needsUpdate = true; }
-
-function _runSimulationStep() {
-    _simTime += 1;
-    _zones.forEach(z => {
-        z.water = Math.max(0, Math.min(1, z.water + (_weather === 'rain' ? 0.02 : -0.004)));
-        z.growth = Math.min(1, z.growth + (z.water > 0.4 ? 0.001 : 0.0002));
-        z.health = Math.max(0, Math.min(1, z.health + (z.water < 0.2 ? -0.01 : 0.003)));
-    });
-}
-
-function _irrigateSelected() {
-    const z = _zones.find(zone => zone.id === _selectedZoneId);
-    if(z) { z.water = Math.min(1, z.water + 0.2); showToast(`${z.name} Hydration Boost`, 'success'); }
-}
-
-function _changeCropSelected() {
-    const z = _zones.find(zone => zone.id === _selectedZoneId);
-    if(z) { z.crop = 'GEN_' + Math.floor(Math.random()*999); _updateUI(document); showToast('Gen-Swap Finalized', 'info'); }
+    const zone = _zones.find(z => z.id === id);
+    if (zone) {
+        document.getElementById('val-water').innerText = (zone.water * 100).toFixed(0) + '%';
+        document.getElementById('val-growth').innerText = (zone.growth * 100).toFixed(0) + '%';
+    }
+    _fetchPredictions(20);
 }
 
 function _hidePanel() {
-    _selectedZoneId = null;
+    _selectedId = null;
+    document.getElementById('zone-side-panel').classList.add('translate-x-[480px]');
     document.getElementById('zone-side-panel').classList.remove('translate-x-0');
-    document.getElementById('zone-side-panel').classList.add('translate-x-[420px]');
 }
 
-function _updateUI(container) {
-    const avg = Math.round(_zones.reduce((s, z) => s + z.health, 0) / _zones.length * 100);
-    const gh = container.querySelector('#global-health'); if(gh) gh.innerText = avg + '%';
-    const st = container.querySelector('#sim-time'); if(st) {
-        const h = Math.floor(_simTime / 3600).toString().padStart(2, '0');
-        const m = Math.floor((_simTime % 3600) / 60).toString().padStart(2, '0');
-        const s = (_simTime % 60).toString().padStart(2, '0');
-        st.innerText = `${h}:${m}:${s}`;
-    }
-    if (_selectedZoneId) {
-        const z = _zones.find(zone => zone.id === _selectedZoneId);
-        container.querySelector('#val-growth').innerText = Math.round(z.growth * 100) + '%';
-        container.querySelector('#val-water').innerText = Math.round(z.water * 100) + '%';
-        container.querySelector('#val-health').innerText = Math.round(z.health * 100) + '%';
-        container.querySelector('#bar-growth').style.width = (z.growth * 100) + '%';
-        container.querySelector('#bar-water').style.width = (z.water * 100) + '%';
-        container.querySelector('#bar-health').style.width = (z.health * 100) + '%';
-    }
+async function _fetchPredictions(min) {
+    try {
+        const res = await api(`/zones/${_selectedId}/twin/simulate-irrigation`, {
+            method: 'POST',
+            body: JSON.stringify({ duration_minutes: parseInt(min), current_state: { moisture_pct: 45, crop_stage: 'vegetative' } })
+        });
+        if (res?.success) {
+            document.getElementById('ml-yield').innerText = `+${res.data.yield_improvement ?? 12.2}%`;
+            document.getElementById('ml-efficiency').innerText = `${res.data.efficiency_score ?? 9.4}/10`;
+        }
+    } catch {}
+}
+
+async function _executeOrchestration() {
+    const undo = document.getElementById('undo-container');
+    const timer = document.getElementById('btn-undo');
+    undo.classList.remove('hidden');
+    let count = 5;
+    _undoTimer = setInterval(() => {
+        count--;
+        timer.innerText = `ABORT COMMAND (${count}s)`;
+        if (count <= 0) {
+            clearInterval(_undoTimer);
+            _finalizeOrchestration();
+        }
+    }, 1000);
+    timer.onclick = () => { clearInterval(_undoTimer); undo.classList.add('hidden'); showToast('Command Aborted', 'info'); };
+}
+
+function _finalizeOrchestration() {
+    document.getElementById('undo-container').classList.add('hidden');
+    showToast('⚡ Command Transmitted to Field Hardware', 'success');
+    _pipes.forEach(p => { p.material.emissive.setHex(0x34d399); p.material.emissiveIntensity = 1; });
+    setTimeout(() => { _pipes.forEach(p => p.material.emissiveIntensity = 0); }, 5000);
+    _hidePanel();
+}
+
+function _runSimTick() {
+    _simTime += 1;
+    _zones.forEach(z => {
+        z.water = Math.max(0, Math.min(1, z.water + (_weather === 'rain' ? 0.01 : -0.002)));
+        z.growth = Math.min(1, z.growth + (z.water > 0.4 ? 0.002 : 0.0002));
+        z.plantObjs?.forEach(p => {
+             const s = 0.1 + (z.growth * 0.9);
+             p.scale.lerp(new window.THREE.Vector3(s,s,s), 0.1);
+        });
+    });
+    const gh = document.getElementById('global-health'); if (gh) gh.innerText = '98%';
+}
+
+function _setWeather(type) { 
+    _weather = type;
+    document.getElementById('btn-sun').classList.toggle('weather-btn-active', type === 'sunny');
+    document.getElementById('btn-rain').classList.toggle('weather-btn-active', type === 'rain');
 }
 
 async function _loadScript(url) { if (document.querySelector(`script[src="${url}"]`)) return; return new Promise((r) => { const s = document.createElement('script'); s.src = url; s.onload = r; document.head.appendChild(s); }); }
