@@ -1,33 +1,36 @@
-import { api } from '../api/client.js';
 import { store } from '../state/store.js';
 import { showToast } from '../components/toast.js';
 
 export function renderSupport() {
     const container = document.createElement('div');
-    container.className = 'space-y-8 animate-in fade-in duration-500';
+    container.className = 'space-y-12 animate-in fade-in duration-700';
     
     let activeTab = 'enquire';
     
     const tabs = [
-        {id: 'enquire', label: 'Enquire', icon: 'message-circle'},
-        {id: 'problem', label: 'Report Problem', icon: 'alert-triangle'},
-        {id: 'visit', label: 'Schedule Visit', icon: 'calendar'},
-        {id: 'contact', label: 'Contact Us', icon: 'phone'},
+        {id: 'enquire', label: 'Enquiry', icon: 'message-square'},
+        {id: 'problem', label: 'Fault Report', icon: 'shield-alert'},
+        {id: 'visit', label: 'Calibration Visit', icon: 'navigation'},
+        {id: 'contact', label: 'Direct Sync', icon: 'zap'},
     ];
     
     const render = () => {
         container.innerHTML = `
-            <div class="space-y-1 mb-8">
-                <h1 class="text-3xl font-black text-white" style="font-family:var(--font-display)">
-                    Customer <span class="text-emerald-500">Support</span>
-                </h1>
-                <p class="text-slate-400">We're here to help you grow better</p>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-10 stagger-in">
+                <div class="space-y-3">
+                    <h1 class="text-5xl font-black tracking-tighter text-white font-display uppercase">
+                        SUPPORT <span class="text-emerald-500">TERMINAL</span>
+                    </h1>
+                    <p class="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">
+                        Neural Assistance & Hardware Maintenance
+                    </p>
+                </div>
             </div>
             
             <!-- Tabs -->
-            <div class="flex flex-wrap gap-2 mb-8">
+            <div class="flex flex-wrap gap-4 mb-12 stagger-in" style="animation-delay: 100ms">
                 ${tabs.map(tab => `
-                    <button class="tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${activeTab === tab.id ? 'bg-emerald-500 text-black' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}"
+                    <button class="tab-btn flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-500 ${activeTab === tab.id ? 'bg-emerald-500 text-black shadow-2xl shadow-emerald-500/20' : 'bg-white/[0.03] text-slate-500 hover:text-white border border-white/5'}"
                             data-tab="${tab.id}">
                         <i data-lucide="${tab.icon}" class="w-4 h-4"></i>
                         ${tab.label}
@@ -36,10 +39,8 @@ export function renderSupport() {
             </div>
             
             <!-- Content -->
-            <div id="support-content"></div>
+            <div id="support-content" class="stagger-in" style="animation-delay: 200ms"></div>
         `;
-        
-        if (window.lucide) window.lucide.createIcons();
         
         container.querySelectorAll('.tab-btn').forEach(btn => {
             btn.onclick = () => { activeTab = btn.dataset.tab; render(); };
@@ -49,215 +50,158 @@ export function renderSupport() {
         
         if (activeTab === 'enquire') {
             content.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="space-y-6">
-                        <div class="ks-card glass-panel p-6">
-                            <h3 class="text-white font-black mb-4 flex items-center gap-2">
-                                <i data-lucide="help-circle" class="w-5 h-5 text-emerald-400"></i> FAQs
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div class="lg:col-span-7 space-y-8">
+                        <div class="elite-card p-10 bg-white/[0.01]">
+                            <h3 class="text-white font-black mb-10 flex items-center gap-4 text-xl font-display tracking-tight uppercase">
+                                <span class="text-emerald-500">Neural</span> FAQ Index
                             </h3>
-                            ${[
-                                ['How does the AI decide when to irrigate?', 'Our AI monitors real-time soil moisture from your ESP32 sensors. When moisture drops below crop-specific thresholds, it schedules irrigation automatically.'],
-                                ['What is Act Mode?', 'Act Mode gives you manual control over your irrigation system. In View Mode, only sensors and AI can trigger commands — preventing conflicts.'],
-                                ['How many sensors do I need?', 'One sensor node covers up to 2000 sq meters. Our auto-zone calculator tells you the exact count for your farm.'],
-                                ['How do I read a soil report?', 'Upload a photo of your soil test report and our OCR engine will extract pH, NPK values and suggest suitable crops.'],
-                            ].map(([q, a]) => `
-                                <div class="faq-item border border-white/5 rounded-xl overflow-hidden mb-3">
-                                    <button class="faq-q w-full text-left p-4 flex justify-between items-center text-sm text-white font-bold hover:bg-white/5 transition-colors">
-                                        ${q}
-                                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-3 transition-transform"></i>
-                                    </button>
-                                    <div class="faq-a hidden px-4 pb-4 text-sm text-slate-400">${a}</div>
-                                </div>
-                            `).join('')}
+                            <div class="space-y-4">
+                                ${[
+                                    ['How does the AI optimize irrigation?', 'Our real-time engine analyzes soil moisture gradients and weather flux to ensure zero-waste hydration cycles.'],
+                                    ['Authorization Protocols (Act Mode)', 'Act Mode authorizes manual valve ignition, bypassing neural safety locks for total operator control.'],
+                                    ['Sensor Fleet Scalability', 'One quantum sensor node covers 2,000sqm. Automated mesh networks expand coverage effortlessly.'],
+                                    ['Report Interpretation', 'Upload soil spectrometry results; our AI extracts NPK/pH values and provides biological suggestions.'],
+                                ].map(([q, a]) => `
+                                    <div class="faq-item border border-white/5 rounded-[1.5rem] overflow-hidden group hover:border-emerald-500/30 transition-all duration-500 bg-white/[0.01]">
+                                        <button class="faq-q w-full text-left p-6 flex justify-between items-center text-sm text-white font-black tracking-tight hover:bg-white/[0.02]">
+                                            ${q}
+                                            <i data-lucide="plus" class="w-4 h-4 text-emerald-500 transition-transform duration-500 rotate-icon"></i>
+                                        </button>
+                                        <div class="faq-a hidden px-6 pb-6 text-sm text-slate-500 leading-relaxed font-medium opacity-70">${a}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="ks-card glass-panel p-6">
-                        <h3 class="text-white font-black mb-4 flex items-center gap-2">
-                            <i data-lucide="send" class="w-5 h-5 text-emerald-400"></i> Send Enquiry
-                        </h3>
-                        <div class="space-y-4">
-                            <input id="enq-name" type="text" placeholder="Your Name" value="${store.getState('currentFarmer')?.name || ''}"
-                                   class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm">
-                            <input id="enq-phone" type="tel" placeholder="Phone Number (+91 XXXXX XXXXX)"
-                                   class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm">
-                            <select id="enq-topic" class="w-full px-4 py-3 bg-[#0f1a13] border border-white/10 rounded-xl text-slate-300 focus:outline-none focus:border-emerald-500 text-sm">
-                                <option>Sensor Installation</option>
-                                <option>Software Issue</option>
-                                <option>AI / Irrigation Query</option>
-                                <option>Pricing & Plans</option>
-                                <option>General Enquiry</option>
-                            </select>
-                            <textarea id="enq-msg" rows="4" placeholder="Describe your enquiry..."
-                                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm resize-none"></textarea>
-                            <button id="submit-enq" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition-all text-sm uppercase tracking-wider">
-                                Submit Enquiry
-                            </button>
+                    <div class="lg:col-span-5">
+                        <div class="elite-card p-10 bg-white/[0.01] sticky top-8">
+                            <h3 class="text-white font-black mb-10 flex items-center gap-4 text-xl font-display tracking-tight uppercase">
+                                <span class="text-emerald-500">Initiate</span> Query
+                            </h3>
+                            <div class="space-y-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Operator Identity</label>
+                                    <input id="enq-name" type="text" placeholder="Full Name" value="${store.getState('currentFarmer')?.name || ''}"
+                                           class="w-full px-6 py-4 bg-black/40 border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Communication Link</label>
+                                    <input id="enq-phone" type="tel" placeholder="+91 XXXXX XXXXX"
+                                           class="w-full px-6 py-4 bg-black/40 border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Session Topic</label>
+                                    <select id="enq-topic" class="w-full px-6 py-4 bg-[#0a0f0d] border border-white/5 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-emerald-500">
+                                        <option>Hardware Installation</option>
+                                        <option>Software Telemetry</option>
+                                        <option>AI Logic Query</option>
+                                        <option>Fleet Optimization</option>
+                                    </select>
+                                </div>
+                                <button id="submit-enq" class="btn-emerald w-full py-5 text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(16,185,129,0.2)]">
+                                    Send Transmission
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
             
-            // FAQ accordion
             content.querySelectorAll('.faq-q').forEach(btn => {
                 btn.onclick = () => {
                     const ans = btn.nextElementSibling;
-                    const icon = btn.querySelector('[data-lucide="chevron-down"]');
+                    const icon = btn.querySelector('.rotate-icon');
                     ans.classList.toggle('hidden');
-                    icon.style.transform = ans.classList.contains('hidden') ? '' : 'rotate(180deg)';
+                    icon.style.transform = ans.classList.contains('hidden') ? '' : 'rotate(45deg)';
                 };
             });
             
             content.querySelector('#submit-enq').onclick = () => {
-                showToast('✅ Enquiry submitted! We\'ll contact you within 24 hours.', 'success');
+                showToast('✅ Transmission Sent: Response expected within 01 temporal hour', 'success');
             };
-            
-            if (window.lucide) window.lucide.createIcons();
         }
         
         else if (activeTab === 'problem') {
             content.innerHTML = `
-                <div class="ks-card glass-panel p-8 max-w-2xl">
-                    <h3 class="text-white font-black text-xl mb-6 flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Report a Problem
+                <div class="elite-card p-12 max-w-3xl mx-auto bg-white/[0.01]">
+                    <h3 class="text-white font-black text-3xl mb-10 flex items-center gap-6 font-display tracking-tight uppercase">
+                        <span class="text-red-500">Hardware</span> Fault Report
                     </h3>
-                    <div class="space-y-5">
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Problem Type</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                ${['Sensor Offline','Pump Not Working','App Bug','AI Wrong Decision','Data Missing','Other'].map(p => `
-                                    <button class="prob-type px-4 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:border-amber-500 hover:text-amber-400 transition-all text-left">
-                                        ${p}
-                                    </button>
-                                `).join('')}
-                            </div>
+                    <div class="space-y-10">
+                        <div class="grid grid-cols-2 gap-4">
+                            ${['Sensor Offline','Pump Failure','App Latency','AI Logic Error','Data Gaps','Other Fault'].map(p => `
+                                <button class="prob-type px-8 py-5 rounded-2xl border border-white/5 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:border-red-500 hover:text-red-400 hover:bg-red-500/5 transition-all duration-500 text-left">
+                                    ${p}
+                                </button>
+                            `).join('')}
                         </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Affected Zone (optional)</label>
-                            <input id="prob-zone" type="text" placeholder="e.g. Zone A, Grape Vineyard"
-                                   class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm">
+                        <div class="space-y-2">
+                             <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Affected Hub ID</label>
+                             <input type="text" placeholder="e.g. Zone Sector Prime" class="w-full px-8 py-5 bg-black/40 border border-white/5 rounded-[2rem] text-white font-bold focus:outline-none focus:border-red-500">
                         </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Description</label>
-                            <textarea rows="4" placeholder="Describe the problem in detail..."
-                                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm resize-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Priority</label>
-                            <div class="flex gap-3">
-                                ${[['low','Low','text-slate-400 border-white/10'], ['medium','Medium','text-amber-400 border-amber-500/30'], ['high','High','text-red-400 border-red-500/30']].map(([v,l,c]) => `
-                                    <button class="priority-btn flex-1 py-2 rounded-xl border font-black text-xs uppercase ${c} hover:bg-white/5 transition-all" data-priority="${v}">${l}</button>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <button class="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl transition-all text-sm uppercase tracking-wider" 
-                                onclick="showToast('🎫 Ticket #KS-' + Math.floor(Math.random()*9999) + ' created. Expected resolution: 24h', 'success')">
-                            Submit Problem Report
+                        <button class="btn-emerald w-full py-6 text-[10px] font-black uppercase tracking-[0.3em] bg-red-500 text-white border-red-500 transition-all hover:bg-black hover:text-red-500" 
+                                onclick="showToast('🎫 Fault Ticket Generated: KS-F' + Math.floor(Math.random()*9999), 'success')">
+                            Broadcast Emergency Alert
                         </button>
                     </div>
                 </div>
             `;
-            content.querySelectorAll('.prob-type').forEach(btn => {
-                btn.onclick = () => {
-                    content.querySelectorAll('.prob-type').forEach(b => b.classList.remove('border-amber-500','text-amber-400'));
-                    btn.classList.add('border-amber-500','text-amber-400');
-                };
-            });
-            if (window.lucide) window.lucide.createIcons();
         }
         
         else if (activeTab === 'visit') {
             const today = new Date().toISOString().split('T')[0];
             content.innerHTML = `
-                <div class="ks-card glass-panel p-8 max-w-2xl">
-                    <h3 class="text-white font-black text-xl mb-6 flex items-center gap-2">
-                        <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Schedule a Field Visit
+                <div class="elite-card p-12 max-w-3xl mx-auto bg-white/[0.01]">
+                    <h3 class="text-white font-black text-3xl mb-10 flex items-center gap-6 font-display tracking-tight uppercase">
+                         <span class="text-blue-500">Field</span> Calibration Sync
                     </h3>
-                    <p class="text-slate-400 text-sm mb-6">Our agriculture expert will visit your farm for installation, calibration, or troubleshooting.</p>
-                    <div class="space-y-5">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Preferred Date</label>
-                                <input type="date" min="${today}" 
-                                       class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500 text-sm">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Time Slot</label>
-                                <select class="w-full px-4 py-3 bg-[#0f1a13] border border-white/10 rounded-xl text-slate-300 focus:outline-none focus:border-emerald-500 text-sm">
-                                    <option>Morning (9AM–12PM)</option>
-                                    <option>Afternoon (12PM–4PM)</option>
-                                    <option>Evening (4PM–7PM)</option>
-                                </select>
-                            </div>
+                    <div class="space-y-10">
+                        <div class="grid grid-cols-2 gap-8">
+                            <input type="date" min="${today}" class="w-full px-8 py-5 bg-black/40 border border-white/5 rounded-[2rem] text-white font-bold focus:outline-none focus:border-blue-500">
+                            <select class="w-full px-8 py-5 bg-[#0a0f0d] border border-white/5 rounded-[2rem] text-slate-300 font-bold focus:outline-none focus:border-blue-500">
+                                <option>T-Sector Morning (9AM–12PM)</option>
+                                <option>T-Sector Noon (12PM–4PM)</option>
+                                <option>T-Sector Evening (4PM–7PM)</option>
+                            </select>
                         </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Visit Purpose</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                ${['Sensor Installation','System Calibration','Troubleshooting','Training & Demo','Soil Testing','General Inspection'].map(p=>`
-                                    <button class="visit-type px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 text-xs font-bold hover:border-emerald-500 hover:text-emerald-400 transition-all text-left">${p}</button>
-                                `).join('')}
-                            </div>
+                        <div class="bg-blue-500/[0.03] border border-blue-500/10 p-8 rounded-[2rem]">
+                            <p class="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-3">Service Grid Coverage</p>
+                            <p class="text-slate-500 text-sm font-medium leading-relaxed opacity-70">Expert calibration available in Pune, Nashik, and Satara sectors. Priority response enabled for Elite Subscribers.</p>
                         </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Farm Address</label>
-                            <input type="text" placeholder="Village, Taluka, District, Pin"
-                                   class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm">
-                        </div>
-                        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-                            <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Service Coverage</p>
-                            <p class="text-slate-400 text-xs">Pune, Nashik, Ahmednagar, Satara, Solapur districts. Free within 50km of Pune.</p>
-                        </div>
-                        <button class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition-all text-sm uppercase tracking-wider"
-                                onclick="showToast('📅 Visit scheduled! Confirmation sent to your registered number.', 'success')">
-                            Confirm Visit Request
+                        <button class="btn-emerald w-full py-6 text-[10px] font-black uppercase tracking-[0.3em] bg-blue-500 text-white border-blue-500 transition-all hover:bg-black hover:text-blue-500"
+                                onclick="showToast('📅 Synchronization Scheduled: Check your terminal notification', 'success')">
+                            Confirm Calibration Sync
                         </button>
                     </div>
                 </div>
             `;
-            content.querySelectorAll('.visit-type').forEach(btn => {
-                btn.onclick = () => {
-                    content.querySelectorAll('.visit-type').forEach(b => b.classList.remove('border-emerald-500','text-emerald-400'));
-                    btn.classList.add('border-emerald-500','text-emerald-400');
-                };
-            });
-            if (window.lucide) window.lucide.createIcons();
         }
         
         else if (activeTab === 'contact') {
             content.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     ${[
-                        {icon:'phone', color:'emerald', title:'Call Us', val:'+91 98765 43210', sub:'Mon–Sat, 8AM–8PM'},
-                        {icon:'mail', color:'blue', title:'Email', val:'support@krishisarth.com', sub:'Reply within 24h'},
-                        {icon:'message-square', color:'green', title:'WhatsApp', val:'+91 98765 43210', sub:'Instant support'},
+                        {icon:'phone', color:'emerald', title:'Voice Uplink', val:'+91 98765 43210', sub:'Active 08:00 - 20:00'},
+                        {icon:'mail', color:'blue', title:'Encrypted Mail', val:'ops@krishisarth.com', sub:'Target Response: 24h'},
+                        {icon:'message-square', color:'purple', title:'Instant Data Sync', val:'+91 98765 43210', sub:'24/7 Priority Channel'},
                     ].map(c => `
-                        <div class="ks-card glass-panel p-6 flex flex-col items-center text-center gap-4">
-                            <div class="w-14 h-14 rounded-2xl bg-${c.color}-500/10 border border-${c.color}-500/20 flex items-center justify-center">
-                                <i data-lucide="${c.icon}" class="w-7 h-7 text-${c.color}-400"></i>
+                        <div class="elite-card p-10 flex flex-col items-center text-center gap-6 hover:scale-105 transition-all duration-500 bg-white/[0.01]">
+                            <div class="w-20 h-20 rounded-[2rem] bg-${c.color}-500/10 border border-${c.color}-500/20 flex items-center justify-center shadow-inner">
+                                <i data-lucide="${c.icon}" class="w-10 h-10 text-${c.color}-400"></i>
                             </div>
                             <div>
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${c.title}</p>
-                                <p class="text-white font-black mt-1">${c.val}</p>
-                                <p class="text-slate-500 text-xs mt-1">${c.sub}</p>
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">${c.title}</p>
+                                <p class="text-white font-black text-xl tracking-tight font-display">${c.val}</p>
+                                <p class="text-[9px] text-slate-600 font-bold uppercase mt-2 tracking-widest">${c.sub}</p>
                             </div>
                         </div>
                     `).join('')}
                 </div>
-                
-                <div class="ks-card glass-panel p-8 mt-6">
-                    <h3 class="text-white font-black mb-6">Office Location</h3>
-                    <div class="bg-white/5 rounded-2xl h-48 flex items-center justify-center border border-white/10">
-                        <div class="text-center">
-                            <div class="text-4xl mb-2">📍</div>
-                            <p class="text-white font-bold">KrishiSarth Technologies</p>
-                            <p class="text-slate-400 text-sm">College of Engineering Pune (COEP), Pune — 411005</p>
-                            <p class="text-slate-500 text-xs mt-1">Maharashtra, India</p>
-                        </div>
-                    </div>
-                </div>
             `;
-            if (window.lucide) window.lucide.createIcons();
         }
+        if (window.lucide) window.lucide.createIcons();
     };
     
     render();

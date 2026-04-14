@@ -14,24 +14,24 @@ export function renderControl() {
     container.className = "space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700";
 
     const header = document.createElement('div');
-    header.className = "flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-4";
+    header.className = "flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-8 stagger-in";
     header.innerHTML = `
-        <div class="space-y-1">
-            <h1 class="ks-text-fluid-lg tracking-tight text-white font-display">
-                Hardware <span class="text-emerald-500">Orchestration</span>
+        <div class="space-y-3">
+            <h1 class="text-5xl font-black tracking-tighter text-white font-display">
+                NODE <span class="text-emerald-500">ORCHESTRTION</span>
             </h1>
-            <p class="text-slate-400 font-medium text-sm">
-                Direct manual overrides for connected irrigation actuators.
+            <p class="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">
+                Direct Manual Override Hub
             </p>
         </div>
         <div class="flex flex-wrap gap-4">
-            <button id="start-all-btn" class="btn-elite flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+            <button id="start-all-btn" class="btn-emerald px-8 py-4 text-[10px] uppercase font-black tracking-widest bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                 <i data-lucide="play-circle" class="w-5 h-5"></i>
-                <span>INITIALIZE ALL</span>
+                <span>ACTIVATE FULL GRID</span>
             </button>
-            <button id="stop-all-btn" class="btn-elite flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-red-500/10 text-red-500 border-red-500/20">
+            <button id="stop-all-btn" class="btn-elite px-8 py-4 text-[10px] uppercase font-black tracking-widest bg-red-500/10 text-red-500 border-red-500/20">
                 <i data-lucide="stop-circle" class="w-5 h-5"></i>
-                <span>TERMINATE ALL</span>
+                <span>SECURE ALL VALVES</span>
             </button>
         </div>
     `;
@@ -197,8 +197,8 @@ function initVoiceCommands(container) {
     // Add voice button to header
     const voiceBtn = document.createElement('button');
     voiceBtn.id = 'voice-cmd-btn';
-    voiceBtn.className = 'btn-elite flex items-center gap-2 px-6 py-3 bg-purple-500/10 text-purple-400 border-purple-500/20';
-    voiceBtn.innerHTML = `<i data-lucide="mic" class="w-5 h-5"></i><span>VOICE</span>`;
+    voiceBtn.className = 'btn-elite flex items-center gap-2 px-8 py-4 bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] font-black uppercase tracking-widest';
+    voiceBtn.innerHTML = `<i data-lucide="mic" class="w-5 h-5"></i><span>VOICE PILOT</span>`;
     
     const btnRow = container.querySelector('.flex.flex-wrap.gap-4');
     if (btnRow) btnRow.appendChild(voiceBtn);
