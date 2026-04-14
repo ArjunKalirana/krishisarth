@@ -150,10 +150,33 @@ async function _initEliteTwin(container) {
     const THREE = window.THREE;
     _clock = new THREE.Clock();
     _raycaster = new THREE.Raycaster();
+    _scene     = new THREE.Scene();
+    
+    // Camera configuration
+    _camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    _camera.position.set(40, 40, 40);
+
+    // Renderer HQ
+    _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    _renderer.setPixelRatio(window.devicePixelRatio);
+    _renderer.setSize(window.innerWidth, window.innerHeight);
+    _renderer.shadowMap.enabled = true;
+    _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    const canvasContainer = container.querySelector('#farm3d-canvas-container');
+    if (canvasContainer) canvasContainer.appendChild(_renderer.domElement);
+
+    // Controls
+    if (THREE.OrbitControls) {
+        _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
+        _controls.enableDamping = true;
+        _controls.dampingFactor = 0.05;
+        _controls.maxPolarAngle = Math.PI / 2.1;
+    }
 
     // Lighting HQ
-    _scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-    _scene.add(new THREE.HemisphereLight(0xffffff, 0x0a0f12, 0.4));
+    _scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    _scene.add(new THREE.HemisphereLight(0xffffff, 0x0a0f12, 0.6));
     const sun = new THREE.DirectionalLight(0xfff1e0, 1.4);
     sun.position.set(30, 50, 20);
     sun.castShadow = true;

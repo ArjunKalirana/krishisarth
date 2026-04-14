@@ -48,9 +48,9 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                         <div>
                             <h3 class="font-black text-white text-lg tracking-tight font-display">${name}</h3>
                             <div class="flex items-center gap-2">
-                                <div class="w-1.5 h-1.5 rounded-full ${isActMode ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-slate-600'}"></div>
+                                <div class="w-1.5 h-1.5 rounded-full ${isActMode ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]' : 'bg-slate-600'}"></div>
                                 <span class="text-[9px] font-black uppercase tracking-[0.2em] ${isActMode ? 'text-emerald-400' : 'text-slate-500'}">
-                                    ${isActMode ? 'Operational' : 'Visualizer'}
+                                    ${isActMode ? 'Operational Mode' : 'Visualizer Phase'}
                                 </span>
                             </div>
                         </div>
@@ -142,12 +142,16 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
         const toggle = card.querySelector(`#toggle-${id}`);
         if (!isActMode) {
             if (toggle) {
-                toggle.disabled = true;
+                toggle.onclick = () => {
+                   showToast('⚠️ SAFETY LOCK: Switch to ACT MODE to authorize manual valve override.', 'warning');
+                };
                 toggle.style.opacity = '0.3';
                 toggle.style.cursor = 'not-allowed';
             }
             card.querySelectorAll('.dur-btn').forEach(btn => {
-                btn.disabled = true;
+                btn.onclick = () => {
+                   showToast('⚠️ Control interface restricted in visualizer mode.', 'info');
+                };
                 btn.style.opacity = '0.3';
                 btn.style.cursor = 'not-allowed';
             });

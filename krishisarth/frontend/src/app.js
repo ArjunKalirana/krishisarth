@@ -68,7 +68,11 @@ async function initApp() {
         const hash    = window.location.hash || '#dashboard';
         const appRoot = document.getElementById('app-root');
         const navRoot = document.getElementById('navbar-root');
+        const footer  = document.getElementById('app-footer');
         const farmer  = store.getState('currentFarmer');
+
+        // Clean shell for pure SPA experience
+        if (appRoot) appRoot.innerHTML = '';
 
         console.log(`[ROUTER] → ${hash} | farmer: ${farmer?.name ?? 'none'}`);
 
@@ -82,9 +86,11 @@ async function initApp() {
         const asstRoot = document.getElementById('ks-assistant');
         if (hash === '#login' || hash === '#register') {
             navRoot?.classList.add('hidden');
+            if (footer) footer.style.display = 'none';
             if (asstRoot) asstRoot.style.display = 'none';
         } else {
             navRoot?.classList.remove('hidden');
+            if (footer) footer.style.display = 'block';
             if (asstRoot) asstRoot.style.display = 'block';
         }
 
@@ -117,6 +123,8 @@ async function initApp() {
                     }
                     
                     telemetryWS.connect(bestFarm.id);
+                    // RE-RENDER: Now that we have a farm ID, move past the bootstrap phase
+                    return route();
                 } else {
                     console.log('[ROUTER] No farms found — auto-provisioning default...');
                     // Auto-create a default farm for a seamless experience (especially for "Demo" user)
