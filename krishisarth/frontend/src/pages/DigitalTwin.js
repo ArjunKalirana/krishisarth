@@ -48,22 +48,26 @@ function Model({ mode, onSelect, selectedId, deviceStates }) {
   }, [scene]);
 
   useFrame((state, delta) => {
+    if (!scene || !deviceStates) return;
     scene.traverse((child) => {
-      if (child.userData.deviceId === 'fertilizer_mixer' && deviceStates.pump_active) {
+      if (child.userData?.deviceId === 'fertilizer_mixer' && deviceStates.pump_active) {
           child.rotation.y += delta * 2;
       }
-      if (child.isMesh && child.userData.isInteractive) {
+      if (child.isMesh && child.userData?.isInteractive) {
         const isSelected = child.userData.deviceId === selectedId;
         const isHovered = child.userData.deviceId === hovered;
-        if (isSelected) {
-            child.material.emissive?.set('#10b981');
-            child.material.emissiveIntensity = 0.5 + Math.sin(state.clock.elapsedTime * 4) * 0.2;
-        } else if (isHovered && mode === 'act') {
-            child.material.emissive?.set('#34d399');
-            child.material.emissiveIntensity = 0.3;
-        } else {
-            child.material.emissive?.set('#000000');
-            child.material.emissiveIntensity = 0;
+        
+        if (child.material) {
+            if (isSelected) {
+                child.material.emissive?.set('#10b981');
+                child.material.emissiveIntensity = 0.5 + Math.sin(state.clock.elapsedTime * 4) * 0.2;
+            } else if (isHovered && mode === 'act') {
+                child.material.emissive?.set('#34d399');
+                child.material.emissiveIntensity = 0.3;
+            } else {
+                child.material.emissive?.set('#000000');
+                child.material.emissiveIntensity = 0;
+            }
         }
       }
     });
