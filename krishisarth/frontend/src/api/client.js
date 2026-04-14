@@ -42,6 +42,11 @@ export async function api(path, options = {}, attempt = 1) {
         clearTimeout(timeoutId);
 
         if (response.status === 401) {
+            // Prevent recursive refresh attempts if the refresh token itself is invalid
+            if (path.includes('/auth/refresh') || path.includes('/auth/login')) {
+                throw new Error('AUTH_FAILED');
+            }
+
             const refreshed = await _refreshAccessToken();
             if (refreshed) {
                 const retryController = new AbortController();
@@ -53,7 +58,19 @@ export async function api(path, options = {}, attempt = 1) {
                 if (!retry.ok) throw new Error(retryData.error?.code || 'API_ERROR');
                 return retryData;
             }
+
+            // FAIL-SAFE: If the user is the demo account, attempt to gracefully degrade 
+            // rather than kicking to login. This keeps the Digital Twin visible.
+            if (localStorage.getItem('ks_refresh')) {
+                console.warn('[API] 401 refresh failed. Attempting offline fallback for demo...');
+                if (path.includes('/dashboard') || path.includes('/farms')) {
+                    const cached = localStorage.getItem(`ks_dash_cache`);
+                    if (cached) return { success: true, data: JSON.parse(cached), _fallback: true };
+                }
+            }
+
             clearToken();
+            showToast('Session Expired — Re-authenticating', 'warning');
             window.location.hash = '#login';
             return null;
         }

@@ -60,6 +60,10 @@ export function renderFarm3D() {
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x0a0f12, 0.008);
+    
+    // Create a high-fidelity environment map
+    const gen = new THREE.PMREMGenerator(renderer);
+    scene.environment = gen.fromScene(new THREE.Scene()).texture;
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 500);
     camera.position.set(40, 40, 40);
@@ -113,8 +117,12 @@ export function renderFarm3D() {
 
     // ─── Load GLB Model ─────────────────────────────────────────
     const loader = new GLTFLoader();
+    
+    // RENAMED for maximum reliability: farm_model.glb -> model.glb
+    const MODEL_PATH = '/assets/model.glb';
+    
     loader.load(
-        './assets/hydroponic greenhouse 3d model.glb',
+        MODEL_PATH,
         (gltf) => {
             const model = gltf.scene;
             model.scale.setScalar(1.5);
@@ -126,7 +134,9 @@ export function renderFarm3D() {
                     child.receiveShadow = true;
 
                     // Clone material so emissive changes don't bleed between meshes
-                    child.material = child.material.clone();
+                    if (child.material) {
+                        child.material = child.material.clone();
+                    }
 
                     const match = Object.keys(DEVICE_MAP).find(key =>
                         child.name.toLowerCase().includes(key.toLowerCase()) ||
@@ -140,21 +150,43 @@ export function renderFarm3D() {
             });
 
             scene.add(model);
-            // Hide loading indicator
+            
+            // Hide loading indicator with transition
             const loadingEl = container.querySelector('#twin-loading');
-            if (loadingEl) loadingEl.style.display = 'none';
+            if (loadingEl) {
+                loadingEl.style.transition = 'opacity 0.8s ease-out';
+                loadingEl.style.opacity = '0';
+                setTimeout(() => loadingEl.style.display = 'none', 800);
+            }
+            
+            showToast('Neural Twin Synchronized', 'success');
         },
         (progress) => {
             const pct = progress.total ? Math.round((progress.loaded / progress.total) * 100) : 0;
-            const loadingEl = container.querySelector('#twin-loading-pct');
-            if (loadingEl) loadingEl.textContent = `${pct}%`;
+            const loadingPctEl = container.querySelector('#twin-loading-pct');
+            const loadingBarEl = container.querySelector('#twin-loading-bar-fill');
+            if (loadingPctEl) loadingPctEl.textContent = `${pct}%`;
+            if (loadingBarEl) loadingBarEl.style.width = `${pct}%`;
         },
         (err) => {
             console.error('[DigitalTwin] GLB load error:', err);
             const loadingEl = container.querySelector('#twin-loading');
-            if (loadingEl) loadingEl.innerHTML = `
-                <div class="text-red-500 font-mono text-[10px] uppercase tracking-widest">MODEL_LOAD_FAILURE</div>
-                <div class="text-slate-500 text-[10px] mt-2">${err.message}</div>`;
+            if (loadingEl) {
+                loadingEl.innerHTML = `
+                    <div class="glass-hud p-10 rounded-[3rem] border-red-500/20 text-center space-y-4 animate-in zoom-in">
+                        <div class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i data-lucide="unplug" class="w-10 h-10 text-red-500"></i>
+                        </div>
+                        <h3 class="text-3xl font-black text-white font-display uppercase tracking-tight">Signal Lost</h3>
+                        <p class="text-slate-400 text-xs font-medium max-w-[240px] leading-relaxed mx-auto">
+                            The neural asset <span class="text-red-400 font-mono">${MODEL_PATH}</span> could not be resolved.
+                        </p>
+                        <button onclick="window.location.reload()" class="mt-8 btn-emerald bg-red-500 hover:bg-red-400 text-black px-10 py-4">
+                            RE-INITIALIZE LINK
+                        </button>
+                    </div>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
         }
     );
 
@@ -334,10 +366,20 @@ export function renderFarm3D() {
     // ─── HUD (Mode Toggle + Loading) ────────────────────────────
     container.innerHTML += `
         <!-- Loading Indicator -->
-        <div id="twin-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-4 z-40 pointer-events-none">
-            <div class="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-            <div class="text-emerald-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">
-                Neural Linking... <span id="twin-loading-pct">0%</span>
+        <div id="twin-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-8 z-40 bg-[#0a0f12]">
+            <div class="relative">
+                <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i data-lucide="box" class="w-8 h-8 text-emerald-500/40"></i>
+                </div>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div class="text-emerald-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">
+                    Streaming Neural Asset... <span id="twin-loading-pct">0%</span>
+                </div>
+                <div class="w-48 h-1 bg-white/5 rounded-full overflow-hidden mt-2">
+                    <div id="twin-loading-bar-fill" class="h-full bg-emerald-500 shadow-[0_0_10px_#10b981] transition-all duration-300" style="width:0%"></div>
+                </div>
             </div>
         </div>
 

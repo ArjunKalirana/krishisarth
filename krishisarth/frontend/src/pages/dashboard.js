@@ -429,7 +429,7 @@ function renderHeader(data) {
     const statusClass = isCritical ? 'text-red-400' : (isWarning ? 'text-amber-400' : 'text-emerald-400');
     
     const sparklineSvg = `<svg class="w-full h-8" preserveAspectRatio="none" viewBox="0 0 100 20">
-        <polyline points="0,15 15,10 30,12 45,5 60,8 75,2 100,6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+        <polyline points="0,15 15,10 30,12 45,5 60,8 75,2 100,6" fill="none" stroke="var(--emerald-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
     </svg>`;
 
     return `
@@ -461,41 +461,41 @@ function renderHeader(data) {
             </div>
 
             <!-- Premium Hero Banner -->
-            <div class="relative w-full h-[400px] rounded-[2rem] overflow-hidden mb-12 elite-card border-none shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
-                <img src="./assets/images/hero.png" class="absolute inset-0 w-full h-full object-cover transition-transform duration-[20s] linear animate-slow-zoom" alt="Smart Farm Hero">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f0d] via-[#0a0f0d]/40 to-transparent"></div>
+            <div class="relative w-full h-[450px] rounded-[3rem] overflow-hidden mb-12 glass-hud border-emerald-500/10 shadow-[0_40px_100px_rgba(0,0,0,0.6)] animate-in zoom-in duration-1000">
+                <img src="./assets/images/hero.png" class="absolute inset-0 w-full h-full object-cover transition-transform duration-[30s] linear animate-slow-zoom opacity-60" alt="Smart Farm Hero">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f0d] via-[#0a0f0d]/60 to-transparent"></div>
                 
-                <div class="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
+                <div class="absolute inset-0 p-10 md:p-16 flex flex-col justify-end">
                     <div class="flex flex-col md:flex-row justify-between items-end gap-10">
-                        <div class="max-w-2xl">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Live Simulation Engine Active</span>
-                                <div class="flex items-center gap-1.5">
-                                    <div class="w-1 h-1 rounded-full bg-emerald-500 animate-ping"></div>
-                                    <span class="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Node-24-Alpha</span>
+                        <div class="max-w-3xl">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></div>
+                                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Neural Synchronicity Active</span>
                                 </div>
+                                <span class="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] font-mono">Node_Link: 0x8F2C</span>
                             </div>
-                            <h3 class="text-5xl md:text-7xl font-black text-white font-display tracking-tighter leading-[0.9] mb-4">
-                                HARVEST <span class="text-emerald-500">INTELLIGENCE</span>
+                            <h3 class="text-6xl md:text-8xl font-black text-white font-display tracking-tighter leading-[0.85] mb-6">
+                                THE <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600">NEURAL</span> <br/>HARVEST
                             </h3>
-                            <p class="text-slate-300 text-sm md:text-lg font-medium opacity-80 leading-relaxed">
-                                Our neural twin is currently processing 1.4M data points per second to optimize moisture retention across all active plots.
+                            <p class="text-slate-400 text-sm md:text-xl font-medium opacity-80 leading-relaxed max-w-xl">
+                                Our real-time simulation engine is processing agricultural telemetry with <span class="text-emerald-400 font-bold">99.2% fidelity</span>.
                             </p>
                         </div>
                         
-                        <div class="hidden lg:flex flex-col items-end space-y-6 glass-hud p-8 rounded-[2rem] border-white/5 bg-black/20">
-                             <div class="flex items-center gap-6">
+                        <div class="hidden lg:flex flex-col items-end space-y-8 glass-hud p-10 rounded-[2.5rem] border-white/5 bg-black/40 backdrop-blur-3xl">
+                             <div class="flex items-center gap-8">
                                  <div class="text-right">
-                                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Model Fidelity</p>
-                                     <p class="text-3xl font-black text-white font-display">99.2%</p>
+                                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Model Confidence</p>
+                                     <p class="text-5xl font-black text-white font-display tracking-tighter">99.2%</p>
                                  </div>
-                                 <div class="w-14 h-14 rounded-full border-2 border-emerald-500/20 flex items-center justify-center relative">
-                                     <div class="absolute inset-0 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin duration-[3s]"></div>
-                                     <i data-lucide="brain" class="w-6 h-6 text-emerald-400"></i>
+                                 <div class="w-20 h-20 rounded-full border-2 border-emerald-500/10 flex items-center justify-center relative">
+                                     <div class="absolute inset-0 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin duration-[4s]"></div>
+                                     <i data-lucide="brain-circuit" class="w-10 h-10 text-emerald-400"></i>
                                  </div>
                              </div>
-                             <div class="w-56 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                 <div class="h-full bg-emerald-500 w-[99%] shadow-[0_0_15px_#10b981]"></div>
+                             <div class="w-64 h-2 bg-white/5 rounded-full overflow-hidden">
+                                 <div class="h-full bg-emerald-500 w-[99%] shadow-[0_0_20px_#10b981]"></div>
                              </div>
                         </div>
                     </div>
