@@ -1,4 +1,6 @@
 import uuid
+import sys
+import logging
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +10,11 @@ from app.core.config import settings
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import rate_limit
 
+# Diagnostic log for Railway deployment
+print(">>> [DEBUG] KRISHISARTH BACKEND PROCESS STARTED")
+print(f">>> [DEBUG] Python Version: {sys.version}")
+print(f">>> [DEBUG] Working Directory: {sys.path[0]}")
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
@@ -16,9 +23,12 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
+    print(">>> [DEBUG] FASTAPI STARTUP EVENT TRIGGERED")
     if settings.ENABLE_DEMO_MODE:
+        print(">>> [DEBUG] INITIALIZING SIMULATION ENGINE...")
         from app.services.simulation_service import simulation_engine
         await simulation_engine.start()
+        print(">>> [DEBUG] SIMULATION ENGINE STARTED")
 
 @app.on_event("shutdown")
 async def shutdown_event():
