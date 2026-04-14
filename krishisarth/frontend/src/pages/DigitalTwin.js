@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment, ContactShadows, Float, Html } from '@react-three/drei';
+import { useGLTF, OrbitControls, ContactShadows, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import htm from 'htm';
 import { api } from '../api/client.js';
@@ -171,9 +171,11 @@ const DigitalTwin = () => {
         <div className="w-full h-screen relative bg-[#0a0f12] overflow-hidden">
         <${Canvas} shadows camera=${{ position: [40, 40, 40], fov: 35 }}>
             <${Suspense} fallback=${html`<${Html} center><div className="text-emerald-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">Neural Linking...</div><//>`}>
-                <${Environment} preset="city" />
-                <ambientLight intensity=${0.4} />
-                <directionalLight position=${[10, 10, 5]} intensity=${1} castShadow shadow-mapSize=${[1024, 1024]} />
+                <hemisphereLight skyColor=${0x87ceeb} groundColor=${0x362907} intensity=${0.6} />
+                <ambientLight intensity=${0.3} />
+                <directionalLight position=${[10, 15, 8]} intensity=${1.2} castShadow shadow-mapSize=${[2048, 2048]} shadow-camera-far=${50} shadow-camera-left=${-20} shadow-camera-right=${20} shadow-camera-top=${20} shadow-camera-bottom=${-20} />
+                <directionalLight position=${[-5, 5, -5]} intensity=${0.3} color=${0x8eb4d4} />
+                <pointLight position=${[0, 10, 0]} intensity=${0.4} color=${0xfff4e6} />
                 
                 <${Model} 
                    mode=${mode} 
