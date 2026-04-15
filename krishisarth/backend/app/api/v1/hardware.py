@@ -29,12 +29,12 @@ class HardwarePayload(BaseModel):
     rainfall: float = 100.0
     ec: float = 0.5
     oc: float = 0.6
-    S: float = 10.0
+    s: float = 10.0
     zn: float = 0.6
     fe: float = 4.5
     cu: float = 0.2
-    Mn: float = 2.0
-    B: float = 0.5
+    mn: float = 2.0
+    b: float = 0.5
 
 @router.post("/ingest")
 async def hardware_ingest(
@@ -100,12 +100,12 @@ async def hardware_ingest(
         ph=payload.ph if payload.ph != 6.5 else (zone.ph or 6.5),
         ec=payload.ec if payload.ec != 0.5 else (zone.ec or 0.5),
         oc=payload.oc if payload.oc != 0.6 else (zone.oc or 0.6),
-        S=payload.S if payload.S != 10.0 else (zone.S or 10.0),
+        s=payload.s if payload.s != 10.0 else (zone.s or 10.0),
         zn=payload.zn if payload.zn != 0.6 else (zone.zn or 0.6),
         fe=payload.fe if payload.fe != 4.5 else (zone.fe or 4.5),
         cu=payload.cu if payload.cu != 0.2 else (zone.cu or 0.2),
-        Mn=payload.Mn if payload.Mn != 2.0 else (zone.Mn or 2.0),
-        B=payload.B if payload.B != 0.5 else (zone.B or 0.5)
+        mn=payload.mn if payload.mn != 2.0 else (zone.mn or 2.0),
+        b=payload.b if payload.b != 0.5 else (zone.b or 0.5)
     )
     crop_result, fertility_result = await asyncio.gather(crop_task, fertility_task)
 

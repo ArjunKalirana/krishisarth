@@ -222,7 +222,7 @@ async def update_zone_profile(
         raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
 
     # Update only allowed fields
-    allowed_fields = {"ph", "rainfall", "ec", "oc", "S", "zn", "fe", "cu", "Mn", "B", "crop_type", "crop_stage"}
+    allowed_fields = {"ph", "rainfall", "ec", "oc", "s", "zn", "fe", "cu", "mn", "b", "crop_type", "crop_stage"}
     for field, value in payload.items():
         if field in allowed_fields:
             setattr(zone, field, value)

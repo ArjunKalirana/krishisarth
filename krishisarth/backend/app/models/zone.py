@@ -26,16 +26,16 @@ class Zone(Base):
     crop_suggestion = Column(String, nullable=True)  # AI suggested crop
     
     # High-Precision ML Data (Settable from Frontend)
-    ph              = Column(Float, nullable=True, default=6.5)
-    rainfall        = Column(Float, nullable=True, default=100.0)
-    ec              = Column(Float, nullable=True, default=0.5)  # electrical conductivity
-    oc              = Column(Float, nullable=True, default=0.6)  # organic carbon
-    S               = Column(Float, nullable=True, default=10.0) # sulfur
-    zn              = Column(Float, nullable=True, default=0.6)  # Zinc
-    fe              = Column(Float, nullable=True, default=4.5)  # Iron
-    cu              = Column(Float, nullable=True, default=0.2)  # Copper
-    Mn              = Column(Float, nullable=True, default=2.0)  # Manganese
-    B               = Column(Float, nullable=True, default=0.5)  # Boron
+    ph              = Column(Float, nullable=True)
+    rainfall        = Column(Float, nullable=True)
+    ec              = Column(Float, nullable=True)  # electrical conductivity
+    oc              = Column(Float, nullable=True)  # organic carbon
+    s               = Column(Float, nullable=True)  # sulfur
+    zn              = Column(Float, nullable=True)  # Zinc
+    fe              = Column(Float, nullable=True)  # Iron
+    cu              = Column(Float, nullable=True)  # Copper
+    mn              = Column(Float, nullable=True)  # Manganese
+    b               = Column(Float, nullable=True)  # Boron
     
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

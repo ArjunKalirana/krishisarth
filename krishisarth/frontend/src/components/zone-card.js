@@ -70,20 +70,20 @@ export function createZoneCard({ id, name, lastIrrig, moisture, initialState = f
                     <input name="oc" type="number" step="0.01" value="0.6" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-emerald-500 outline-none">
                 </div>
                  <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Sulfur (S) - ppm</label>
-                    <input name="S" type="number" step="1" value="10" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-emerald-500 outline-none">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Sulfur (s) - ppm</label>
+                    <input name="s" type="number" step="1" value="10" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-emerald-500 outline-none">
                 </div>
                 <div class="col-span-2 grid grid-cols-4 gap-4">
                     <div class="space-y-1">
-                        <label class="text-[8px] font-black text-slate-500 uppercase">Zn</label>
-                        <input name="zn" type="number" step="0.1" value="0.6" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs">
+                        <label class="text-[8px] font-black text-slate-500 uppercase">mn</label>
+                        <input name="mn" type="number" step="0.1" value="2.0" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[8px] font-black text-slate-500 uppercase">Fe</label>
-                        <input name="fe" type="number" step="0.1" value="4.5" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs">
+                        <label class="text-[8px] font-black text-slate-500 uppercase">b</label>
+                        <input name="b" type="number" step="0.1" value="0.5" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[8px] font-black text-slate-500 uppercase">Cu</label>
+                        <label class="text-[8px] font-black text-slate-500 uppercase">cu</label>
                         <input name="cu" type="number" step="0.1" value="0.2" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs">
                     </div>
                     <div class="space-y-1">

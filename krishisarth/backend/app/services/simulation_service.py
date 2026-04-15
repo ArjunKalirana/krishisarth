@@ -45,7 +45,10 @@ class SimulationEngine:
                 await self._simulate_tick()
             except Exception as e:
                 logger.error(f"Simulation tick failed: {str(e)}")
-            await asyncio.sleep(10) # Tick every 10 seconds
+                # Increase backoff on consecutive failures to avoid log spam
+                await asyncio.sleep(30) 
+                continue
+            await asyncio.sleep(10) # Normal tick every 10 seconds
 
     async def _simulate_tick(self):
         logger.debug(f"Simulation tick running — {len(self.zone_states)} zones in state")

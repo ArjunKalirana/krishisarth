@@ -24,6 +24,26 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     print(">>> [DEBUG] FASTAPI STARTUP EVENT TRIGGERED")
+    
+    # 0. Safety Integrity Check: Verify DB Schema matches ML requirements
+    try:
+        from sqlalchemy import inspect
+        from app.db.postgres import engine
+        inspector = inspect(engine)
+        existing_cols = [col['name'] for col in inspector.get_columns('zones')]
+        required_cols = ['ph', 'ec', 'oc', 's', 'zn', 'fe', 'cu', 'mn', 'b']
+        missing = [c for c in required_cols if c not in existing_cols]
+        if missing:
+            print(f">>> [ERROR] SCHEMA INCOMPLETE: Missing columns {missing}")
+            # We don't raise Exception here to allow the server to start (so migrations can potentially run),
+            # but we log it loudly. Actually, the user suggested raising exception.
+            # But Alembic runs BEFORE this. If Alembic failed, we should know.
+            raise Exception(f"Database schema incomplete. Missing columns in 'zones' table: {missing}")
+    except Exception as e:
+        print(f">>> [CRITICAL] Database Integrity Check Failed: {e}")
+        # Stop startup if schema is broken to prevent spamming logs
+        sys.exit(1)
+
     if settings.ENABLE_DEMO_MODE:
         print(">>> [DEBUG] INITIALIZING SIMULATION ENGINE...")
         from app.services.simulation_service import simulation_engine

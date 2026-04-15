@@ -28,14 +28,14 @@ async def predict_crop(N: float, P: float, K: float, temperature: float,
         return "unavailable"
 
 async def predict_fertility(N: float, P: float, K: float, ph: float = 6.5,
-                             ec: float = 0.5, oc: float = 0.6, S: float = 10.0,
+                             ec: float = 0.5, oc: float = 0.6, s: float = 10.0,
                              zn: float = 0.6, fe: float = 4.5, cu: float = 0.2,
-                             Mn: float = 2.0, B: float = 0.5) -> dict:
+                             mn: float = 2.0, b: float = 0.5) -> dict:
     """Call Soil Fertility Prediction ML API."""
     payload = {
         "N": N, "P": P, "K": K, "ph": ph,
-        "ec": ec, "oc": oc, "S": S,
-        "zn": zn, "fe": fe, "cu": cu, "Mn": Mn, "B": B
+        "ec": ec, "oc": oc, "S": s,
+        "zn": zn, "fe": fe, "cu": cu, "Mn": mn, "B": b
     }
     LABELS = {0: "Less Fertile", 1: "Fertile", 2: "Highly Fertile"}
     try:
