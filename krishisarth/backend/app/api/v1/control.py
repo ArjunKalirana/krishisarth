@@ -26,7 +26,13 @@ async def start_zone_irrigation(
     _=Depends(deps.verify_zone_owner),
 ) -> Any:
     # 1. Mode Guard: Only allow irrigation if zone is in Act Mode
-    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    try:
+        import uuid
+        uuid.UUID(str(zone_id))
+        zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    except (ValueError, Exception):
+        zone = None
+
     if not zone:
         raise HTTPException(404, "ZONE_NOT_FOUND")
     
@@ -76,7 +82,13 @@ async def stop_zone_irrigation(
     _=Depends(deps.verify_zone_owner),
 ) -> Any:
     # 1. Mode Guard
-    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    try:
+        import uuid
+        uuid.UUID(str(zone_id))
+        zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    except (ValueError, Exception):
+        zone = None
+
     if not zone:
         raise HTTPException(404, "ZONE_NOT_FOUND")
     
@@ -153,7 +165,13 @@ async def set_zone_mode(
     if mode not in ("view", "act"):
         raise HTTPException(status_code=400, detail="INVALID_MODE: must be 'view' or 'act'")
     
-    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    try:
+        import uuid
+        uuid.UUID(str(zone_id))
+        zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    except (ValueError, Exception):
+        zone = None
+
     if not zone:
         raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
         
