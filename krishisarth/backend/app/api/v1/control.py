@@ -201,3 +201,31 @@ async def set_zone_mode(
             "message": "Act Mode activated — you can now send commands" if mode == "act" else "View Mode — observation only"
         }
     }
+
+@router.patch("/{zone_id}/profile", response_model=dict)
+async def update_zone_profile(
+    zone_id: str,
+    db: Session = Depends(get_db),
+    current_farmer=Depends(deps.get_current_farmer),
+    _=Depends(deps.verify_zone_owner),
+    payload: dict = Body(...)
+) -> Any:
+    """Update detailed soil and environmental profile for ML precision."""
+    try:
+        import uuid
+        uuid.UUID(str(zone_id))
+        zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    except (ValueError, Exception):
+        zone = None
+
+    if not zone:
+        raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
+
+    # Update only allowed fields
+    allowed_fields = {"ph", "rainfall", "ec", "oc", "S", "zn", "fe", "cu", "Mn", "B", "crop_type", "crop_stage"}
+    for field, value in payload.items():
+        if field in allowed_fields:
+            setattr(zone, field, value)
+            
+    db.commit()
+    return {"success": True, "message": "Zone profile updated successfully"}

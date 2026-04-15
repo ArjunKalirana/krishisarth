@@ -68,14 +68,19 @@ class TelemetryWS {
     }
 
     handleMessage(msg) {
-        // Expected message format: { type: 'ZONE_UPDATE' | 'SYS_UPDATE', data: { ... } }
-        if (msg.type === 'ZONE_UPDATE') {
+        // Expected message format: { type: 'ZONE_UPDATE' | 'SYS_UPDATE' | 'HARDWARE_UPDATE', data: { ... } }
+        if (msg.type === 'ZONE_UPDATE' || msg.type === 'HARDWARE_UPDATE') {
             const currentData = store.getState('sensorData') || {};
             currentData[msg.data.zone_id] = {
                 ...currentData[msg.data.zone_id],
                 ...msg.data
             };
             store.setState('sensorData', { ...currentData });
+            
+            // Dispatch a custom event to update non-react views dynamically
+            if (msg.type === 'HARDWARE_UPDATE') {
+                document.dispatchEvent(new CustomEvent('hardware-update', { detail: msg.data }));
+            }
         }
     }
 

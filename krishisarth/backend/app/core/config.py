@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     AWS_REGION: Optional[str] = "ap-south-1"
     OPENWEATHER_API_KEY: Optional[str] = None
     GROQ_KEY: Optional[str] = None
+    ML_CROP_API_URL: str = "https://your-crop-model-url/predict"
+    ML_FERTILITY_API_URL: str = "https://your-fertility-model-url/predict"
     ENABLE_DEMO_MODE: bool = True  # Enable simulation engine by default for hardware-less demos
 
     # CORS — add your Vercel URL here OR override via CORS_ORIGINS env var

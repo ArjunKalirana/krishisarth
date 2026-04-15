@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.middleware.rate_limit import rate_limit
-from app.api.v1 import auth, farms, dashboard, control, ai_decisions, analytics, alerts, alerts_mark, websocket, demo, digital_twin, soil
+from app.api.v1 import auth, farms, dashboard, control, ai_decisions, analytics, alerts, alerts_mark, websocket, demo, digital_twin, soil, hardware
 
 api_router = APIRouter()
 
@@ -23,3 +23,8 @@ protected_router.include_router(demo.router,          prefix="/demo",   tags=["d
 api_router.include_router(protected_router)
 api_router.include_router(websocket.router,     prefix="",        tags=["websocket"])
 api_router.include_router(digital_twin.router,  prefix="",        tags=["digital_twin"])
+api_router.include_router(
+    hardware.router,
+    prefix="/hardware",
+    tags=["hardware"]
+)

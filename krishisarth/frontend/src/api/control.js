@@ -27,3 +27,9 @@ export async function injectFertigation(zoneId, nutrientType, concentrationMl) {
         })
     });
 }
+export async function setZoneMode(zoneId, mode) {
+    return await api(`/zones/${zoneId}/mode`, {
+        method: 'PATCH',
+        body: JSON.stringify({ mode })
+    });
+}
