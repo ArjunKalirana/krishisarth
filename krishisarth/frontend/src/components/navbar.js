@@ -20,7 +20,7 @@ export function renderNavbar() {
     const unreadCount = store.getState('unreadAlertCount');
 
     const template = `
-        <nav class="glass-panel mx-4 mt-4 px-6 border border-white/5 relative z-50 flex items-center justify-between" style="height: 64px;">
+        <nav class="glass-panel bg-slate-900/95 backdrop-blur-2xl mx-4 mt-4 px-6 border border-white/10 relative z-50 flex items-center justify-between shadow-[0_10px_40px_rgba(0,0,0,0.5)]" style="height: 64px;">
             <!-- Brand & Status -->
             <div class="flex items-center gap-6">
                 <a href="#dashboard" class="flex items-center gap-3 group" style="text-decoration:none;">
@@ -110,7 +110,7 @@ export function renderNavbar() {
 
             <!-- Mobile Drawer HUD -->
             <div id="mobile-drawer" class="lg:hidden absolute top-[calc(100%+12px)] left-0 w-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" style="max-height: 0; opacity: 0;">
-                <div class="glass-panel border-white/10 p-4 space-y-2">
+                <div class="glass-panel bg-slate-900/95 backdrop-blur-2xl border-white/10 p-4 space-y-2 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
                     ${[
                         { hash: '#dashboard', icon: 'layout-dashboard', label: t('nav_dashboard') },
                         { hash: '#farm3d',    icon: 'box',              label: 'Digital Twin' },

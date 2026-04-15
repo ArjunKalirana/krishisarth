@@ -40,9 +40,9 @@ function _buildWidget() {
         </button>
 
         <!-- Neural Chat Panel -->
-        <div id="assistant-panel" class="hidden absolute bottom-20 right-0 w-[420px] max-w-[calc(100vw-3rem)] h-[640px] max-h-[calc(100vh-10rem)] glass-panel flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-6 duration-500">
+        <div id="assistant-panel" class="hidden absolute bottom-20 right-0 w-[420px] max-w-[calc(100vw-3rem)] h-[640px] max-h-[calc(100vh-10rem)] glass-panel bg-slate-900/95 backdrop-blur-3xl flex-col overflow-hidden shadow-[0_10px_50px_rgba(0,0,0,0.8)] border border-white/10 animate-in slide-in-from-bottom-6 duration-500">
             <!-- Header HUD -->
-            <div class="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center justify-between">
+            <div class="bg-slate-900 border-b border-white/10 px-6 py-5 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                         <i data-lucide="sprout" class="w-5 h-5 text-emerald-400"></i>
