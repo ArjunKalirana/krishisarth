@@ -170,6 +170,11 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 100;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(-100%); /* Hidden by default on all screens */
+}
+
+.side-sidebar.open {
+    transform: translateX(0);
 }
 
 .bottom-navigation {
@@ -186,24 +191,31 @@ body {
 }
 
 @media (max-width: 1024px) {
-    .side-sidebar {
-        transform: translateX(-100%);
-    }
-    .side-sidebar.open {
-        transform: translateX(0);
-    }
     .bottom-navigation {
         display: flex;
     }
     .main-content {
-        margin-left: 0 !important;
         padding-bottom: var(--bottom-nav-height);
     }
 }
 
+/* Tablet & Mobile padding */
+@media (max-width: 1024px) {
+    .main-content {
+        padding-top: 20px;
+    }
+}
+
+/* Desktop padding for Top Navbar */
+@media (min-width: 1025px) {
+    .main-content {
+        padding-top: 80px;
+    }
+}
+
 .main-content {
-    margin-left: var(--sidebar-width);
-    transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-left: 0; /* Centered by default */
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* --- Agricultural HUD Enhancements --- */

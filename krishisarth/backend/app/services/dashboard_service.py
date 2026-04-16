@@ -113,12 +113,15 @@ from(bucket: "{bucket}")
         }
     }
 
-    # Fetch Real Weather if Farm exists
+    # Fetch Real Weather if Farm exists (Fallback to Pune)
     try:
         farm = db.query(Farm).filter(Farm.id == farm_id).first()
+        lat, lng = 18.52, 73.86 # Default: Pune
         if farm and farm.lat and farm.lng:
-            weather = await get_weather_full(farm.lat, farm.lng)
-            dashboard["weather"] = weather
+            lat, lng = farm.lat, farm.lng
+            
+        weather = await get_weather_full(lat, lng)
+        dashboard["weather"] = weather
     except Exception as e:
         print(f"[DashboardService] Weather error: {e}")
 
