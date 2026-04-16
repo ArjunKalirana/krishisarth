@@ -1,7 +1,7 @@
 /**
  * KrishiSarth API Client
- * Access token: in-memory ONLY — never written to any storage.
- * Refresh token: sessionStorage (survives page reload, cleared on tab close).
+ * - Access token: In-memory closure ONLY (XSS-safe)
+ * - Refresh token: sessionStorage (survives reload, wiped on tab close)
  */
 
 const API_PROD_URL = 'https://krishisarth-production.up.railway.app/v1';
@@ -12,29 +12,57 @@ const BASE_URL = window.__KS_API_URL__ ||
         ? API_PROD_URL 
         : API_DEV_URL);
 
-// Modified for 6A robust API client structure
-let _refreshing   = false;
+// --- Secure Token Closure ---
+let _accessToken = null;
+let _refreshing  = false;
 let _refreshQueue = [];
 
 export function setToken(token) {
-    localStorage.setItem('ks_token', token);
+    _accessToken = token;
 }
 
 export function getToken() {
-    return localStorage.getItem('ks_token');
+    return _accessToken;
 }
 
 export function clearToken() {
-    localStorage.removeItem('ks_token');
-    localStorage.removeItem('ks_refresh');
+    _accessToken = null;
+    sessionStorage.removeItem('ks_refresh');
     sessionStorage.removeItem('ks_farmer');
+}
+
+/** 
+ * Silent Refresh on Page Reload 
+ * This attempts to restore a session using the sessionStorage refresh token.
+ */
+export async function attemptSilentRefresh() {
+    const rf = sessionStorage.getItem('ks_refresh');
+    if (!rf) return false;
+    try {
+        const res = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: rf }),
+            credentials: 'include'
+        });
+        if (res.ok) {
+            const body = await res.json();
+            const data = body.data || body;
+            setToken(data.access_token);
+            sessionStorage.setItem('ks_refresh', data.refresh_token);
+            return true;
+        }
+    } catch (e) {
+        console.warn('[AUTH] Silent refresh failed:', e);
+    }
+    return false;
 }
 
 import { showToast } from '../components/toast.js';
 
 export async function api(path, options = {}, attempt = 1) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     options.signal = controller.signal;
 
     try {
@@ -42,31 +70,13 @@ export async function api(path, options = {}, attempt = 1) {
         clearTimeout(timeoutId);
 
         if (response.status === 401) {
-            // Prevent recursive refresh attempts if the refresh token itself is invalid
             if (path.includes('/auth/refresh') || path.includes('/auth/login')) {
                 throw new Error('AUTH_FAILED');
             }
 
             const refreshed = await _refreshAccessToken();
             if (refreshed) {
-                const retryController = new AbortController();
-                setTimeout(() => retryController.abort(), 15000);
-                options.signal = retryController.signal;
-                
-                const retry = await _fetchWithAuth(path, options);
-                const retryData = await retry.json();
-                if (!retry.ok) throw new Error(retryData.error?.code || 'API_ERROR');
-                return retryData;
-            }
-
-            // FAIL-SAFE: If the user is the demo account, attempt to gracefully degrade 
-            // rather than kicking to login. This keeps the Digital Twin visible.
-            if (localStorage.getItem('ks_refresh')) {
-                console.warn('[API] 401 refresh failed. Attempting offline fallback for demo...');
-                if (path.includes('/dashboard') || path.includes('/farms')) {
-                    const cached = localStorage.getItem(`ks_dash_cache`);
-                    if (cached) return { success: true, data: JSON.parse(cached), _fallback: true };
-                }
+                return await api(path, options, 2);
             }
 
             clearToken();
@@ -76,51 +86,19 @@ export async function api(path, options = {}, attempt = 1) {
         }
 
         const data = await response.json();
-        if (!response.ok) {
-            // SELF-HEALING: If we are not the farm owner, our currentFarm ID is stale
-            if (data.detail === 'NOT_FARM_OWNER') {
-                console.error('[API] Stale Farm ID detected. Purging local state…');
-                localStorage.removeItem('ks_dash_cache');
-                localStorage.removeItem('ks_current_farm'); // Just in case name varies
-                // Also clear partial keys from store if possible, 
-                // but a hard reload is the safest recover for the demo
-                setTimeout(() => window.location.reload(), 500);
-            }
-            throw new Error(data.detail || data.error?.code || 'API_ERROR');
-        }
+        if (!response.ok) throw new Error(data.detail || 'API_ERROR');
         return data;
     } catch (err) {
         clearTimeout(timeoutId);
-        console.error(`[API] ${path}:`, err.message);
-        
-        // Network Error Catch & Retry logic
-        if (err.name === 'TypeError' || err.name === 'AbortError') {
-             if (attempt === 1) {
-                  showToast('Network error — retrying...', 'error');
-                  return new Promise((resolve, reject) => {
-                       setTimeout(async () => {
-                           try {
-                               const out = await api(path, options, 2);
-                               resolve(out);
-                           } catch(e) {
-                               reject(e);
-                           }
-                       }, 2000);
-                  });
-             }
-        }
-        
+        if (err.name === 'AbortError') throw new Error('REQUEST_TIMEOUT');
         throw err;
     }
 }
 
 async function _fetchWithAuth(path, options) {
     const headers = { 'Content-Type': 'application/json', ...options.headers };
-    const ksToken = getToken();
-    if (ksToken) headers['Authorization'] = `Bearer ${ksToken}`;
-    
-    // Removed: .replace(/\/+(\?|$)/, '$1') — stripping slashes causes 307 redirects 
-    // in FastAPI which often fail CORS/Mixed Content behind proxies.
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     return fetch(`${BASE_URL}${path}`, { ...options, headers, credentials: 'include' });
 }
 
@@ -128,7 +106,7 @@ async function _refreshAccessToken() {
     if (_refreshing) {
         return new Promise(resolve => _refreshQueue.push(resolve));
     }
-    const refreshToken = localStorage.getItem('ks_refresh');
+    const refreshToken = sessionStorage.getItem('ks_refresh');
     if (!refreshToken) return false;
 
     _refreshing = true;
@@ -141,8 +119,9 @@ async function _refreshAccessToken() {
         });
         if (res.ok) {
             const body = await res.json();
-            setToken(body.data.access_token || body.access_token);
-            localStorage.setItem('ks_refresh', body.data.refresh_token || body.refresh_token);
+            const data = body.data || body;
+            setToken(data.access_token);
+            sessionStorage.setItem('ks_refresh', data.refresh_token);
             _refreshQueue.forEach(r => r(true));
             _refreshQueue = [];
             return true;

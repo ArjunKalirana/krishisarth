@@ -441,11 +441,18 @@ function renderHeader(data) {
                         <span class="text-slate-500 font-medium">${t('greeting_' + timeOfDay) || 'Good ' + timeOfDay},</span> ${farmerName}.
                     </h1>
                     <div class="flex items-center gap-2 text-slate-400 font-medium text-xs md:text-sm">
-                        <span class="w-2 h-2 rounded-full ${isCritical ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'} animate-pulse"></span>
-                        <span data-i18n="farm_is">SYSTEM STATE:</span> 
-                        <span class="${statusClass} font-black uppercase tracking-widest">${t('sys_status_' + sysStatus) || sysStatus}</span>
-                        <span class="mx-2 text-slate-700">|</span>
-                        <span class="font-mono text-[10px] uppercase opacity-60">Last Sync: ${minsAgo}m ago</span>
+                    <div class="flex items-center gap-4 text-slate-400 font-medium text-xs md:text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${isCritical ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'} animate-pulse"></span>
+                            <span class="${statusClass} font-black uppercase tracking-widest">${t('sys_status_' + sysStatus) || sysStatus}</span>
+                        </div>
+                        <span class="text-slate-700">|</span>
+                        <div id="ws-status-badge" class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500" id="ws-dot"></span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500" id="ws-text">Synchronizing...</span>
+                        </div>
+                        <span class="hidden md:inline text-slate-700">|</span>
+                        <span class="hidden md:inline font-mono text-[10px] uppercase opacity-60">Last Sync: ${minsAgo}m ago</span>
                     </div>
                 </div>
                 
@@ -578,7 +585,7 @@ function renderGrid(data) {
     grid.className = "ks-grid md:ks-grid-2 lg:ks-grid-4 gap-6";
     
     data.zones.forEach(z => {
-        const moisture = z.moisture_pct || 0;
+        const moisture = z.moisture_pct !== null ? z.moisture_pct : "--";
         const card = createSensorCard({
             title: z.name,
             icon: "sprout",
@@ -595,9 +602,14 @@ function renderGrid(data) {
 }
 
 function renderSkeleton() {
-    return `<div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-pulse">
-        ${[1,2,3,4].map(() => `<div class="h-48 bg-gray-200 rounded-2xl"></div>`).join('')}
-    </div>`;
+    return `
+        <div class="space-y-12">
+            <div class="h-[450px] w-full bg-white/5 rounded-[3rem] ks-shimmer"></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                ${[1, 2, 3, 4].map(() => `<div class="h-48 bg-white/5 rounded-2xl ks-shimmer"></div>`).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function renderEmptyState() {

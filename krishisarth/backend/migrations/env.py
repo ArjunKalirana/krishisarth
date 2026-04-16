@@ -1,4 +1,4 @@
-import sys
+import os
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -7,7 +7,6 @@ from alembic import context
 # Add current directory to path so we can import 'app'
 sys.path.append(".")
 
-from app.core.config import settings
 from app.models import Base
 
 # this is the Alembic Config object, which provides
@@ -19,13 +18,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the sqlalchemy.url from our internal settings
+# Set the sqlalchemy.url from our internal environments
 # Railway provides DATABASE_URL starting with "postgres://" (legacy Heroku
 # format). SQLAlchemy 2.x requires "postgresql://". Fix at runtime.
-_db_url = settings.DATABASE_URL
-if _db_url.startswith("postgres://"):
+_db_url = os.getenv("DATABASE_URL")
+if _db_url and _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
-config.set_main_option("sqlalchemy.url", _db_url)
+config.set_main_option("sqlalchemy.url", _db_url or "postgresql://user:pass@localhost/db")
 
 # add your model's MetaData object here
 # for 'autogenerate' support

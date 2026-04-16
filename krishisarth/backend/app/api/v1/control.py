@@ -48,10 +48,16 @@ async def start_zone_irrigation(
             zone_id=zone_id, duration_min=req.duration_min, source=req.source, db=db, redis=redis
         )
 
-        # 3. Physical Hardware Trigger (MQTT)
-        # If MQTT fails, the pump didn't start, but the lock is already set (safety first)
-        topic = f"krishisarth/zone/{zone_id}/pump/on"
-        mqtt_manager.client.publish(topic, "ON", qos=1)
+        # 3. Physical Hardware Trigger (MQTT Protocol v12)
+        # Publish JSON command payload for production gateway
+        command = {
+            "action": "irrigate",
+            "zone_id": zone_id,
+            "duration_minutes": req.duration_min,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        topic = f"krishisarth/zone/{zone_id}/command"
+        mqtt_manager.client.publish(topic, json.dumps(command), qos=1)
         
         return {"success": True, "data": result}
     except Exception:
@@ -103,8 +109,13 @@ async def stop_zone_irrigation(
         result = await irrigation_service.stop_irrigation(zone_id=zone_id, db=db, redis=redis)
 
         # 3. Physical Hardware Trigger (MQTT)
-        topic = f"krishisarth/zone/{zone_id}/pump/off"
-        mqtt_manager.client.publish(topic, "OFF", qos=1)
+        command = {
+            "action": "stop",
+            "zone_id": zone_id,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        topic = f"krishisarth/zone/{zone_id}/command"
+        mqtt_manager.client.publish(topic, json.dumps(command), qos=1)
         
         return {"success": True, "data": result}
     except Exception:

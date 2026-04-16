@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     REDIS_URL: str
     JWT_SECRET: str
     JWT_REFRESH_SECRET: str
-    MONGODB_URL: str
-    MONGODB_DB_NAME: str = "KrishiSarth_ML"
+    MONGODB_URL: Optional[str] = None
+    MONGODB_DB_NAME: str = "smart_agri"
     JWT_ACCESS_EXPIRE_HOURS: int = 24
     JWT_REFRESH_EXPIRE_DAYS: int = 30
 
@@ -25,12 +25,15 @@ class Settings(BaseSettings):
     PORT: int = 8000                              # Injected by Railway at runtime
     MQTT_BROKER_HOST: Optional[str] = "localhost"
     MQTT_BROKER_PORT: int = 1883
+    MQTT_USERNAME: Optional[str] = None
+    MQTT_PASSWORD: Optional[str] = None
+    MQTT_USE_TLS: bool = False
     AWS_S3_BUCKET: Optional[str] = None
     AWS_REGION: Optional[str] = "ap-south-1"
     OPENWEATHER_API_KEY: Optional[str] = None
     GROQ_KEY: Optional[str] = None
-    ML_CROP_API_URL: str = "https://krishisarth.onrender.com/v1/predict/crop"
-    ML_FERTILITY_API_URL: str = "https://krishisarth.onrender.com/v1/predict/fertilizer"
+    ML_CROP_API_URL: str = "https://krishisarth.onrender.com/predict-crop"
+    ML_FERTILITY_API_URL: str = "https://krishisarth.onrender.com/predict-fertility"
     ENABLE_DEMO_MODE: bool = True  # Enable simulation engine by default for hardware-less demos
 
     # CORS — add your Vercel URL here OR override via CORS_ORIGINS env var

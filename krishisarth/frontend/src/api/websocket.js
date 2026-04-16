@@ -19,6 +19,23 @@ class TelemetryWS {
     _setStatus(status) {
         wsStatus = status;
         document.dispatchEvent(new CustomEvent('ws-status', { detail: status }));
+        
+        // Update DOM Indicators if they exist (Dashboard header)
+        const dot = document.getElementById('ws-dot');
+        const text = document.getElementById('ws-text');
+        if (dot && text) {
+            const COLORS = {
+                connected: '#10b981',
+                connecting: '#f59e0b',
+                disconnected: '#ef4444'
+            };
+            dot.style.backgroundColor = COLORS[status] || '#64748b';
+            text.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            text.style.color = COLORS[status] || '#64748b';
+            
+            if (status === 'connecting') dot.classList.add('animate-pulse');
+            else dot.classList.remove('animate-pulse');
+        }
     }
 
     connect(farmId) {

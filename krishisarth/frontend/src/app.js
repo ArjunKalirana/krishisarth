@@ -39,7 +39,7 @@ async function initApp() {
     // ── Silent session restore ───────────────────────────────────────────────
     // On hard-refresh the in-memory access token is gone but refresh token
     // is still in sessionStorage. Restore access token before route guard runs.
-    const savedRefresh = sessionStorage.getItem('ks_refresh_token');
+    const savedRefresh = sessionStorage.getItem('ks_refresh');
     const savedFarmer  = store.getState('currentFarmer');
 
     if (savedRefresh) {
@@ -53,9 +53,9 @@ async function initApp() {
             if (res.ok) {
                 const body = await res.json();
                 setToken(body.data.access_token);
-                sessionStorage.setItem('ks_refresh_token', body.data.refresh_token);
+                sessionStorage.setItem('ks_refresh', body.data.refresh_token);
             } else {
-                // Refresh token expired — clear session cleanly
+                // Refresh token expired â€” clear session cleanly
                 sessionStorage.clear();
             }
         } catch { /* network down — let route guard handle it */ }

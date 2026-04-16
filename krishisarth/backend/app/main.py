@@ -25,13 +25,25 @@ app = FastAPI(
 async def startup_event():
     print(">>> [DEBUG] FASTAPI STARTUP EVENT TRIGGERED")
     
-    # -0.5 Warm up MongoDB Connection
+    # -0.5 Warm up MongoDB Connection (ONLY if configured)
+    if settings.MONGODB_URL:
+        try:
+            from app.db.mongodb import mongo_manager
+            await mongo_manager.client.admin.command('ping')
+            print(">>> [DEBUG] MONGODB CONNECTED SUCCESSFULLY")
+        except Exception as e:
+            print(f">>> [WARNING] MongoDB Connection Delay/Failure: {e}")
+    else:
+        print(">>> [DEBUG] MONGODB_URL not set; skipping cluster initialization.")
+
+    # -0.2 Initialize MQTT Loop Synchronization
     try:
-        from app.db.mongodb import mongo_manager
-        await mongo_manager.client.admin.command('ping')
-        print(">>> [DEBUG] MONGODB CONNECTED SUCCESSFULLY")
+        import asyncio
+        from app.mqtt.client import mqtt_manager
+        mqtt_manager.set_loop(asyncio.get_running_loop())
+        print(">>> [DEBUG] MQTT EVENT LOOP SYNCHRONIZED")
     except Exception as e:
-        print(f">>> [WARNING] MongoDB Connection Delay/Failure: {e}")
+        print(f">>> [ERROR] MQTT Loop Sync Failed: {e}")
 
     # 0. Safety Integrity Check: Verify DB Schema matches ML requirements
     try:

@@ -18,7 +18,7 @@ async def start_irrigation(zone_id: str, duration_min: int, source: str, db: Ses
         raise HTTPException(status_code=404, detail="ZONE_NOT_FOUND")
     
     farm_id = str(zone.farm_id)
-    lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
+    lock_key = f"ks:pump_lock:{zone_id}"
     
     if redis.get(lock_key):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PUMP_ALREADY_RUNNING")
@@ -54,10 +54,9 @@ async def start_irrigation(zone_id: str, duration_min: int, source: str, db: Ses
     db.commit()
     db.refresh(schedule)
 
-    # Use scoped key: irrigation_lock:{farm_id}:{zone_id}
-    # TTL is exactly duration + small buffer
-    scoped_lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
-    redis.setex(scoped_lock_key, duration_min * 60, "1")
+    # Scoped lock key with 30-min TTL or duration + buffer
+    scoped_lock_key = f"ks:pump_lock:{zone_id}"
+    redis.setex(scoped_lock_key, max(1800, duration_min * 60), "active")
 
     schedule.celery_task_id = f"task_{schedule.id}"
     db.commit()
@@ -79,7 +78,7 @@ async def stop_irrigation(zone_id: str, db: Session, redis) -> dict:
         raise HTTPException(404, "ZONE_NOT_FOUND")
     
     farm_id = str(zone.farm_id)
-    lock_key = f"irrigation_lock:{farm_id}:{zone_id}"
+    lock_key = f"ks:pump_lock:{zone_id}"
     
     if not redis.get(lock_key):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PUMP_NOT_RUNNING")
@@ -116,7 +115,7 @@ async def queue_fertigation(zone_id: str, nutrient_type: str, concentration_ml: 
         raise HTTPException(404, "ZONE_NOT_FOUND")
         
     farm_id = str(zone.farm_id)
-    if not redis.get(f"irrigation_lock:{farm_id}:{zone_id}"):
+    if not redis.get(f"ks:pump_lock:{zone_id}"):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PUMP_NOT_RUNNING")
 
     log = FertigationLog(

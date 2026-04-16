@@ -208,7 +208,7 @@ export function renderFarm3D() {
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:24px;">
                     <div>
                         <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:900;color:#fff;">${zone.name}</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;">${zone.crop_type || 'Tomato'} • LIVE TELEMETRY</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;">${zone.crop_type || 'Scanning...'} • LIVE TELEMETRY</div>
                     </div>
                     <button id="panel-close" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.05);border:none;color:#64748b;cursor:pointer;">✕</button>
                 </div>
@@ -303,7 +303,7 @@ export function renderFarm3D() {
             m.scale.setScalar(40); // Auto-scale to visible size
             group.add(m);
 
-            const label = createLabel(z.name, z.crop_type || 'Tomato');
+            const label = createLabel(z.name, z.crop_type || 'Crop Pending');
             label.position.set(0, 45, 0);
             group.add(label);
 
