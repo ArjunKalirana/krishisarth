@@ -133,7 +133,7 @@ async def get_dashboard(farm_id: str, db: Session, influx_client, redis) -> dict
     }
 
     try:
-        redis.setex(cache_key, 10, json.dumps(dashboard, default=str))
+        redis.setex(cache_key, 5, json.dumps(dashboard, default=str))
     except Exception: pass
 
     return dashboard

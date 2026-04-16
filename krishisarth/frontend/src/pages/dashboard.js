@@ -198,7 +198,15 @@ function renderWeatherHero(weather) {
             
             <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
                 <div class="space-y-4 text-center md:text-left">
-                    <p class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">Environmental Awareness</p>
+                    <div class="flex items-center gap-3 justify-center md:justify-start">
+                        <p class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">Environmental Awareness</p>
+                        ${weather.is_live ? `
+                            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/20">
+                                <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="text-[7px] font-black text-emerald-400 uppercase tracking-widest">LIVE Intelligence</span>
+                            </div>
+                        ` : ''}
+                    </div>
                     <h1 class="text-8xl md:text-9xl font-black text-white font-display tracking-tighter leading-none">
                         ${temp}<span class="text-emerald-500/50">°</span>
                     </h1>
