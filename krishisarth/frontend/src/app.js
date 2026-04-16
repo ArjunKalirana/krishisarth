@@ -12,6 +12,7 @@ import { renderRegister }    from './pages/register.js';
 import { renderFarm3D }      from './pages/farm-3d.js';
 import { renderFarmSetup }   from './pages/farm-setup.js';
 import { renderSupport }     from './pages/support.js';
+import { renderSoilAnalysis } from './pages/soil-analysis.js';
 import { initAIAssistant }   from './components/ai-assistant.js';
 
 const BACKEND = window.__KS_API_URL__ || 'http://localhost:8000/v1';
@@ -176,6 +177,7 @@ async function initApp() {
                 case '#control':    appRoot.appendChild(renderControl());     break;
                 case '#analytics':  appRoot.appendChild(renderAnalytics());   break;
                 case '#farm3d':     appRoot.appendChild(renderFarm3D());      break;
+                case '#soil-analysis': appRoot.appendChild(renderSoilAnalysis()); break;
                 case '#setup':      appRoot.appendChild(renderFarmSetup(() => { window.location.hash = '#dashboard'; })); break;
                 case '#support':    appRoot.appendChild(renderSupport());     break;
                 default:

@@ -7,7 +7,7 @@ from app.db.influxdb import get_write_api
 from app.mqtt.client import mqtt_manager
 from app.api.v1.websocket import manager
 from app.models.zone import Zone
-from app.services.ml_service import predict_crop, predict_fertility
+from app.services.ml_service import predict_crop, predict_fertility, log_inference_event
 from app.services import irrigation_service
 from influxdb_client import Point
 from datetime import datetime, timezone
@@ -108,6 +108,9 @@ async def hardware_ingest(
         b=payload.b if payload.b != 0.5 else (zone.b or 0.5)
     )
     crop_result, fertility_result = await asyncio.gather(crop_task, fertility_task)
+    
+    # 3.5 Log combined inference event to MongoDB for 'critical and important data' persistence
+    asyncio.create_task(log_inference_event(payload.dict(), crop_result, fertility_result))
 
     # Cache ML results in Redis (TTL: 10 minutes)
     redis.setex(f"ml:zone:{zone_id}:crop", 600, crop_result)

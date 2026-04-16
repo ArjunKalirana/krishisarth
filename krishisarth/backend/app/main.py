@@ -25,6 +25,14 @@ app = FastAPI(
 async def startup_event():
     print(">>> [DEBUG] FASTAPI STARTUP EVENT TRIGGERED")
     
+    # -0.5 Warm up MongoDB Connection
+    try:
+        from app.db.mongodb import mongo_manager
+        await mongo_manager.client.admin.command('ping')
+        print(">>> [DEBUG] MONGODB CONNECTED SUCCESSFULLY")
+    except Exception as e:
+        print(f">>> [WARNING] MongoDB Connection Delay/Failure: {e}")
+
     # 0. Safety Integrity Check: Verify DB Schema matches ML requirements
     try:
         from sqlalchemy import inspect
@@ -57,6 +65,13 @@ async def shutdown_event():
         from app.services.simulation_service import simulation_engine
         await simulation_engine.stop()
     
+    # 0.5 Cleanly close MongoDB singleton
+    try:
+        from app.db.mongodb import mongo_manager
+        mongo_manager.close()
+    except Exception as e:
+        print(f">>> [DEBUG] MongoDB shutdown error: {e}")
+
     # 1. Cleanly close InfluxDB singleton and shared Write API
     try:
         from app.db.influxdb import client as influx_client, _write_api
