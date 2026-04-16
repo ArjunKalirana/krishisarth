@@ -52,9 +52,19 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    print(">>> [DEBUG] FASTAPI SHUTDOWN EVENT TRIGGERED")
     if settings.ENABLE_DEMO_MODE:
         from app.services.simulation_service import simulation_engine
         await simulation_engine.stop()
+    
+    # 1. Cleanly close InfluxDB singleton and shared Write API
+    try:
+        from app.db.influxdb import client as influx_client, _write_api
+        _write_api.close()
+        influx_client.close()
+        print(">>> [DEBUG] INFLUXDB CLIENT DISCONNECTED")
+    except Exception as e:
+        print(f">>> [DEBUG] InfluxDB shutdown error: {e}")
 
 app.add_middleware(LoggingMiddleware)
 

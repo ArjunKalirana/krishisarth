@@ -8,9 +8,12 @@ client = InfluxDBClient(
     org=settings.INFLUXDB_ORG
 )
 
+# Shared Write API instance (prevents thread leaks)
+_write_api = client.write_api()
+
 def get_write_api():
-    """Returns the synchronous InfluxDB Write API client."""
-    return client.write_api()
+    """Returns the shared InfluxDB Write API client."""
+    return _write_api
 
 def get_query_api():
     """Returns the InfluxDB Query API client."""

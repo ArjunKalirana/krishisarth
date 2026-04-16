@@ -53,6 +53,7 @@ class SimulationEngine:
     async def _simulate_tick(self):
         logger.debug(f"Simulation tick running — {len(self.zone_states)} zones in state")
         db = SessionLocal()
+        # Uses the singleton shared write API
         write_api = get_write_api()
         try:
             # ONLY simulate the exact demo account for the judges.
