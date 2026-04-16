@@ -223,6 +223,7 @@ async function _loadAI(gridEl, runBtn) {
 function _decisionCard(d) {
     const conf = Math.round((d.confidence || 0) * 100);
     const type = d.type || d.decision_type || 'analysis';
+    const snapshot = d.snapshot || d.input_snapshot || {};
     
     // Elite Semantic Theming
     const themes = {
@@ -249,14 +250,32 @@ function _decisionCard(d) {
                 </div>
             </div>
             
-            <p class="text-slate-300 leading-relaxed text-sm mb-8 font-medium italic">
+            <p class="text-slate-200 leading-relaxed text-sm mb-8 font-medium">
+                <span class="text-emerald-500 font-black uppercase text-[10px] tracking-widest block mb-2">Sarth's Reasoning — </span>
                 "${d.reasoning || 'Neural inference stable. No action required.'}"
             </p>
+
+            ${snapshot.N !== undefined ? `
+                <div class="flex items-center gap-6 mb-8 p-4 bg-black/20 rounded-2xl border border-white/5">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">NPK Balance</span>
+                        <span class="text-xs font-bold text-white">${snapshot.N}-${snapshot.P}-${snapshot.K}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">ML Fertility</span>
+                        <span class="text-xs font-bold text-emerald-400">${snapshot.fertility_label || 'Optimal'}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Snapshot Moisture</span>
+                        <span class="text-xs font-bold text-blue-400">${(snapshot.moisture_pct || 0).toFixed(1)}%</span>
+                    </div>
+                </div>
+            ` : ''}
             
             <!-- Logic Chain Metadata -->
             <div class="flex flex-wrap gap-3">
-                <span class="badge-elite badge-success text-[9px] uppercase tracking-widest">Model: LSTM-v4</span>
-                <span class="badge-elite badge-info text-[9px] uppercase tracking-widest">Latency: 12ms</span>
+                <span class="badge-elite badge-success text-[9px] uppercase tracking-widest">Model: Llama3-8B</span>
+                <span class="badge-elite badge-info text-[9px] uppercase tracking-widest">Source: MongoDB Telemetry</span>
                 <span class="badge-elite ${conf > 80 ? 'badge-success' : 'badge-warning'} text-[9px] uppercase tracking-widest">${conf > 80 ? 'AUTO_EXECUTE' : 'PENDING_AUDIT'}</span>
             </div>
         </div>

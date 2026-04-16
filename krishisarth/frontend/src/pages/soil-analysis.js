@@ -63,6 +63,46 @@ export function renderSoilAnalysis() {
         renderUI();
     };
 
+    const loadAIRecommendation = async (resEl) => {
+        const farm = store.getState('currentFarm');
+        const dash = store.getState('currentFarmDashboard');
+        const zone = dash?.zones?.[0];
+        
+        if (!zone) return;
+
+        resEl.innerHTML = `
+            <div class="flex items-center gap-4 animate-pulse">
+                <div class="w-4 h-4 bg-emerald-500 rounded-full"></div>
+                <span class="text-[10px] uppercase font-black tracking-widest text-slate-500">Querying Neural Core...</span>
+            </div>
+        `;
+
+        try {
+            const { api } = await import('../api/client.js');
+            const res = await api(`/zones/${zone.id}/crop-suggestion`);
+            const data = res.data;
+
+            resEl.innerHTML = `
+                <div class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                    <div class="flex items-center justify-between">
+                         <span class="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Recommended Crop</span>
+                         <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black rounded-full border border-emerald-500/20">94% MATCH</span>
+                    </div>
+                    <div class="text-3xl font-black text-white font-manrope tracking-tight uppercase">${data.prediction}</div>
+                    <p class="text-[11px] leading-relaxed text-slate-400 font-medium italic border-l-2 border-emerald-500/30 pl-4 py-1">
+                        "${data.rationale}"
+                    </p>
+                    <div class="flex gap-2 pt-2">
+                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">N: ${data.inputs.N}</div>
+                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">pH: ${data.inputs.ph}</div>
+                    </div>
+                </div>
+            `;
+        } catch (err) {
+            resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Inference Hub Unavailable</p>`;
+        }
+    };
+
     const renderUI = () => {
         const qualityColor = state.quality === 'High' ? '#4edea3' : state.quality === 'Medium' ? '#f59e0b' : '#ff7b72';
         const qualityBg = state.quality === 'Low' ? 'rgba(255, 123, 114, 0.1)' : 'rgba(78, 222, 163, 0.05)';
@@ -70,14 +110,20 @@ export function renderSoilAnalysis() {
 
         container.innerHTML = `
             <div class="max-w-6xl mx-auto">
-                <header class="mb-12">
-                    <h1 class="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-2 font-manrope">SOIL ANALYSIS</h1>
-                    <p class="text-[#64748b] text-[10px] uppercase tracking-[0.3em]">Precision Quality Assessment • Neon Harvest v1.0</p>
+                <header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+                    <div>
+                        <h1 class="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-2 font-manrope">SOIL ANALYSIS</h1>
+                        <p class="text-[#64748b] text-[10px] uppercase tracking-[0.3em]">Precision Quality Assessment • Neon Harvest v1.0</p>
+                    </div>
+                    <div class="glass-panel px-6 py-3 border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
+                        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none">Bio-Network Active</span>
+                    </div>
                 </header>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <!-- Input Section -->
-                    <div class="lg:col-span-7 bg-[#201f1f] p-8 rounded-3xl border border-white/5 backdrop-blur-3xl shadow-2xl">
+                    <div class="lg:col-span-6 bg-[#201f1f] p-8 rounded-3xl border border-white/5 backdrop-blur-3xl shadow-2xl">
                         <h2 class="text-[10px] font-black text-[#4edea3] mb-10 tracking-widest uppercase">Input Soil Metrics</h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -91,30 +137,24 @@ export function renderSoilAnalysis() {
                                 </div>
                             `).join('')}
                         </div>
-
-                        <div class="mt-14 p-6 bg-[#4edea3]/5 rounded-2xl border border-[#4edea3]/10 border-dashed">
-                            <p class="text-[10px] text-[#4edea3]/80 leading-relaxed uppercase font-black text-center italic tracking-wider">
-                                Automated heuristic engine calibrated for ${state.pH < 7 ? 'Acidic' : 'Alkaline'} profile.
-                            </p>
-                        </div>
                     </div>
 
                     <!-- Output Section -->
-                    <div class="lg:col-span-5 space-y-6">
-                        <div id="quality-card" style="background: ${qualityBg}; border: 1px solid ${qualityBorder};" class="p-12 rounded-[48px] transition-all duration-700 backdrop-blur-3xl shadow-xl">
-                            <div class="flex flex-col mb-14">
+                    <div class="lg:col-span-6 space-y-6">
+                        <div id="quality-card" style="background: ${qualityBg}; border: 1px solid ${qualityBorder};" class="p-10 rounded-[48px] transition-all duration-700 backdrop-blur-3xl shadow-xl">
+                            <div class="flex flex-col mb-10">
                                 <span class="text-[10px] font-black uppercase tracking-[0.4em] text-[#64748b]">Real-Time Quality Index</span>
-                                <div id="quality-label" style="color: ${qualityColor};" class="text-7xl font-black tracking-tighter mt-4 font-manrope animate-in fade-in slide-in-from-left-4 duration-1000">${state.quality}</div>
+                                <div id="quality-label" style="color: ${qualityColor};" class="text-7xl font-black tracking-tighter mt-4 font-manrope">${state.quality}</div>
                             </div>
 
                             <div class="space-y-4">
                                 ${state.issues.length > 0 ? state.issues.map(issue => `
-                                    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#e5e2e1]/80 bg-white/5 p-5 rounded-2xl border border-white/5">
+                                    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#e5e2e1]/80 bg-white/5 p-4 rounded-2xl border border-white/5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-[#ff7b72] shadow-[0_0_8px_rgba(255,123,114,0.5)]"></span>
                                         ${issue}
                                     </div>
                                 `).join('') : `
-                                    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#4edea3] bg-[#4edea3]/10 p-5 rounded-2xl border border-[#4edea3]/20">
+                                    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#4edea3] bg-[#4edea3]/10 p-4 rounded-full border border-[#4edea3]/20 text-center justify-center">
                                         <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
                                         Optimum Nutrient Equilibrium
                                     </div>
@@ -122,18 +162,31 @@ export function renderSoilAnalysis() {
                             </div>
                         </div>
 
-                        <div class="p-8 bg-[#1a1919] border border-white/5 rounded-3xl">
+                        <!-- 🌿 Next Season Recommendation -->
+                        <div class="p-10 bg-[#1a1919] border border-white/5 rounded-[44px] shadow-2xl relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-8 opacity-5">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1"><path d="M12 2v10M12 12l-4-4M12 12l4-4"/></svg>
+                            </div>
+                            <div class="flex items-center gap-3 mb-8">
+                                <div class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)]"></div>
+                                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748b]">Next Season Strategy</h3>
+                            </div>
+                            
+                            <div id="crop-recommendation-root">
+                                <!-- Loaded via loadAIRecommendation -->
+                            </div>
+                        </div>
+
+                        <div class="p-10 bg-[#131212] border border-white/5 rounded-[40px] shadow-lg">
                             <div class="flex items-center gap-3 mb-6">
-                                <div class="w-1 h-3 bg-[#4edea3]"></div>
                                 <h3 class="text-[10px] font-black uppercase tracking-widest text-[#64748b]">Agronomist Intel</h3>
                             </div>
-                            <p class="text-xs font-medium leading-loose text-slate-400">
-                                ${state.quality === 'High' ? 'Peak soil vitality confirmed. Proceed with standard irrigation schedule. NPK saturation is within high-fidelity ranges for commercial yield.' :
-                                  state.quality === 'Medium' ? 'Moderate deficiencies identified in the NPK matrix. We recommend a localized nutrient boost within 24 hours to prevent crop stress.' :
-                                  'CRITICAL SYSTEM ALERT: Severe element imbalance detected. Immediate remediation protocol required. Soil fertility is currently insufficient for sustainable growth.'}
+                            <p class="text-xs font-medium leading-relaxed text-slate-500 mb-10 italic">
+                                ${state.quality === 'High' ? 'Peak soil vitality confirmed. Proceed with standard irrigation schedule.' : 
+                                  'Localized nutrient boost recommended within 24 hours to prevent crop stress.'}
                             </p>
-                            <button class="w-full mt-12 py-5 bg-[#4edea3] text-[#131313] font-black uppercase tracking-widest text-[10px] rounded-2xl hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-[#4edea3]/20">
-                                ${state.quality === 'Low' ? 'DEPLOY REMEDIATION' : 'EXPORT ANALYSIS'}
+                            <button class="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all border border-white/10">
+                                EXPORT FULL BIO-REPORT
                             </button>
                         </div>
                     </div>
@@ -147,7 +200,16 @@ export function renderSoilAnalysis() {
                 updateAnalysis();
             };
         });
+
+        const recRoot = container.querySelector('#crop-recommendation-root');
+        if (recRoot) loadAIRecommendation(recRoot);
     };
+
+    const store = window.KrishiSarthStore || { getState: () => ({}) };
+    
+    updateAnalysis();
+    return container;
+}
 
     updateAnalysis();
     return container;

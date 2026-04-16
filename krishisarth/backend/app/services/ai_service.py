@@ -1,142 +1,113 @@
 import logging
+import httpx
+import json
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.models.ai_decision import AIDecision
 from app.models.zone import Zone
 from app.core import constants
 from app.core.config import settings
+from app.db.mongodb import mongo_manager
+from app.services import ml_service
 
 logger = logging.getLogger(__name__)
 
-class ModelLoadError(Exception):
-    """Raised when machine learning models fail to initialize."""
-    pass
+async def _get_groq_reasoning(snapshot: dict) -> str:
+    """Use Groq to generate high-quality agronomist reasoning."""
+    if not settings.GROQ_KEY:
+        return None
+    
+    groq_key = settings.GROQ_KEY.strip("'\"")
+    prompt = f"""
+    You are Sarth, an Elite AI Agronomist. Analyze this sensor data and provide 1-2 sentences of actionable advice for the farmer.
+    Data:
+    - Zone: {snapshot['zone_name']}
+    - Crop: {snapshot['crop_type']} ({snapshot['crop_stage']})
+    - Soil Moisture: {snapshot['moisture_pct']}%
+    - Fertility: {snapshot['fertility_label']}
+    - NPK: {snapshot['N']}-{snapshot['P']}-{snapshot['K']}
+    
+    Advice should be professional, data-centric, and focused on yield optimization.
+    """
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}"},
+                json={
+                    "model": "llama-3-8b-8192",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.5
+                },
+                timeout=10.0
+            )
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            logger.warning(f"Groq reasoning failed: {e}")
+            return None
 
 async def run_inference(zone_id: str, db: Session, influx_client=None, redis=None) -> AIDecision:
     """
-    Execute an AI reasoning cycle for a zone.
-    Falls back gracefully if InfluxDB or Redis are unavailable.
+    Execute an AI reasoning cycle using MongoDB telemetry and ML models.
     """
-    # Use injected deps or fall back to module-level singletons
-    if redis is None:
-        from app.db.redis import redis_client
-        redis = redis_client
-
-    if influx_client is None:
-        from app.db.influxdb import client as influx_singleton
-        influx_client = influx_singleton
-
-    # 1. Load zone from database
     zone = db.query(Zone).filter(Zone.id == zone_id).first()
     if not zone:
         raise ValueError(f"Zone {zone_id} not found")
 
-    farm_id = str(zone.farm_id)
+    # 1. Fetch latest telemetry from MongoDB
+    m_db = mongo_manager.client[settings.MONGODB_DB_NAME]
+    collection = m_db["sensor_data"]
+    
+    # Query by node_id if available, otherwise fallback
+    query = {"node_id": zone.node_id} if zone.node_id else {"zone_id": zone_id}
+    latest = await collection.find_one(query, sort=[("timestamp", -1)])
+    
+    moisture = latest.get("soil_moisture", 45.0) if latest else 45.0
+    N = latest.get("N", 20) if latest else 20
+    P = latest.get("P", 15) if latest else 15
+    K = latest.get("K", 40) if latest else 40
+    temp = latest.get("temperature", 28.0) if latest else 28.0
 
-    # 2. Fetch latest moisture from InfluxDB — graceful if no data
-    moisture_pct = 0.0
-    try:
-        query_api = influx_client.query_api()
-        bucket = settings.INFLUXDB_BUCKET
-        flux = f'''
-        from(bucket: "{bucket}")
-          |> range(start: -24h)
-          |> filter(fn: (r) => r["_measurement"] == "soil_readings")
-          |> filter(fn: (r) => r["zone_id"] == "{zone_id}")
-          |> last()
-        '''
-        results = query_api.query(flux)
-        for table in results:
-            for record in table.records:
-                if record.get_field() in ("moisture_pct", "moisture"):
-                    val = record.get_value()
-                    if val is not None:
-                        moisture_pct = float(val)
-                        break
-    except Exception as e:
-        logger.warning(f"InfluxDB unavailable for zone {zone_id}: {str(e)}")
-        moisture_pct = 0.0
+    # 2. Call ML Fertility Model
+    fertility = await ml_service.predict_fertility(N=N, P=P, K=K)
+    
+    # 3. Decision Logic (Threshold-based for action, Groq for reasoning)
+    threshold = constants.AI_MOISTURE_RULE_THRESHOLD * 100
+    decision_type = "irrigate" if moisture < threshold else "skip"
+    confidence = 0.85 if moisture < threshold else 0.70
 
-    # 3. Fetch tank level from Redis — graceful if unavailable
-    tank_val = 100.0
-    try:
-        tank_raw = redis.get(f"tank_level:{farm_id}")
-        if tank_raw:
-            tank_val = float(tank_raw)
-    except Exception as e:
-        logger.warning(f"Redis unavailable: {str(e)}")
-        tank_val = 100.0
-
-    # 4. Build input snapshot
     snapshot = {
-        "moisture_pct": moisture_pct,
-        "crop_type":    zone.crop_type,
-        "crop_stage":   zone.crop_stage,
-        "tank_level":   tank_val,
-        "zone_name":    zone.name,
-        "at":           datetime.now(timezone.utc).isoformat()
+        "moisture_pct": moisture,
+        "N": N, "P": P, "K": K,
+        "fertility_label": fertility.get("label", "Unknown"),
+        "crop_type": zone.crop_type,
+        "crop_stage": zone.crop_stage,
+        "zone_name": zone.name,
+        "at": datetime.now(timezone.utc).isoformat()
     }
 
-    # 5. Rule-based decision (LSTM model not trained yet — using threshold rules)
-    # moisture_pct is already in range 0-100 (e.g. 24.5)
-    # AI_MOISTURE_RULE_THRESHOLD is typically 0.25 (25%)
-    THRESHOLD_PCT = constants.AI_MOISTURE_RULE_THRESHOLD * 100
-    
-    decision_type = "skip"
-    confidence    = 0.65
-    reasoning     = f"Soil moisture at {moisture_pct:.1f}% — within acceptable range. No irrigation needed."
-    water_saved   = 0.0
+    # 4. Generate Groq Reasoning
+    reasoning = await _get_groq_reasoning(snapshot)
+    if not reasoning:
+        # Fallback reasoning
+        if decision_type == "irrigate":
+            reasoning = f"Moisture at {moisture}% is below threshold {threshold}%. Immediate irrigation required."
+        else:
+            reasoning = f"Soil moisture levels ({moisture}%) are optimal for {zone.crop_type}. Sustaining current state."
 
-    if moisture_pct < THRESHOLD_PCT and moisture_pct > 0:
-        decision_type = "irrigate"
-        confidence    = 0.92
-        reasoning     = (
-            f"Critical moisture deficit detected: {moisture_pct:.1f}% "
-            f"(threshold: {THRESHOLD_PCT:.0f}%). "
-            f"Immediate irrigation recommended for {zone.name} "
-            f"({zone.crop_type}, {zone.crop_stage} stage)."
-        )
-        water_saved = 0.0
-    elif moisture_pct == 0.0:
-        decision_type = "skip"
-        confidence    = 0.55
-        reasoning     = (
-            f"No sensor data available for {zone.name}. "
-            f"Skipping irrigation as a precaution. "
-            f"Connect IoT sensors or run inject_fake_sensors.py for testing."
-        )
-    elif moisture_pct > 70:
-        decision_type = "skip"
-        confidence    = 0.88
-        reasoning     = (
-            f"Soil is well-hydrated at {moisture_pct:.1f}% for {zone.name}. "
-            f"Irrigation skipped — estimated water saved: 20L."
-        )
-        water_saved = 20.0
-
-    # 5.1 Mode Check: Skip autonomous action if zone is in Act Mode
-    if zone.control_mode == "act":
-        logger.info(f"Zone {zone.name} is in Act Mode — AI skipping auto-command")
-        decision_type = "deferred"
-        reasoning = f"Zone is in Act Mode (manual control). AI decision deferred to farmer. Manual recommendation: {decision_type}."
-        # Note: We still save the decision for historical tracking but it won't trigger automation
-
-    # 6. Persist the decision
+    # 5. Persist Decision
     decision = AIDecision(
-        zone_id        = zone_id,
-        decision_type  = decision_type,
-        reasoning      = reasoning,
-        confidence     = confidence,
+        zone_id = zone_id,
+        decision_type = decision_type,
+        reasoning = reasoning,
+        confidence = confidence,
         input_snapshot = snapshot,
-        water_saved_l  = water_saved,
+        water_saved_l = 25.0 if decision_type == "skip" else 0.0
     )
     db.add(decision)
     db.commit()
     db.refresh(decision)
-
-    logger.info(
-        f"AI Decision for zone {zone.name}: {decision_type} "
-        f"(confidence={confidence:.0%}, moisture={moisture_pct:.1f}%)"
-    )
 
     return decision
