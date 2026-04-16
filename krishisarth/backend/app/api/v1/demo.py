@@ -73,61 +73,8 @@ async def backfill_history():
         db.commit()
         db.refresh(farm)
         
-        print(f"[Seeder] New Farm ID: {farm.id}")
-        
-        # 3. Zones - Clear count logic as we just nuked it
-        # No longer creating mock zones; the system will sync real nodes from MongoDB.
+        # 3. Zones - No longer creating mock zones; the system will sync real nodes from MongoDB.
         zones = []
-
-            # 4. Device per Zone
-            device = Device(
-                zone_id=zone.id,
-                type="soil_sensor",
-                serial_no=f"ESP32-DEMO-{zone.name[:4].upper()}-{random.randint(100,999)}",
-                is_online=True,
-                battery_pct=random.randint(70,98)
-            )
-            db.add(device)
-
-        # 5. Alerts
-        alert_defs = [
-            ("critical", "MOISTURE_ALERT", "Wheat Block moisture at 18% — critically below threshold. Irrigate immediately.", False),
-            ("warning", "PUMP_FAILURE", "Grape Vineyard pump pressure dropped — possible blockage", False),
-            ("info", "AI_DECISION", "AI skipped irrigation in Pomegranate Orchard — moisture at 72%", False),
-            ("warning", "TANK_LOW", "Main water tank at 22% — schedule refill", True),
-            ("critical", "SENSOR_FAULT", "Wheat Block sensor offline 2 hrs — last reading 22%", True),
-            ("info", "FERTIGATION", "Nitrogen injection completed for Tomato Greenhouse A", True),
-        ]
-        for sev, atype, msg, is_read in alert_defs:
-            alert = Alert(
-                farm_id=farm.id,
-                zone_id=zones[0].id, # Link all to first zone or map appropriately
-                severity=sev,
-                type=atype,
-                message=msg,
-                is_read=is_read,
-                created_at=datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 24))
-            )
-            db.add(alert)
-
-        # 6. AI Decisions
-        ai_targets = [z for z in zones if z.name in ["Grape Vineyard", "Pomegranate Orchard", "Wheat Block", "Tomato Greenhouse A", "Chilli Patch"]]
-        actions = ["IRRIGATE", "SKIP", "IRRIGATE_URGENT"]
-        for idx, z in enumerate(ai_targets):
-            action = actions[idx % len(actions)]
-            water_saved = 0 if "IRRIGATE" in action else random.randint(1800, 3200)
-            reasoning = f"Moisture critically low at 19% during {z.crop_stage} stage — yield loss risk 35%" if "IRRIGATE" in action else f"Adequate moisture ({random.randint(65,75)}%) detected with rain forecast. Skipping saves {water_saved}L."
-            
-            decision = AIDecision(
-                zone_id=z.id,
-                decision_type="irrigate" if "IRRIGATE" in action else "skip",
-                reasoning=reasoning,
-                confidence=round(random.uniform(0.83, 0.99), 2),
-                water_saved_l=float(water_saved),
-                created_at=datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 8))
-            )
-            db.add(decision)
-
         db.commit()
 
         # 7. InfluxDB Backfill (7 days, hourly)
