@@ -13,6 +13,7 @@ class Zone(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     farm_id = Column(UUID(as_uuid=True), ForeignKey("farms.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String, nullable=False)
+    node_id = Column(String, unique=True, index=True, nullable=True) # MongoDB Reference ID
     crop_type = Column(String, nullable=False)
     crop_stage = Column(String)
     area_sqm = Column(Float)

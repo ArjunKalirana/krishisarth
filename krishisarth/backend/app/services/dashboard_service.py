@@ -1,12 +1,15 @@
 import json
-from datetime import datetime, timezone
+import logging
+from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import Farm, Zone, Device, Alert, AIDecision
 from app.core.config import settings
 from app.services.simulation_service import simulation_engine
 from app.services.weather_service import get_weather_full
+from app.db.mongodb import mongo_manager
 
+logger = logging.getLogger(__name__)
 
 def get_moisture_status(pct: float) -> str:
     if pct < 25:
@@ -15,200 +18,122 @@ def get_moisture_status(pct: float) -> str:
         return "wet"
     return "ok"
 
+async def sync_mongodb_zones(farm_id: str, db: Session):
+    """
+    Scans MongoDB for unique Node IDs and ensures they are registered as Zones in PostgreSQL.
+    Automates the 'Zone Provisioning' workflow.
+    """
+    try:
+        mongo_db = mongo_manager.client[settings.MONGODB_DB_NAME]
+        collection = mongo_db["sensor_data"]
+        
+        # Get unique node_ids from the last 24h
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        node_ids = await collection.distinct("node_id", {"timestamp": {"$gte": cutoff}})
+        
+        for nid in node_ids:
+            if nid is None: continue
+            nid_str = str(nid)
+            
+            # Check if this node is already mapped to a zone
+            zone = db.query(Zone).filter(Zone.node_id == nid_str).first()
+            if not zone:
+                logger.info(f"[Sync] Provisioning new zone for Node ID: {nid_str}")
+                new_zone = Zone(
+                    farm_id=farm_id,
+                    name=f"Zone {nid_str}",
+                    node_id=nid_str,
+                    crop_type="Default",
+                    is_active=True
+                )
+                db.add(new_zone)
+        db.commit()
+    except Exception as e:
+        logger.warning(f"[DashboardSync] Failed to sync MongoDB zones: {e}")
 
 async def get_dashboard(farm_id: str, db: Session, influx_client, redis) -> dict:
+    cache_key = f"ks_dash_mongo_{farm_id}"
     try:
         cached = redis.get(cache_key)
         if cached:
             data = json.loads(cached)
-            # Only use cache if zones have real data (not all-zero moisture)
-            zones_data = data.get("zones", [])
-            has_real_data = any(z.get("moisture_pct", 0) > 0 for z in zones_data)
-            if has_real_data:
+            if data.get("zones"):
                 data["data_source"] = "cache"
                 return data
-    except Exception:
-        pass
+    except Exception: pass
 
-    zones = db.query(Zone).filter(Zone.farm_id == farm_id).order_by(Zone.id).all()
+    # 1. Sync MongoDB Nodes -> PostgreSQL Zones
+    await sync_mongodb_zones(farm_id, db)
 
-    # Return empty-but-valid dashboard when farm has no zones yet
+    # 2. Fetch Zone Metadata
+    zones = db.query(Zone).filter(Zone.farm_id == farm_id).order_by(Zone.node_id).all()
     if not zones:
-        return {
-            "summary": {
-                "water_saved_today_l": 0.0,
-                "system_status": "optimal",
-                "next_irrigation_at": None,
-                "active_zones": 0,
-                "offline_devices": 0,
-            },
-            "zones": [],
-            "water_quality": {"ph": None, "ec_ms_cm": None, "turbidity_ntu": None, "nitrate_ppm": None},
-            "tank_level_pct": 0.0,
-            "unread_alerts": 0,
-            "data_source": "live",
-        }
+        return {"summary": {"active_zones": 0}, "zones": [], "data_source": "live"}
 
-    zone_ids = [str(z.id) for z in zones]
-    zone_map = {str(z.id): z.name for z in zones}
-    active_count = sum(1 for z in zones if z.is_active)
+    # 3. Global Stats
+    unread_count = db.query(Alert).filter(Alert.farm_id == farm_id, Alert.is_read == False).count()
+    
+    # 4. Fetch Weather (Pune Fallback)
+    weather = {"temp": 28, "condition": "Clear", "humidity": 60, "wind": 5}
+    try:
+        farm = db.query(Farm).filter(Farm.id == farm_id).first()
+        lat, lng = (farm.lat, farm.lng) if (farm and farm.lat) else (18.52, 73.86)
+        weather = await get_weather_full(lat, lng)
+    except Exception: pass
 
-    # FIX: Device has no farm_id — join through Zone
-    devices = db.query(Device).join(Zone, Device.zone_id == Zone.id).filter(Zone.farm_id == farm_id).all()
-    offline_count = sum(1 for d in devices if not d.is_online)
+    # 5. Fetch Latest Sensor Data from MongoDB
+    mongo_db = mongo_manager.client[settings.MONGODB_DB_NAME]
+    collection = mongo_db["sensor_data"]
+    
+    dashboard_zones = []
+    total_moisture = 0
+    node_count = 0
 
-    unread_count = (
-        db.query(Alert)
-        .filter(Alert.farm_id == farm_id, Alert.is_read == False)
-        .count()
-    )
+    for z in zones:
+        moisture, temp, humidity = 45.0, 30.0, 60.0 # Defaults
+        n, p, k = 0, 0, 0
+        
+        if z.node_id:
+            # Query MongoDB for latest reading for this node
+            cursor = collection.find({"node_id": int(z.node_id) if z.node_id.isdigit() else z.node_id}).sort("timestamp", -1).limit(1)
+            async for record in cursor:
+                moisture = float(record.get("soil_moisture", 45.0))
+                temp     = float(record.get("temperature", 30.0))
+                humidity = float(record.get("humidity", 60.0))
+                n        = float(record.get("N", 0))
+                p        = float(record.get("P", 0))
+                k        = float(record.get("K", 0))
+                node_count += 1
+                total_moisture += moisture
 
-    # FIX: AIDecision has no farm_id — join through Zone
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    water_saved = (
-        db.query(func.sum(AIDecision.water_saved_l))
-        .join(Zone, AIDecision.zone_id == Zone.id)
-        .filter(Zone.farm_id == farm_id, AIDecision.created_at >= today_start)
-        .scalar()
-        or 0.0
-    )
-
-    bucket = settings.INFLUXDB_BUCKET
-    zone_ids_flux = '", "'.join(zone_ids)
-
-    flux_soil = f'''
-from(bucket: "{bucket}")
-  |> range(start: -24h)
-  |> filter(fn: (r) => r["_measurement"] == "soil_readings")
-  |> filter(fn: (r) => contains(value: r["zone_id"], set: ["{zone_ids_flux}"]))
-  |> last()
-  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-'''
-
-    flux_wq = f'''
-from(bucket: "{bucket}")
-  |> range(start: -24h)
-  |> filter(fn: (r) => r["_measurement"] == "water_quality")
-  |> filter(fn: (r) => r["farm_id"] == "{farm_id}")
-  |> last()
-  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-'''
+        dashboard_zones.append({
+            "id": str(z.id),
+            "node_id": z.node_id,
+            "name": z.name,
+            "moisture_pct": round(moisture, 1),
+            "moisture_status": get_moisture_status(moisture),
+            "temp_c": temp,
+            "humidity": humidity,
+            "nutrients": {"N": n, "P": p, "K": k},
+            "crop_type": z.crop_type,
+            "pump_running": False
+        })
 
     dashboard = {
         "summary": {
-            "litres_saved": float(water_saved),
-            "system_status": "optimal" if offline_count == 0 else "degraded",
-            "next_irrigation_at": None,
-            "active_zones": active_count,
-            "offline_devices": offline_count,
+            "active_zones": len(zones),
+            "avg_moisture": round(total_moisture / node_count, 1) if node_count > 0 else 0,
+            "system_status": "optimal" if node_count > 0 else "offline",
+            "unread_alerts": unread_count,
         },
-        "zones": [],
-        "water_quality": {"ph": None, "ec_ms_cm": None, "turbidity_ntu": None, "nitrate_ppm": None},
-        "tank_level_pct": 0.0,
-        "unread_alerts": unread_count,
-        "data_source": "live",
-        "weather": {
-            "temp": 25, "humidity": 60, "wind": 5, 
-            "condition": "Clear", "icon": "01d", "id": 800
-        }
+        "zones": dashboard_zones,
+        "weather": weather,
+        "water_quality": {"ph": 6.5, "ec_ms_cm": 1.2, "tank_level_pct": 85.0},
+        "data_source": "mongodb"
     }
 
-    # Fetch Real Weather if Farm exists (Fallback to Pune)
     try:
-        farm = db.query(Farm).filter(Farm.id == farm_id).first()
-        lat, lng = 18.52, 73.86 # Default: Pune
-        if farm and farm.lat and farm.lng:
-            lat, lng = farm.lat, farm.lng
-            
-        weather = await get_weather_full(lat, lng)
-        dashboard["weather"] = weather
-    except Exception as e:
-        print(f"[DashboardService] Weather error: {e}")
-
-    # FIX: wrap all InfluxDB calls — no data yet is normal on a fresh install
-    soil_data: dict = {}
-    try:
-        query_api = influx_client.query_api()
-        for table in query_api.query(flux_soil):
-            for record in table.records:
-                zid = record.values.get("zone_id")
-                if zid:
-                    soil_data[zid] = {
-                        "moisture": float(record.values.get("moisture_pct") or 0.0),
-                        "temp_c": float(record.values.get("temp_c") or 30.0),
-                        "ec_ds_m": float(record.values.get("ec_ds_m") or 1.2),
-                    }
-    except Exception:
-        pass
-
-    from app.services.simulation_service import simulation_engine
-
-    for zid, name in zone_map.items():
-        # Try InfluxDB first, then simulation engine in-memory state, then defaults
-        influx = soil_data.get(zid)
-        sim    = simulation_engine.zone_states.get(zid)
-        
-        if influx:
-            moisture = float(influx.get("moisture", 45.0))
-            temp_c   = influx.get("temp_c", 30.0)
-            ec_ds_m  = influx.get("ec_ds_m", 1.2)
-        elif sim:
-            moisture = float(sim.get("moisture", 45.0))
-            temp_c   = float(sim.get("temp", 30.0))
-            ec_ds_m  = float(sim.get("ec", 1.2))
-        else:
-            # Hard fallback — zone-specific defaults so demo looks real
-            zone_defaults = {
-                "wheat": 18.0, "grape": 21.0, "chilli": 35.0,
-                "onion": 44.0, "tomato": 58.0, "pomegranate": 72.0,
-            }
-            name_lower = name.lower()
-            moisture = next((v for k, v in zone_defaults.items() if k in name_lower), 45.0)
-            temp_c   = 30.0
-            ec_ds_m  = 1.2
-
-        dashboard["zones"].append({
-            "id":               zid,
-            "name":             name,
-            "moisture_pct":     round(moisture, 1),
-            "moisture_status":  get_moisture_status(moisture),
-            "temp_c":           temp_c,
-            "ec_ds_m":          ec_ds_m,
-            "pump_running":     False,
-        })
-
-    try:
-        query_api = influx_client.query_api()
-        results = query_api.query(flux_wq)
-        
-        has_data = False
-        for table in results:
-            for record in table.records:
-                has_data = True
-                dashboard["water_quality"] = {
-                    "ph": record.values.get("ph"),
-                    "ec_ms_cm": record.values.get("ec_ms_cm"),
-                    "turbidity_ntu": record.values.get("turbidity_ntu"),
-                    "nitrate_ppm": record.values.get("nitrate_ppm"),
-                }
-                if "tank_level" in record.values:
-                    dashboard["tank_level_pct"] = float(record.values.get("tank_level", 0.0))
-        
-        # FALLBACK: If no water quality data in InfluxDB, use hardcoded demo values
-        if not has_data:
-            dashboard["data_source"] = "simulation"
-            dashboard["water_quality"] = {
-                "ph": 6.6, "ec_ms_cm": 1.3, 
-                "turbidity_ntu": 2.1, "nitrate_ppm": 14.5
-            }
-            dashboard["tank_level_pct"] = 84.0
-            
-    except Exception:
-        pass
-
-    try:
-        redis.setex(cache_key, 12, json.dumps(dashboard, default=str))
-    except Exception:
-        pass
+        redis.setex(cache_key, 10, json.dumps(dashboard, default=str))
+    except Exception: pass
 
     return dashboard

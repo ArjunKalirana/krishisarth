@@ -243,13 +243,31 @@ function renderPlotNode(zone) {
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <div class="flex justify-between items-end">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Soil Moisture</span>
-                    <span class="text-sm font-black text-white font-mono">${moisture}%</span>
+            <div class="space-y-4">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Soil Moisture</span>
+                        <span class="text-sm font-black text-white font-mono">${moisture}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full ${isDry ? 'bg-red-500' : 'bg-emerald-500'} transition-all duration-1000" style="width: ${moisture}%"></div>
+                    </div>
                 </div>
-                <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                    <div class="h-full ${isDry ? 'bg-red-500' : 'bg-emerald-500'} transition-all duration-1000" style="width: ${moisture}%"></div>
+
+                <!-- Nutrient HUD -->
+                <div class="grid grid-cols-3 gap-3 pt-2 border-t border-white/5">
+                    <div class="text-center">
+                        <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Nitrogen</p>
+                        <p class="text-[11px] font-bold text-white">${zone.nutrients?.N || 0}<span class="text-[8px] text-slate-500 ml-0.5">mg</span></p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Phosphorus</p>
+                        <p class="text-[11px] font-bold text-white">${zone.nutrients?.P || 0}<span class="text-[8px] text-slate-500 ml-0.5">mg</span></p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Potassium</p>
+                        <p class="text-[11px] font-bold text-white">${zone.nutrients?.K || 0}<span class="text-[8px] text-slate-500 ml-0.5">mg</span></p>
+                    </div>
                 </div>
             </div>
         </div>
