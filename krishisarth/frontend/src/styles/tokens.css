@@ -6,24 +6,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&family=Outfit:wght@700;800&display=swap');
 
 :root {
-    /* --- The Void (Foundations) --- */
-    --surface-lowest: #0a0f0d;   /* The infinite field */
-    --surface-low: #131a17;      /* Section base */
-    --surface-mid: #1c2621;      /* Component base */
-    --surface-high: #2a3530;     /* Interaction layer */
-    --surface-glass: rgba(19, 26, 23, 0.7);
+    /* --- The Void (Refined Agri-Tech Palette) --- */
+    --surface-lowest: #0b1210;   /* Farmer's night */
+    --surface-low: #111827;      /* Clean card elevation */
+    --surface-mid: #1f2937;      /* Active state */
+    --surface-high: #374151;     /* Interaction highlight */
+    --surface-glass: rgba(11, 18, 16, 0.85);
+    --surface-glass-light: rgba(255, 255, 255, 0.04);
 
     /* --- Emerald Growth (Primary) --- */
     --emerald-primary: #10b981;
-    --emerald-bright: #4edea3;
-    --emerald-glow: rgba(16, 185, 129, 0.4);
-    --emerald-soft: rgba(16, 185, 129, 0.1);
+    --emerald-bright: #34d399;
+    --emerald-glow: rgba(16, 185, 129, 0.3);
+    --emerald-soft: rgba(16, 185, 129, 0.08);
+
+    /* --- Agricultural Accents --- */
+    --soil-brown: #7c4a2d;
+    --sky-blue: #38bdf8;
+    --neon-lime: #a3e635;
 
     /* --- Status Icons --- */
-    --status-success: #4edea3;
+    --status-success: #10b981;
     --status-warning: #f59e0b;
     --status-danger: #ef4444;
-    --status-info: #3b82f6;
+    --status-info: #38bdf8;
 
     /* --- Typography --- */
     --font-display: 'Manrope', 'Outfit', sans-serif;
@@ -31,10 +37,14 @@
     
     /* --- Spacing & Radius --- */
     --radius-lg: 1.25rem;
-    --radius-xl: 2rem;
+    --radius-xl: 2.5rem;
     --pad-sm: 0.75rem;
     --pad-md: 1.5rem;
     --pad-lg: 3rem;
+
+    /* --- Layout Constants --- */
+    --sidebar-width: 280px;
+    --bottom-nav-height: 72px;
 }
 
 /* --- Base Styles --- */
@@ -147,4 +157,67 @@ body {
 @keyframes shimmer {
     from { background-position: 200% 0; }
     to { background-position: -200% 0; }
+}
+
+/* --- Layout Components --- */
+.side-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--surface-low);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--bottom-nav-height);
+    background: var(--surface-glass);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 90;
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .side-sidebar {
+        transform: translateX(-100%);
+    }
+    .side-sidebar.open {
+        transform: translateX(0);
+    }
+    .bottom-navigation {
+        display: flex;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding-bottom: var(--bottom-nav-height);
+    }
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Agricultural HUD Enhancements --- */
+.weather-hero {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 95, 70, 0.2));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.weather-hero.condition-rain {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(30, 64, 175, 0.2));
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.weather-hero.condition-storm {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(67, 20, 162, 0.2));
+    border-color: rgba(124, 58, 237, 0.2);
 }

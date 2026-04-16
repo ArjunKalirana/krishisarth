@@ -2,9 +2,10 @@ import json
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import Zone, Device, Alert, AIDecision
+from app.models import Farm, Zone, Device, Alert, AIDecision
 from app.core.config import settings
 from app.services.simulation_service import simulation_engine
+from app.services.weather_service import get_weather_full
 
 
 def get_moisture_status(pct: float) -> str:
@@ -106,7 +107,20 @@ from(bucket: "{bucket}")
         "tank_level_pct": 0.0,
         "unread_alerts": unread_count,
         "data_source": "live",
+        "weather": {
+            "temp": 25, "humidity": 60, "wind": 5, 
+            "condition": "Clear", "icon": "01d", "id": 800
+        }
     }
+
+    # Fetch Real Weather if Farm exists
+    try:
+        farm = db.query(Farm).filter(Farm.id == farm_id).first()
+        if farm and farm.lat and farm.lng:
+            weather = await get_weather_full(farm.lat, farm.lng)
+            dashboard["weather"] = weather
+    except Exception as e:
+        print(f"[DashboardService] Weather error: {e}")
 
     # FIX: wrap all InfluxDB calls — no data yet is normal on a fresh install
     soil_data: dict = {}
