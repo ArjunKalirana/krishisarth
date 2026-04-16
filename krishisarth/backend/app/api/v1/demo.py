@@ -76,34 +76,8 @@ async def backfill_history():
         print(f"[Seeder] New Farm ID: {farm.id}")
         
         # 3. Zones - Clear count logic as we just nuked it
-        print("[Seeder] Provisioning 6 specialized zones...")
-
-        # Continue with seeding...
-
-        # 3. Zones
-        zone_configs = [
-            {"name": "Tomato Greenhouse A", "crop_type": "tomato", "crop_stage": "fruiting", "area_sqm": 4500},
-            {"name": "Grape Vineyard", "crop_type": "grape", "crop_stage": "flowering", "area_sqm": 12000},
-            {"name": "Onion Field", "crop_type": "onion", "crop_stage": "bulbing", "area_sqm": 8000},
-            {"name": "Pomegranate Orchard", "crop_type": "pomegranate", "crop_stage": "vegetative", "area_sqm": 15000},
-            {"name": "Chilli Patch", "crop_type": "chilli", "crop_stage": "seedling", "area_sqm": 3000},
-            {"name": "Wheat Block", "crop_type": "wheat", "crop_stage": "harvesting", "area_sqm": 9000},
-        ]
-        
+        # No longer creating mock zones; the system will sync real nodes from MongoDB.
         zones = []
-        for zc in zone_configs:
-            zone = Zone(
-                farm_id=farm.id,
-                name=zc["name"],
-                crop_type=zc["crop_type"],
-                crop_stage=zc["crop_stage"],
-                area_sqm=zc["area_sqm"],
-                is_active=True
-            )
-            db.add(zone)
-            db.commit()
-            db.refresh(zone)
-            zones.append(zone)
 
             # 4. Device per Zone
             device = Device(

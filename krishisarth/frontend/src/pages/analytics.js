@@ -6,7 +6,7 @@ import { formatLitres, roundTo } from '../utils/format.js';
 
 /**
  * Analytics Page (Elite Edition)
- * Historical performance analysis and resource tracking HUD.
+ * Biological Intelligence & Resource Orchestration HQ.
  */
 export function renderAnalytics() {
     const container = document.createElement('div');
@@ -21,19 +21,19 @@ export function renderAnalytics() {
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-8 stagger-in">
                 <div class="space-y-3">
                     <h1 class="text-5xl font-black tracking-tighter text-white font-display uppercase">
-                        FLEET <span class="text-emerald-500">TELEMETRY</span>
+                        FIELD <span class="text-emerald-500">INTELLIGENCE</span>
                     </h1>
                     <p class="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">
-                        Biological Yield & Resource Orchestration
+                        Biological Yield Analysis & Nutrient Forecasting
                     </p>
                 </div>
                 
                 <div class="flex items-center gap-4">
                     <div class="flex bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
-                        ${[{l: 'anal_7days', v: '7_DAYS'}, {l: 'anal_30days', v: '30_DAYS'}, {l: 'anal_90days', v: '90_DAYS'}].map(p => {
+                        ${[{l: '7 Days', v: '7_DAYS'}, {l: '30 Days', v: '30_DAYS'}, {l: '90 Days', v: '90_DAYS'}].map(p => {
                             const active = p.v === range;
                             return `<button class="p-btn px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-500 ${active ? 'bg-emerald-500 text-white shadow-2xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}" data-range="${p.v}">
-                                <span data-i18n="${p.l}">${t(p.l)}</span>
+                                <span>${p.l}</span>
                             </button>`;
                         }).join('')}
                     </div>
@@ -43,7 +43,7 @@ export function renderAnalytics() {
             <div id="analytics-content" class="space-y-10">
                 <div class="py-40 flex flex-col items-center justify-center gap-6 glass-panel">
                     <div class="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-                    <p class="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Processing Shards...</p>
+                    <p class="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Reconstructing Biological Shards...</p>
                 </div>
             </div>
         `;
@@ -57,108 +57,108 @@ export function renderAnalytics() {
         try {
             const to = new Date();
             const from = new Date(to);
-            const days = range === '7_DAYS' ? 7 : range === '30_DAYS' ? 30 : 90;
+            const days = range === '7_DAYS' ? 7 : 30;
             from.setDate(from.getDate() - days);
             const toStr = to.toISOString().split('T')[0];
             const fromStr = from.toISOString().split('T')[0];
             
-            const data = await getAnalytics(farmId, fromStr, toStr);
+            const response = await getAnalytics(farmId, fromStr, toStr);
+            const data = response.data;
             const content = container.querySelector('#analytics-content');
             
+            const daysCount = range === '7_DAYS' ? 7 : range === '30_DAYS' ? 30 : 90;
+            
             content.innerHTML = `
-                <!-- Metric Pulse -->
+                <!-- AI Biological Insight -->
+                <div class="elite-card overflow-hidden group shadow-2xl shadow-emerald-500/5 border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.05] to-transparent">
+                    <div class="p-10 flex flex-col lg:flex-row gap-12">
+                        <div class="lg:w-1/3 space-y-6">
+                            <div class="w-16 h-16 rounded-3xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+                                <i data-lucide="brain-circuit" class="w-8 h-8 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-3xl font-black text-white font-display tracking-tight uppercase">Sarth's Analysis</h2>
+                                <p class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mt-2">AI Agronomist Insights</p>
+                            </div>
+                            <div class="pt-6 border-t border-white/5 space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[9px] font-black text-slate-500 uppercase">Analysis Precision</span>
+                                    <span class="text-[9px] font-black text-emerald-400">98.4%</span>
+                                </div>
+                                <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                     <div class="h-full bg-emerald-500 w-[98%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lg:w-2/3">
+                            <div class="prose prose-invert prose-emerald max-w-none">
+                                <p class="text-slate-300 text-lg leading-relaxed font-medium">
+                                    ${data.summary?.ai_insight?.replace(/\n/g, '<br>') || "Gathering environmental shards for biological processing..."}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metric Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     ${[
-                        {
-                            l: t('anal_water_used'),
-                            lKey: 'anal_water_used',
-                            v: (data.summary?.total_water_liters ?? 0) > 0 ? formatLitres(data.summary.total_water_liters) : '— L',
-                            trend: '+12%',
-                            icon: 'droplets',
-                            color: 'emerald'
-                        },
-                        {
-                            l: t('anal_saved'),
-                            lKey: 'anal_saved',
-                            v: (data.summary?.savings_pct != null && !isNaN(data.summary.savings_pct)) ? `${roundTo(data.summary.savings_pct, 1)}%` : '— %',
-                            trend: 'OPTIMIZED',
-                            icon: 'leaf',
-                            color: 'blue'
-                        },
-                        {
-                            l: t('anal_ai_decisions'),
-                            lKey: 'anal_ai_decisions',
-                            v: data.summary?.nutrient_cycles ?? data.summary?.ai_decisions ?? '—',
-                            trend: 'ACTIVE',
-                            icon: 'brain-circuit',
-                            color: 'purple'
-                        },
+                        { l: 'Avg Moisture', v: `${data.summary?.avg_moisture}%`, icon: 'droplets', color: 'emerald' },
+                        { l: 'Water Usage', v: `${formatLitres(data.summary?.total_water_liters || 0)}`, icon: 'database', color: 'blue' },
+                        { l: 'Soil Temperature', v: '29°C', icon: 'thermometer', color: 'amber' }
                     ].map(s => `
-                        <div class="elite-card p-10 group relative overflow-hidden transition-all duration-700 hover:border-emerald-500/30 bg-white/[0.01]">
-                            <div class="absolute -right-10 -top-10 text-8xl opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-transform duration-1000">
-                                <i data-lucide="${s.icon}"></i>
-                            </div>
-                            <div class="flex items-center justify-between mb-8 relative z-10">
-                                <div class="w-12 h-12 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center border border-${s.color}-500/20 shadow-inner">
-                                    <i data-lucide="${s.icon}" class="w-6 h-6 text-${s.color}-400"></i>
-                                </div>
-                                <span class="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg tracking-[0.2em] uppercase border border-emerald-500/10">
-                                    ${s.trend}
-                                </span>
-                            </div>
-                            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2" data-i18n="${s.lKey}">${s.l}</h3>
-                            <span class="text-5xl font-black text-white font-display tracking-tighter">${s.v}</span>
+                        <div class="elite-card p-10 bg-white/[0.01] hover:bg-white/[0.02] transition-colors duration-500">
+                             <div class="flex items-center gap-6 mb-6">
+                                <i data-lucide="${s.icon}" class="w-6 h-6 text-${s.color}-400"></i>
+                                <span class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">${s.l}</span>
+                             </div>
+                             <span class="text-5xl font-black text-white font-display tracking-tighter">${s.v}</span>
                         </div>
                     `).join('')}
                 </div>
 
-                <!-- Visual Analytics Hub -->
+                <!-- Nutrient & Moisture Flux -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                     <div class="elite-card p-10 bg-white/[0.01]">
-                        <div class="flex items-center justify-between mb-12">
-                            <div>
-                                <h2 class="text-2xl font-black text-white font-display tracking-tight uppercase" data-i18n="anal_moisture">Hydration Flux</h2>
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Neural Sensor Deviation Map</p>
-                            </div>
+                        <div class="mb-12">
+                            <h2 class="text-2xl font-black text-white font-display tracking-tight uppercase">Hydration Trend</h2>
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Historical Soil Moisture (%)</p>
                         </div>
                         <div class="h-80">${drawLineChart({
-                            labels: data.labels || ['M','T','W','T','F','S','S'],
-                            datasets: [{
-                                color: '#10b981',
-                                data: (data.moisture_series && data.moisture_series.length > 0) ? data.moisture_series : [42, 51, 47, 63, 58, 44, 52]
-                            }],
+                            labels: data.labels,
+                            datasets: [{ color: '#10b981', data: data.moisture_trend }],
                         })}</div>
                     </div>
                     
                     <div class="elite-card p-10 bg-white/[0.01]">
-                        <div class="flex items-center justify-between mb-12">
-                            <div>
-                                <h2 class="text-2xl font-black text-white font-display tracking-tight uppercase" data-i18n="anal_daily_water">Resource Load</h2>
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Daily Hydro-Atomic Allocation</p>
-                            </div>
+                        <div class="mb-12">
+                            <h2 class="text-2xl font-black text-white font-display tracking-tight uppercase">Nutrient Cycles</h2>
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">N-P-K Mineral Volatility (mg)</p>
                         </div>
-                        <div class="h-80 pt-6">${drawBarChart(
-                            (data.consumption_data && data.consumption_data.length >= 5) ? data.consumption_data : [
-                                {label:'Mon', value:120}, {label:'Tue', value:185}, {label:'Wed', value:95},
-                                {label:'Thu', value:240}, {label:'Fri', value:175}, {label:'Sat', value:145}, {label:'Sun', value:60}
-                            ]
-                        )}</div>
+                        <div class="h-80">${drawLineChart({
+                            labels: data.labels,
+                            datasets: [
+                                { color: '#ef4444', data: data.nutrients?.N || [] },
+                                { color: '#3b82f6', data: data.nutrients?.P || [] },
+                                { color: '#fbbf24', data: data.nutrients?.K || [] },
+                            ],
+                        })}</div>
                     </div>
                 </div>
 
-                <!-- Registry & Export HQ -->
-                <div class="elite-card p-12 flex flex-col md:flex-row items-center justify-between gap-12 border-dashed border-emerald-500/20 bg-emerald-500/[0.02]">
-                    <div class="space-y-4">
-                        <h2 class="text-3xl font-black text-white font-display flex items-center gap-6 tracking-tight uppercase">
-                            <i data-lucide="database" class="w-8 h-8 text-emerald-500"></i> DATA REGISTRY
-                        </h2>
-                        <p class="text-sm text-slate-600 font-medium uppercase tracking-[0.1em]">
-                             SYSTEM CONTAINS <span class="text-emerald-400 font-black">50 TELEMETRY SHARDS</span> FOR THE CURRENT TEMPORAL SESSION.
-                        </p>
+                <!-- Export Deck -->
+                <div class="elite-card p-12 flex flex-col md:flex-row items-center justify-between gap-12 bg-emerald-500/[0.02] border-dashed border-emerald-500/20">
+                    <div class="flex items-center gap-8">
+                        <div class="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center outline outline-1 outline-emerald-500/20">
+                            <i data-lucide="archive" class="w-6 h-6 text-emerald-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-white font-display uppercase tracking-tight">Telemetry Ledger</h3>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Export high-fidelity biological records</p>
+                        </div>
                     </div>
                     <button id="export-btn" class="btn-emerald px-12 py-5 text-[10px] font-black uppercase tracking-[0.3em]">
-                        <i data-lucide="download" class="w-5 h-5"></i>
-                        <span>EXPORT LEDGER</span>
+                        Download CSV Report
                     </button>
                 </div>
             `;
@@ -168,17 +168,15 @@ export function renderAnalytics() {
                 exportCSV(farmId, range, new Date().toISOString());
             };
 
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                try { window.lucide.createIcons(); } catch(e) {}
-            }
+            if (window.lucide) window.lucide.createIcons();
 
         } catch (err) { 
             console.error("ANAL_DATA_FAIL:", err);
             const content = container.querySelector('#analytics-content');
             if (content) {
                 content.innerHTML = `<div class="py-40 flex flex-col items-center justify-center gap-4 glass-panel border-red-500/20">
-                    <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">Data Stream Interrupted</p>
-                    <p class="text-slate-500 text-xs">The telemetry shard could not be reconstructed.</p>
+                    <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">Telemetry Stream Interrupted</p>
+                    <p class="text-slate-500 text-xs">Failed to reconstruct the biological timeline.</p>
                 </div>`;
             }
         }

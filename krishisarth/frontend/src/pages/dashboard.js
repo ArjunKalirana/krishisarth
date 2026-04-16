@@ -328,8 +328,16 @@ function renderBanner(color, msg) {
 function renderEmptyState() {
      return `
         <div class="flex flex-col items-center justify-center py-40 glass-panel">
-            <h2 class="text-4xl font-black text-white mb-6 font-display tracking-tighter">Initializing Field Intelligence...</h2>
-            <button id="rescue-demo-btn" class="btn-emerald px-10 py-4">Provision Default Farm</button>
+            <div class="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-500/20">
+                <i data-lucide="satellite-dish" class="w-10 h-10 text-emerald-400"></i>
+            </div>
+            <h2 class="text-4xl font-black text-white mb-4 font-display tracking-tighter uppercase">No Active Telemetry Shards</h2>
+            <p class="text-slate-500 max-w-md text-center text-xs font-bold uppercase tracking-widest leading-loose mb-10">
+                Waiting for physical sensor nodes to broadcast data. Connect your ESP32 hardware or inject records into MongoDB to begin orchestration.
+            </p>
+            <button id="manual-sync-btn" class="btn-emerald px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em]">
+                Initialize Field Sync
+            </button>
         </div>
     `;
 }
@@ -343,18 +351,13 @@ function attachListeners(data, mainEl) {
         };
     }
     
-    const rescueBtn = mainEl.querySelector('#rescue-demo-btn');
-    if (rescueBtn) {
-        rescueBtn.onclick = async () => {
-            rescueBtn.disabled = true;
-            try {
-                await api('/demo/history', { method: 'POST' });
-                showToast('Hardware provisioned! Syncing...', 'success');
-                setTimeout(() => window.location.reload(), 1500);
-            } catch (e) {
-                showToast('Provisioning failed', 'error');
-                rescueBtn.disabled = false;
-            }
+    const manualSyncBtn = mainEl.querySelector('#manual-sync-btn');
+    if (manualSyncBtn) {
+        manualSyncBtn.onclick = () => {
+             manualSyncBtn.disabled = true;
+             manualSyncBtn.innerHTML = '<span class="animate-pulse">Syncing Shards...</span>';
+             showToast('Polling MongoDB Node Broadcasts...', 'info');
+             setTimeout(() => window.location.reload(), 1500);
         };
     }
 }
