@@ -65,8 +65,15 @@ async def get_dashboard(farm_id: str, db: Session, influx_client, redis) -> dict
     # 1. Sync MongoDB Nodes -> PostgreSQL Zones
     await sync_mongodb_zones(farm_id, db)
 
-    # 2. Fetch Zone Metadata
-    zones = db.query(Zone).filter(Zone.farm_id == farm_id).order_by(Zone.node_id).all()
+    # 1.5 Strict Safety: Auto-purge any orphan zones (mock leftovers) for this farm
+    try:
+        db.query(Zone).filter(Zone.farm_id == farm_id, Zone.node_id == None).delete(synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        logger.warning(f"[Dashboard] Failed to purge orphans: {e}")
+
+    # 2. Fetch Zone Metadata (Strict Telemetry Only)
+    zones = db.query(Zone).filter(Zone.farm_id == farm_id, Zone.node_id != None).order_by(Zone.node_id).all()
     if not zones:
         return {"summary": {"active_zones": 0}, "zones": [], "data_source": "live"}
 

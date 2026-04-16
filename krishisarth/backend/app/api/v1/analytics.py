@@ -89,8 +89,8 @@ async def get_farm_analytics_summary(
     from_dt = datetime.combine(from_date, datetime.min.time()).replace(tzinfo=timezone.utc)
     to_dt   = datetime.combine(to_date,   datetime.max.time()).replace(tzinfo=timezone.utc)
 
-    # 1. PostgreSQL Metadata
-    zones = db.query(Zone).filter(Zone.farm_id == farm_id).all()
+    # 1. PostgreSQL Metadata (Strictly zones with hardware link)
+    zones = db.query(Zone).filter(Zone.id.in_(zone_ids_filter) if (zone_id and (zone_ids_filter:=[zone_id])) else True).filter(Zone.farm_id == farm_id, Zone.node_id != None).all()
     zone_ids = [str(z.id) for z in zones]
     node_ids = [z.node_id for z in zones if z.node_id]
 

@@ -62,7 +62,8 @@ class SimulationEngine:
             ).all()
             
             for farm in farms:
-                zones = db.query(Zone).filter(Zone.farm_id == farm.id).all()
+                # 1. Capture only zones with valid hardware node IDs
+                zones = db.query(Zone).filter(Zone.farm_id == farm.id, Zone.node_id != None).all()
                 farm_telemetry = []
                 
                 # Water Quality (Farm Level) - Simulating tank drainage
