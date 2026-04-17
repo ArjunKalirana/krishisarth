@@ -119,12 +119,34 @@ export function renderFarm3D() {
     const zoneModels = [], allInteractives = [];
     const zoneStates = {}; // Live telemetry mapping
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, logarithmicDepthBuffer: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
-    renderer.setClearColor(0x0a0f12);
+    let renderer;
+    try {
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, logarithmicDepthBuffer: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.4;
+        renderer.setClearColor(0x0a0f12);
+    } catch (err) {
+        console.error('[Digital Twin] WebGL Context Failed:', err);
+        container.innerHTML = `
+            <div style="width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0f12;color:#fff;padding:40px;text-align:center;font-family:'Inter',sans-serif;">
+                <div style="width:80px;height:80px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:32px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h2 style="font-size:24px;font-weight:900;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.1em;">3D Engine Unavailable</h2>
+                <p style="color:#64748b;max-width:400px;line-height:1.6;font-size:13px;margin-bottom:32px;">
+                    The Digital Twin requires hardware acceleration to render the volumetric farm model. 
+                    Please enable WebGL in your browser settings or use a supported device.
+                </p>
+                <div style="display:flex;gap:16px;">
+                    <a href="#dashboard" style="padding:16px 32px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;">Return to Dashboard</a>
+                    <button onclick="location.reload()" style="padding:16px 32px;background:#10b981;border:none;border-radius:16px;color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;">Retry Load</button>
+                </div>
+            </div>
+        `;
+        return container;
+    }
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x0a0f12, 0.001);
