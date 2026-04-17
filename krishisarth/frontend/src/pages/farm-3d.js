@@ -192,7 +192,7 @@ export function renderFarm3D() {
         }
     });
 
-    function showPanel(zoneIdx) {
+    async function showPanel(zoneIdx) {
         const panel = hud.querySelector('#twin-panel');
         if (!panel) return;
         const zm = zoneModels[zoneIdx];
@@ -203,12 +203,15 @@ export function renderFarm3D() {
         const irrigating = st.pump_status === 'on' || st.irrigating;
         const fertigating = st.fertigation_status === 'active' || st.fertigating;
 
+        // Fetch ML Suggestion if not already cached or if we want to refresh
+        let mlData = st.ml_crop_data || null;
+        
         panel.innerHTML = `
             <div style="padding:28px;">
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:24px;">
                     <div>
                         <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:900;color:#fff;">${zone.name}</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;">${zone.crop_type || 'Scanning...'} • LIVE TELEMETRY</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#10b981;text-transform:uppercase;letter-spacing:0.2em;margin-top:4px;">${zone.crop_type || 'Active Plot'} • LIVE TELEMETRY</div>
                     </div>
                     <button id="panel-close" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.05);border:none;color:#64748b;cursor:pointer;">✕</button>
                 </div>
@@ -224,21 +227,30 @@ export function renderFarm3D() {
                     </div>
                 </div>
 
-                <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.1);padding:20px;border-radius:16px;margin-bottom:20px;">
+                <div id="ml-suggestion-box" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.1);padding:20px;border-radius:16px;margin-bottom:20px;">
                     <div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">ML Crop Suggestion</div>
-                    <div style="font-size:18px;font-weight:900;color:#fff;display:flex;align-items:center;gap:10px;">
-                        <span>🌿 ${st.ml_crop || 'Calculating...'}</span>
+                    <div id="ml-suggestion-content" style="font-size:18px;font-weight:900;color:#fff;">
+                        ${mlData ? `
+                            <div style="margin-bottom:8px;">🌿 ${mlData.prediction}</div>
+                            <div style="font-size:10px;font-weight:500;color:#94a3b8;font-style:italic;line-height:1.4;">"${mlData.rationale}"</div>
+                        ` : `
+                            <div style="display:flex;align-items:center;gap:10px;opacity:0.5;animation:pulse 1.5s infinite;">
+                                <div style="width:12px;height:12px;border:2px solid #10b981;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                                <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;">Querying Neural Hub...</span>
+                            </div>
+                        `}
                     </div>
                 </div>
 
                 <div style="margin-bottom:24px;">
-                   <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:8px;">
-                        <span>Nutrients (NPK)</span>
+                   <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:10px;">
+                        <span>Nutrient Shard (NPK)</span>
+                        <span style="color:#ffffff;">${st.N || 0}-${st.P || 0}-${st.K || 0}</span>
                    </div>
                    <div style="display:flex;gap:4px;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
-                        <div style="width:${(st.N/50)*100}%;background:#3b82f6;"></div>
-                        <div style="width:${(st.P/50)*100}%;background:#a855f7;"></div>
-                        <div style="width:${(st.K/50)*100}%;background:#f59e0b;"></div>
+                        <div style="width:${Math.min((st.N||0)/1.5, 100)}%;background:#3b82f6;"></div>
+                        <div style="width:${Math.min((st.P||0)/0.8, 100)}%;background:#a855f7;"></div>
+                        <div style="width:${Math.min((st.K||0)/2.5, 100)}%;background:#f59e0b;"></div>
                    </div>
                 </div>
 
@@ -268,23 +280,52 @@ export function renderFarm3D() {
 
         panel.style.transform = 'translateX(0)';
         panel.querySelector('#panel-close').onclick = () => hidePanel();
-        panel.querySelector('#btn-irrigate').onclick = async () => {
-            try { 
-                await startIrrigation(zone.id, 15);
-                zoneStates[zoneIdx].irrigating = true;
-                showPanel(zoneIdx);
-                showToast(`Actuator Authorized: Starting irrigation on ${zone.name}`, 'success');
-            } catch(e) { showToast(e.message, 'error'); }
-        };
-        panel.querySelector('#btn-stop').onclick = async () => {
-            try { 
-                await stopIrrigation(zone.id);
-                zoneStates[zoneIdx].irrigating = false;
-                zoneStates[zoneIdx].fertigating = false;
-                showPanel(zoneIdx);
-                showToast(`Sequence Secured: Flow terminated on ${zone.name}`, 'info');
-            } catch(e) { showToast(e.message, 'error'); }
-        };
+        
+        const irrBtn = panel.querySelector('#btn-irrigate');
+        if (irrBtn) {
+            irrBtn.onclick = async () => {
+                try { 
+                    await startIrrigation(zone.id, 15);
+                    zoneStates[zoneIdx].irrigating = true;
+                    showPanel(zoneIdx);
+                    showToast(`Actuator Authorized: Starting irrigation on ${zone.name}`, 'success');
+                } catch(e) { showToast(e.message, 'error'); }
+            };
+        }
+
+        const stopBtn = panel.querySelector('#btn-stop');
+        if (stopBtn) {
+            stopBtn.onclick = async () => {
+                try { 
+                    await stopIrrigation(zone.id);
+                    zoneStates[zoneIdx].irrigating = false;
+                    zoneStates[zoneIdx].fertigating = false;
+                    showPanel(zoneIdx);
+                    showToast(`Sequence Secured: Flow terminated on ${zone.name}`, 'info');
+                } catch(e) { showToast(e.message, 'error'); }
+            };
+        }
+
+        // Trigger ML Fetch if missing
+        if (!mlData) {
+            try {
+                const { api } = await import('../api/client.js');
+                const res = await api(`/zones/${zone.id}/crop-suggestion`, { timeout: 120000 });
+                if (res?.success) {
+                    zoneStates[zoneIdx].ml_crop_data = res.data;
+                    const content = panel.querySelector('#ml-suggestion-content');
+                    if (content) {
+                        content.innerHTML = `
+                            <div style="margin-bottom:8px;">🌿 ${res.data.prediction}</div>
+                            <div style="font-size:10px;font-weight:500;color:#94a3b8;font-style:italic;line-height:1.4;">"${res.data.rationale}"</div>
+                        `;
+                    }
+                }
+            } catch (err) {
+                const content = panel.querySelector('#ml-suggestion-content');
+                if (content) content.innerHTML = `<span style="font-size:10px;color:#f87171;text-transform:uppercase;">Neural Core Offline</span>`;
+            }
+        }
     }
 
     function hidePanel() {
