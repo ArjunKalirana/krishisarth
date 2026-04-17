@@ -83,14 +83,18 @@ async function initApp() {
             return;
         }
 
-        // Show/hide navbar & AI Assistant
+        // Show/hide navbar, bottom nav & AI Assistant
         const asstRoot = document.getElementById('ks-assistant');
+        const btmRoot  = document.getElementById('bottom-nav-root');
+        
         if (hash === '#login' || hash === '#register') {
             navRoot?.classList.add('hidden');
+            if (btmRoot) btmRoot.classList.add('hidden');
             if (footer) footer.style.display = 'none';
             if (asstRoot) asstRoot.style.display = 'none';
         } else {
             navRoot?.classList.remove('hidden');
+            if (btmRoot) btmRoot.classList.remove('hidden');
             if (footer) footer.style.display = 'block';
             if (asstRoot) asstRoot.style.display = 'block';
         }

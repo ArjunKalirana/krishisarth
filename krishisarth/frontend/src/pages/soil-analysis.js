@@ -66,10 +66,28 @@ export function renderSoilAnalysis() {
 
     const loadAIRecommendation = async (resEl) => {
         const farm = store.getState('currentFarm');
-        const dash = store.getState('currentFarmDashboard');
+        let dash = store.getState('currentFarmDashboard');
+        
+        // Safety Fallback: Discovery sequence for direct navigation
+        if (!dash || !dash.zones) {
+            try {
+                const { api } = await import('../api/client.js');
+                const farmRes = await api(`/farms/${farm.id}/dashboard`);
+                if (farmRes?.success) {
+                    dash = farmRes.data;
+                    store.setState('currentFarmDashboard', dash);
+                }
+            } catch (err) {
+                console.warn('[AI] Zone discovery failed:', err);
+            }
+        }
+
         const zone = dash?.zones?.[0];
         
-        if (!zone) return;
+        if (!zone) {
+            resEl.innerHTML = `<p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Awaiting Node Telemetry...</p>`;
+            return;
+        }
 
         resEl.innerHTML = `
             <div class="flex items-center gap-4 animate-pulse">
@@ -83,6 +101,8 @@ export function renderSoilAnalysis() {
             const res = await api(`/zones/${zone.id}/crop-suggestion`);
             const data = res.data;
 
+            if (!data || !data.prediction) throw new Error('EMPTY_INFERENCE');
+
             resEl.innerHTML = `
                 <div class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                     <div class="flex items-center justify-between">
@@ -94,12 +114,13 @@ export function renderSoilAnalysis() {
                         "${data.rationale}"
                     </p>
                     <div class="flex gap-2 pt-2">
-                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">N: ${data.inputs.N}</div>
-                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">pH: ${data.inputs.ph}</div>
+                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">N: ${data.inputs?.N ?? '—'}</div>
+                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">pH: ${data.inputs?.ph ?? '—'}</div>
                     </div>
                 </div>
             `;
         } catch (err) {
+            console.error('[AI] Inference Error:', err);
             resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Inference Hub Unavailable</p>`;
         }
     };
