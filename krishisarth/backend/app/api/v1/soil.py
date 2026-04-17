@@ -201,27 +201,36 @@ async def get_ml_crop_suggestion(
     latest = await collection.find_one(query, sort=[("timestamp", -1)])
     
     if not latest:
-        # High-Fidelity Fallback: Use zone metadata or stored report values if hardware is offline
-        logger.info(f"[ML] Offline Fallback triggered for zone {zone_id}. Using metadata.")
+        # High-Fidelity Fallback: Source from live sensor data or high-fidelity defaults
+        # We use safe access here because N,P,K aren't in the SQL model yet
+        logger.info(f"[ML] Offline Fallback triggered for zone {zone_id}. Using predictive defaults.")
         latest = {
-            "N": zone.n_value or 50, 
-            "P": zone.p_value or 40, 
-            "K": zone.k_value or 20,
+            "N": 50, # Global median for NPK models
+            "P": 40,
+            "K": 20,
             "temperature": 25.0, 
             "humidity": 60.0, 
             "soil_moisture": 50.0
         }
 
-    # 2. Preparation for Model Call
-    # N, P, K, temp, hum, ph, rainfall
+    # 2. Preparation for Model Call using High-Precision fields from SQL fallback
+    # We prioritize SQL data for ph/rainfall if available, else use model defaults
+    N = float(latest.get("N", 50))
+    P = float(latest.get("P", 40))
+    K = float(latest.get("K", 20))
+    temp = float(latest.get("temperature", 25.0))
+    hum = float(latest.get("humidity", 60.0))
+    
+    # Use existing SQL fields if present
+    ph = float(zone.ph) if zone.ph is not None else 6.5
+    rain = float(zone.rainfall) if zone.rainfall is not None else 100.0
+
     prediction = await ml_service.predict_crop(
-        N=latest.get("N", 0),
-        P=latest.get("P", 0),
-        K=latest.get("K", 0),
-        temperature=latest.get("temperature", 25.0),
-        humidity=latest.get("humidity", 60.0),
-        ph=zone.ph or 6.5,
-        target_rainfall=zone.rainfall or 200.0  # Default mm
+        N=N, P=P, K=K, 
+        temperature=temp, 
+        humidity=hum, 
+        ph=ph, 
+        rainfall=rain
     )
 
     # 3. Enhance with Groq for "Botanical Rationale"
