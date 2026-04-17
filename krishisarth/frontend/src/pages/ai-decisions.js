@@ -18,15 +18,15 @@ export function renderAIDecisions() {
     header.innerHTML = `
         <div class="space-y-1">
             <h1 class="ks-text-fluid-lg tracking-tight text-white font-display">
-                Neural <span class="text-emerald-500">Intelligence</span>
+                Neural <span class="text-emerald-500">${t('ai_neural_hub').split(' ')[1] || 'Intelligence'}</span>
             </h1>
             <p class="text-slate-400 font-medium text-sm">
-                Real-time inference logs and decision-chain telemetry.
+                ${t('ai_subtitle')}
             </p>
         </div>
         <button id="run-ai-btn" class="btn-elite flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4">
             <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>
-            <span>RUN NEURAL AUDIT</span>
+            <span>${t('ai_run_btn')}</span>
         </button>
     `;
     container.appendChild(header);
@@ -106,7 +106,7 @@ async function _loadAI(gridEl, runBtn) {
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                     <span class="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] font-mono">
-                        Live_Telemetry_Stream.log
+                        ${t('ai_terminal_title')}
                     </span>
                 </div>
                 <div class="flex gap-1.5 opacity-40">
@@ -161,9 +161,9 @@ async function _loadAI(gridEl, runBtn) {
                     <div>
                         <h3 class="text-xs font-black uppercase text-white tracking-[0.2em] font-display flex items-center gap-3">
                             <i data-lucide="satellite" class="w-4 h-4 text-emerald-400"></i>
-                            Communication Links
+                            ${t('channels_title')}
                         </h3>
-                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">Autonomous Notification Matrix</p>
+                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${t('ai_system_ready')}</p>
                     </div>
                 </div>
                 
@@ -196,7 +196,7 @@ async function _loadAI(gridEl, runBtn) {
     runBtn.onclick = async () => {
         runBtn.disabled = true;
         const originalHtml = runBtn.innerHTML;
-        runBtn.innerHTML = `<div class="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> <span>CALCULATING...</span>`;
+        runBtn.innerHTML = `<div class="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> <span>${t('ai_calculating')}</span>`;
         try {
             const res = await api(`/zones/${firstZone.id}/ai-decisions/run/`, { 
                 method: 'POST',
@@ -254,8 +254,8 @@ function _decisionCard(d) {
             </div>
             
             <p class="text-slate-200 leading-relaxed text-sm mb-8 font-medium">
-                <span class="text-emerald-500 font-black uppercase text-[10px] tracking-widest block mb-2">Sarth's Reasoning — </span>
-                "${d.reasoning || 'Neural inference stable. No action required.'}"
+                <span class="text-emerald-500 font-black uppercase text-[10px] tracking-widest block mb-2">${t('decision_chain')} — </span>
+                "${d.reasoning || t('ai_no_reasoning')}"
             </p>
 
             ${snapshot.N !== undefined ? `
@@ -279,7 +279,7 @@ function _decisionCard(d) {
             <div class="flex flex-wrap gap-3">
                 <span class="badge-elite badge-success text-[9px] uppercase tracking-widest">Model: Llama3-70B via Groq</span>
                 <span class="badge-elite badge-info text-[9px] uppercase tracking-widest">Source: MongoDB Live Shard</span>
-                <span class="badge-elite ${conf > 80 ? 'badge-success' : 'badge-warning'} text-[9px] uppercase tracking-widest font-black">${conf > 80 ? 'AUTO_EXECUTE' : 'PENDING_HUB_AUDIT'}</span>
+                <span class="badge-elite ${conf > 80 ? 'badge-success' : 'badge-warning'} text-[9px] uppercase tracking-widest font-black">${conf > 80 ? t('ai_auto') : t('ai_review')}</span>
             </div>
         </div>
     `;

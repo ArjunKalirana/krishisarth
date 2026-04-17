@@ -46,9 +46,9 @@ function renderTopNavbar() {
 
     const navItems = [
         { hash: '#dashboard', icon: 'layout-dashboard', label: t('nav_dashboard') },
-        { hash: '#farm3d',    icon: 'box',              label: 'Digital Twin' },
-        { hash: '#ai',        icon: 'brain',            label: t('nav_ai') },
-        { hash: '#soil-analysis', icon: 'test-tube',         label: 'Soil' },
+        { hash: '#farm3d',    icon: 'box',              label: t('nav_digital_twin') },
+        { hash: '#ai',        icon: 'brain',            label: t('nav_neural_hub') },
+        { hash: '#soil-analysis', icon: 'test-tube',         label: t('nav_soil_analysis') },
         { hash: '#control',   icon: 'sliders',          label: t('nav_control') },
         { hash: '#analytics', icon: 'bar-chart-2',      label: t('nav_analytics') },
     ];
@@ -84,6 +84,21 @@ function renderTopNavbar() {
 
             <!-- Profile & Actions -->
             <div class="flex items-center gap-6 pl-6 border-l border-white/5">
+                <!-- Language Switcher -->
+                <div class="relative group">
+                    <button id="lang-btn-desktop" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all">
+                        <i data-lucide="globe" class="w-4 h-4 text-emerald-400"></i>
+                        <span class="text-[9px] font-black uppercase text-white tracking-widest">${getLanguage().toUpperCase()}</span>
+                    </button>
+                    <div id="lang-dropdown-desktop" class="absolute right-0 top-full mt-2 w-32 glass-panel p-2 hidden">
+                        ${getAvailableLanguages().map(l => `
+                            <button class="lang-opt w-full text-left px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-all" data-lang="${l.code}">
+                                ${l.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
                 <div id="nav-bell-btn-desktop" class="relative cursor-pointer group">
                     <i data-lucide="bell" class="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
                     ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>` : ''}
@@ -99,7 +114,7 @@ function renderTopNavbar() {
                     
                     <div id="dropdown-desktop" class="absolute right-0 top-full mt-4 w-48 glass-panel p-2 hidden">
                         <button id="logout-btn-desktop" class="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/5 rounded-lg flex items-center gap-3">
-                            <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                            <i data-lucide="log-out" class="w-4 h-4"></i> ${t('nav_logout')}
                         </button>
                     </div>
                 </div>
@@ -112,11 +127,21 @@ function renderTopNavbar() {
     const dropdown = root.querySelector('#dropdown-desktop');
     const logoutBtn = root.querySelector('#logout-btn-desktop');
     const bellBtn = root.querySelector('#nav-bell-btn-desktop');
+    const langBtn = root.querySelector('#lang-btn-desktop');
+    const langDropdown = root.querySelector('#lang-dropdown-desktop');
 
     if (profileBtn && dropdown) {
-        profileBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); };
-        document.addEventListener('click', () => dropdown.classList.add('hidden'));
+        profileBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); langDropdown?.classList.add('hidden'); };
     }
+    if (langBtn && langDropdown) {
+        langBtn.onclick = (e) => { e.stopPropagation(); langDropdown.classList.toggle('hidden'); dropdown?.classList.add('hidden'); };
+    }
+    document.addEventListener('click', () => { dropdown?.classList.add('hidden'); langDropdown?.classList.add('hidden'); });
+
+    root.querySelectorAll('.lang-opt').forEach(opt => {
+        opt.onclick = () => { setLanguage(opt.dataset.lang); renderNavbar(); };
+    });
+
     if (logoutBtn) logoutBtn.onclick = _doLogout;
     if (bellBtn) bellBtn.onclick = toggleAlertsFeed;
 
@@ -127,27 +152,40 @@ function renderTopNavbar() {
  * Mobile-specific Drawer
  */
 function renderSidebar() {
-    // We render this but the CSS (translateX-100%) hides it by default
-    // It's only shown on mobile via BottomNav 'More' button class toggle
     const root = document.getElementById('navbar-root');
     const farmer = store.getState('currentFarmer');
     
+    // Check if sidebar already exists to avoid duplication
+    let sidebar = document.getElementById('main-sidebar');
+    if (sidebar) sidebar.remove();
+
     const sidebarHtml = `
         <aside id="main-sidebar" class="side-sidebar flex flex-col p-6 glass-hud">
             <div class="mb-10 px-2 flex items-center justify-between">
-                <span class="text-xl font-black tracking-tighter text-white font-display">Command <span class="text-emerald-500">Node</span></span>
+                <span class="text-xl font-black tracking-tighter text-white font-display uppercase">Krishi<span class="text-emerald-500">Node</span></span>
                 <button onclick="document.getElementById('main-sidebar').classList.remove('open')" class="p-2 text-slate-500"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+
+            <!-- Language Row -->
+            <div class="flex items-center justify-between mb-8 p-4 rounded-2xl bg-white/5 border border-white/5">
+                <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Language</span>
+                <div class="flex gap-2">
+                    ${getAvailableLanguages().map(l => `
+                        <button class="lang-opt-mob px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${getLanguage() === l.code ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}" data-lang="${l.code}">
+                            ${l.code.toUpperCase()}
+                        </button>
+                    `).join('')}
+                </div>
             </div>
 
             <nav class="flex-1 space-y-1">
                 ${[
-                    { hash: '#dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
-                    { hash: '#farm3d',    icon: 'box',              label: 'Digital Twin' },
-                    { hash: '#ai',        icon: 'brain',            label: 'AI Intelligence' },
-                    { hash: '#soil-analysis', icon: 'test-tube',         label: 'Soil Lab' },
-                    { hash: '#control',   icon: 'sliders',          label: 'Hardware' },
-                    { hash: '#analytics', icon: 'bar-chart-2',      label: 'Performance' },
-                    { hash: '#support',   icon: 'headphones',       label: 'Support' },
+                    { hash: '#dashboard', icon: 'layout-dashboard', label: t('nav_dashboard') },
+                    { hash: '#farm3d',    icon: 'box',              label: t('nav_digital_twin') },
+                    { hash: '#ai',        icon: 'brain',            label: t('nav_neural_hub') },
+                    { hash: '#soil-analysis', icon: 'test-tube',         label: t('nav_soil_analysis') },
+                    { hash: '#control',   icon: 'sliders',          label: t('nav_control') },
+                    { hash: '#analytics', icon: 'bar-chart-2',      label: t('nav_analytics') },
                 ].map(item => `
                     <a href="${item.hash}" class="flex items-center gap-4 px-4 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/5">
                         <i data-lucide="${item.icon}" class="w-5 h-5"></i>
@@ -158,20 +196,30 @@ function renderSidebar() {
 
             <div class="mt-auto pt-6 border-t border-white/5 space-y-4">
                 <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5">
-                    <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-black">${farmer ? farmer.name[0] : 'F'}</div>
+                    <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-black font-display font-black">${farmer ? farmer.name[0] : 'F'}</div>
                     <div class="flex-1 overflow-hidden">
-                        <p class="text-[10px] font-black text-white truncate uppercase">${farmer?.name || 'Operator'}</p>
+                        <p class="text-[10px] font-black text-white truncate uppercase tracking-tight">${farmer?.name || 'Operator'}</p>
                         <p class="text-[8px] font-bold text-slate-500 truncate uppercase mt-0.5">${farmer?.email || ''}</p>
                     </div>
                 </div>
                 <button onclick="window.location.hash='#login'" class="w-full py-4 rounded-2xl bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3">
-                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                    <i data-lucide="log-out" class="w-4 h-4"></i> ${t('nav_logout')}
                 </button>
             </div>
         </aside>
     `;
 
     root.insertAdjacentHTML('beforeend', sidebarHtml);
+    
+    // Logic for mobile lang opt
+    document.querySelectorAll('.lang-opt-mob').forEach(opt => {
+        opt.onclick = () => { 
+            setLanguage(opt.dataset.lang); 
+            renderNavbar();
+            document.getElementById('main-sidebar').classList.remove('open');
+        };
+    });
+
     if (window.lucide) window.lucide.createIcons();
 }
 

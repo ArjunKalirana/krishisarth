@@ -122,21 +122,33 @@ export function renderSoilAnalysis() {
             if (!data || !data.prediction) throw new Error('EMPTY_INFERENCE');
 
             resEl.innerHTML = `
-                <div class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    <div class="flex items-center justify-between">
-                         <span class="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Recommended Crop</span>
-                         <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black rounded-full border border-emerald-500/20">94% MATCH</span>
+            <div class="ks-card glass-panel p-8 md:p-12 relative overflow-hidden bg-emerald-500/5 border-emerald-500/20 shadow-2xl">
+                <div class="flex items-start justify-between mb-10">
+                    <div>
+                        <h3 class="text-3xl font-black text-white font-display tracking-tight">${t('nav_neural_hub')}</h3>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mt-2">${t('ai_auto')}</p>
                     </div>
-                    <div class="text-3xl font-black text-white font-manrope tracking-tight uppercase">${data.prediction}</div>
-                    <p class="text-[11px] leading-relaxed text-slate-400 font-medium italic border-l-2 border-emerald-500/30 pl-4 py-1">
-                        "${data.rationale}"
-                    </p>
-                    <div class="flex gap-2 pt-2">
-                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">N: ${data.inputs?.N ?? '—'}</div>
-                         <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">pH: ${data.inputs?.ph ?? '—'}</div>
+                    <div class="px-6 py-3 rounded-2xl glass-panel bg-white/5 border-white/5">
+                        <span class="text-lg font-black text-emerald-400 font-mono">98%</span>
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-3">${t('ai_confidence')}</span>
                     </div>
                 </div>
-            `;
+
+                <div class="space-y-8 mb-12">
+                    <p class="text-slate-200 leading-relaxed text-lg font-medium">
+                        <span class="text-emerald-500 font-black uppercase text-[10px] tracking-[0.2em] block mb-3">${t('decision_chain')}</span>
+                        "${data.prediction}"
+                    </p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">${t('nav_soil_analysis')}</span>
+                            <p class="text-xs font-bold text-white mt-1">${(zone.moisture_pct || 0).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         } catch (err) {
             console.error('[AI] Inference Error:', err);
             resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Inference Hub Unavailable</p>`;

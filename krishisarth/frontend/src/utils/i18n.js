@@ -246,10 +246,14 @@ const TRANSLATIONS = {
     page_dashboard: "Dashboard",
     page_ai: "AI Engine", 
     page_control: "Control Panel",
-    page_analytics: "Analytics",
-    page_farm3d: "3D Farm View",
+    page_analytics:   "Analytics",
+    page_farm3d:      "3D Farm View",
+    page_soil:        "Soil Analysis",
   
-    // Contextual
+    // New Feature Nav
+    nav_soil_analysis: "Soil Lab",
+    nav_digital_twin:  "Digital Twin",
+    nav_neural_hub:    "Neural Hub",
     good_morning: "Good morning",
     good_afternoon: "Good afternoon", 
     good_evening: "Good evening",
@@ -576,9 +580,14 @@ const TRANSLATIONS = {
     page_dashboard: "डैशबोर्ड",
     page_ai: "AI इंजन",
     page_control: "नियंत्रण पैनल",
-    page_analytics: "विश्लेषण",
-    page_farm3d: "3D खेत दृश्य",
-    good_morning: "सुप्रभात",
+    page_analytics:   "विश्लेषण",
+    page_farm3d:      "3D खेत दृश्य",
+    page_soil:        "मिट्टी विश्लेषण",
+  
+    // New Feature Nav
+    nav_soil_analysis: "मिट्टी लैब",
+    nav_digital_twin:  "डिजिटल ट्विन",
+    nav_neural_hub:    "न्यूरल हब",
     good_afternoon: "नमस्कार",
     good_evening: "शुभ संध्या",
     farm_all_ok: "सभी सिस्टम इष्टतम",
@@ -797,6 +806,11 @@ const TRANSLATIONS = {
     farm3d_running:   "चालू आहे",
     farm3d_stopped:   "थांबवले",
     farm3d_no_farm:   "कोणतेही शेत निवडलेले नाही",
+
+    // New Feature Nav
+    nav_soil_analysis: "माती प्रयोगशाळा",
+    nav_digital_twin:  "डिजिटल ट्विन",
+    nav_neural_hub:    "न्यूरल हब",
 
     toast_irrigating: "सिंचन सुरू झाले",
     toast_stopped:    "थांबवले",
