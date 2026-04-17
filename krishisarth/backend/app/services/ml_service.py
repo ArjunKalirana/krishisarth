@@ -47,8 +47,8 @@ async def _predict_with_backoff(url, payload, model_name):
                 return r.json()
             except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as e:
                 if i < attempts - 1:
-                    wait_time = (i + 1) * 20 # 20s, 40s
-                    logger.warning(f">>> [ML] {model_name} Warming Up (Attempt {i+1}/{attempts}). Retrying in {wait_time}s...")
+                    wait_time = (i + 1) * 30 # 30s, 60s
+                    logger.warning(f">>> [ML] {model_name} Warming Up (Attempt {i+1}/{attempts}). Max patience: 100s. Retrying in {wait_time}s...")
                     await asyncio.sleep(wait_time)
                 else:
                     logger.error(f">>> [ML] {model_name} Failed after {attempts} attempts: {e}")

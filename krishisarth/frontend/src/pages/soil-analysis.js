@@ -65,7 +65,23 @@ export function renderSoilAnalysis() {
     };
 
     const loadAIRecommendation = async (resEl) => {
-        const farm = store.getState('currentFarm');
+        let farm = store.getState('currentFarm');
+        
+        // Deep Sync: Wait for bootstrap if navigating directly
+        if (!farm || !farm.id) {
+            resEl.innerHTML = `<span class="text-[9px] uppercase font-black text-slate-600 animate-pulse">Syncing Farm Identity...</span>`;
+            for (let i = 0; i < 10; i++) {
+                await new Promise(r => setTimeout(r, 500));
+                farm = store.getState('currentFarm');
+                if (farm && farm.id) break;
+            }
+        }
+
+        if (!farm || !farm.id) {
+            resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Farm Context Lost</p>`;
+            return;
+        }
+
         let dash = store.getState('currentFarmDashboard');
         
         // Safety Fallback: Discovery sequence for direct navigation
@@ -85,7 +101,7 @@ export function renderSoilAnalysis() {
         const zone = dash?.zones?.[0];
         
         if (!zone) {
-            resEl.innerHTML = `<p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Awaiting Node Telemetry...</p>`;
+            resEl.innerHTML = `<p class="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-relaxed">No Active Zones Found.<br/><span class="text-[8px] opacity-60">Register a node in Farm Setup.</span></p>`;
             return;
         }
 

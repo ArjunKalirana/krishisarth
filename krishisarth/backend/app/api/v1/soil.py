@@ -201,11 +201,15 @@ async def get_ml_crop_suggestion(
     latest = await collection.find_one(query, sort=[("timestamp", -1)])
     
     if not latest:
-        # If no real data, try to use zone defaults or sensible fallbacks
+        # High-Fidelity Fallback: Use zone metadata or stored report values if hardware is offline
+        logger.info(f"[ML] Offline Fallback triggered for zone {zone_id}. Using metadata.")
         latest = {
-            "N": 50, "P": 40, "K": 20,
-            "temperature": 25, "humidity": 70, 
-            "soil_moisture": 50
+            "N": zone.n_value or 50, 
+            "P": zone.p_value or 40, 
+            "K": zone.k_value or 20,
+            "temperature": 25.0, 
+            "humidity": 60.0, 
+            "soil_moisture": 50.0
         }
 
     # 2. Preparation for Model Call
