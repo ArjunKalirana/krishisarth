@@ -246,7 +246,7 @@ async def get_ml_crop_suggestion(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}"},
                     json={
-                        "model": "llama-3-8b-8192",
+                        "model": "llama-3.1-8b-instant",
                         "messages": [{"role": "user", "content": prompt}],
                         "temperature": 0.5,
                         "max_tokens": 150
