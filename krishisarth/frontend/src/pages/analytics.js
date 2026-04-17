@@ -63,6 +63,8 @@ export function renderAnalytics() {
             const fromStr = from.toISOString().split('T')[0];
             
             const response = await getAnalytics(farmId, fromStr, toStr);
+            if (!response || !response.data) throw new Error('EMPTY_PAYLOAD');
+            
             const data = response.data;
             const content = container.querySelector('#analytics-content');
             

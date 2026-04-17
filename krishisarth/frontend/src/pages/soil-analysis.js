@@ -1,4 +1,5 @@
 import { showToast } from '../components/toast.js';
+import { store } from '../state/store.js';
 
 /**
  * KrishiSarth Soil Quality Analysis v1.0
@@ -207,10 +208,6 @@ export function renderSoilAnalysis() {
 
     const store = window.KrishiSarthStore || { getState: () => ({}) };
     
-    updateAnalysis();
-    return container;
-}
-
     updateAnalysis();
     return container;
 }
