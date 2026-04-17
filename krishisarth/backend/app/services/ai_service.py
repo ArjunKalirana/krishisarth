@@ -18,14 +18,23 @@ async def _get_groq_reasoning(snapshot: dict) -> str:
         return None
     
     groq_key = settings.GROQ_KEY.strip("'\"")
+    
+    # Safe Data Extraction
+    z_name = snapshot.get('zone_name') or "Unknown Zone"
+    c_type = snapshot.get('crop_type') or "Active Crop"
+    c_stage = snapshot.get('crop_stage') or "Growth"
+    moisture = snapshot.get('moisture_pct') or 0.0
+    fertility = snapshot.get('fertility_label') or "Stable"
+    npk = f"{snapshot.get('N', 0)}-{snapshot.get('P', 0)}-{snapshot.get('K', 0)}"
+
     prompt = f"""
     You are Sarth, an Elite AI Agronomist. Analyze this sensor data and provide 1-2 sentences of actionable advice for the farmer.
     Data:
-    - Zone: {snapshot['zone_name']}
-    - Crop: {snapshot['crop_type']} ({snapshot['crop_stage']})
-    - Soil Moisture: {snapshot['moisture_pct']}%
-    - Fertility: {snapshot['fertility_label']}
-    - NPK: {snapshot['N']}-{snapshot['P']}-{snapshot['K']}
+    - Zone: {z_name}
+    - Crop: {c_type} ({c_stage})
+    - Soil Moisture: {moisture}%
+    - Fertility: {fertility}
+    - NPK: {npk}
     
     Advice should be professional, data-centric, and focused on yield optimization.
     """
@@ -38,10 +47,14 @@ async def _get_groq_reasoning(snapshot: dict) -> str:
                 json={
                     "model": "llama-3-8b-8192",
                     "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.5
+                    "temperature": 0.5,
+                    "max_tokens": 512
                 },
-                timeout=10.0
+                timeout=15.0
             )
+            if response.status_code != 200:
+                logger.error(f"Groq API Error in Service: {response.status_code} - {response.text}")
+                return None
             data = response.json()
             return data["choices"][0]["message"]["content"].strip()
         except Exception as e:

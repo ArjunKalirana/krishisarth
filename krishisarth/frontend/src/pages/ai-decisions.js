@@ -61,14 +61,13 @@ async function _loadAI(gridEl, runBtn) {
         setTimeout(() => {
             const retryFarm = store.getState('currentFarm');
             if (retryFarm?.id) _loadAI(gridEl, runBtn);
-            else gridEl.innerHTML = `<div class="lg:col-span-12 glass-panel p-20 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">Awaiting Farm Registration...</div>`;
         }, 1000);
         return;
     }
 
     gridEl.innerHTML = `<div class="lg:col-span-12 flex flex-col items-center justify-center py-40 gap-6 glass-panel">
         <div class="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Fetching Live Telemetry...</p>
+        <p class="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Fetching Multi-Zone Telemetry...</p>
     </div>`;
 
     let zones = [];
@@ -91,134 +90,130 @@ async function _loadAI(gridEl, runBtn) {
         return;
     }
 
-    const firstZone = zones[0];
-
-    let decisions = [];
-    try {
-        const res = await api(`/zones/${firstZone.id}/ai-decisions/?limit=5`);
-        decisions = res?.data || [];
-    } catch { decisions = []; }
-
+    // Render Container for Multi-Zone
     gridEl.innerHTML = `
-        <!-- High-Tech Terminal -->
-        <div class="lg:col-span-5 glass-panel overflow-hidden flex flex-col shadow-2xl border-emerald-500/10 bg-slate-950/80">
-            <div class="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-white/5">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span class="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] font-mono">
-                        ${t('ai_terminal_title')}
-                    </span>
-                </div>
-                <div class="flex gap-1.5 opacity-40">
-                    <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                </div>
-            </div>
-            <div class="p-8 space-y-4 font-mono">
-                <p class="font-bold mb-6 text-emerald-400/50 text-[10px]">
-                    >> SYSTEM_STATE: <span class="text-emerald-500">STABLE</span> · CORE: v2.4.0_ALPHA
-                </p>
-                ${[
-                    ['SOIL_MOISTURE',  `${(firstZone.moisture_pct || 0).toFixed(1)}%`],
-                    ['AMBIENT_TEMP',   firstZone.temp_c ? `${firstZone.temp_c.toFixed(1)}°C` : '— °C'],
-                    ['EC_POTENTIAL',   firstZone.ec_ds_m ? `${firstZone.ec_ds_m.toFixed(2)} dS/m` : '— dS/m'],
-                    ['ACTUATOR_STS',   firstZone.pump_running ? 'RUNNING' : 'STANDBY'],
-                    ['TARGET_ZONE',    firstZone.name.toUpperCase()],
-                    ['TOTAL_NODES',    `${zones.length} ACTIVE`]
-                ].map(([k, v]) => `
-                    <div class="flex justify-between items-center text-[12px] group py-1 border-b border-white/5 last:border-0">
-                        <span class="text-slate-500 font-bold group-hover:text-emerald-500 transition-colors">> ${k}</span>
-                        <span class="text-white font-black">${v}</span>
+        <div class="lg:col-span-12 space-y-12">
+            ${zones.map(zone => `
+                <div id="ai-zone-cluster-${zone.id}" class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-8 border-t border-white/5 first:border-0 first:pt-0">
+                    <!-- Zone Identity -->
+                    <div class="lg:col-span-12 flex items-center gap-4 mb-2">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <h2 class="text-sm font-black text-white uppercase tracking-[0.2em] font-display">${zone.name}</h2>
+                        <span class="text-[8px] font-black text-slate-600 font-mono">NODE_ID: ${zone.node_id || 'LOCAL-0x' + zone.id.slice(0,4)}</span>
                     </div>
-                `).join('')}
-                <div class="mt-8 pt-4 border-t border-white/5 text-[9px] text-slate-600 font-black uppercase tracking-[0.2em]">
-                    Synchronized with Hardware Controller 0x${firstZone.id.slice(0,8)}
-                </div>
-            </div>
-        </div>
 
-        <!-- Decisions Feed -->
-        <div class="lg:col-span-7 flex flex-col gap-6">
-            <div class="space-y-6" id="decisions-panel">
-                ${decisions.length > 0
-                    ? decisions.map(d => _decisionCard(d)).join('')
-                    : `<div class="glass-panel p-20 text-center border-dashed border-slate-700/50">
-                        <i data-lucide="brain" class="w-12 h-12 mx-auto mb-4 text-slate-800"></i>
-                        <p class="font-black text-slate-500 uppercase tracking-widest text-[10px]">
-                            Neural history empty
-                        </p>
-                        <p class="text-slate-600 text-[10px] mt-4 font-medium italic">
-                            Trigger a manual audit to initialize inference logic.
-                        </p>
-                      </div>`
-                }
-            </div>
-
-            <!-- Communication Channels HUD -->
-            <div class="glass-panel p-8 bg-slate-900/20 mt-4 border-emerald-500/5">
-                <div class="flex items-center justify-between mb-8">
-                    <div>
-                        <h3 class="text-xs font-black uppercase text-white tracking-[0.2em] font-display flex items-center gap-3">
-                            <i data-lucide="satellite" class="w-4 h-4 text-emerald-400"></i>
-                            ${t('channels_title')}
-                        </h3>
-                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${t('ai_system_ready')}</p>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${[
-                        { id: 'whatsapp', label: 'WhatsApp', icon: 'message-circle', active: true },
-                        { id: 'sms', label: 'SMS/GSM', icon: 'smartphone', active: true },
-                        { id: 'email', label: 'Cloud Node', icon: 'mail', active: false },
-                        { id: 'push', label: 'HUD Push', icon: 'bell', active: true }
-                    ].map(ch => `
-                        <div class="flex items-center justify-between p-4 rounded-2xl glass-panel ${ch.active ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-900/40 border-slate-800 opacity-50'} shadow-sm transition-all hover:scale-[1.02]">
-                            <div class="flex items-center gap-4">
-                                <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center">
-                                    <i data-lucide="${ch.icon}" class="w-4 h-4 ${ch.active ? 'text-emerald-400' : 'text-slate-600'}"></i>
-                                </div>
-                                <span class="text-[10px] font-black uppercase tracking-widest ${ch.active ? 'text-white' : 'text-slate-600'}">${ch.label}</span>
-                            </div>
-                            <div class="w-8 h-4 bg-slate-800 rounded-full relative p-0.5">
-                                <div class="absolute top-0.5 ${ch.active ? 'right-0.5 bg-emerald-500' : 'left-0.5 bg-slate-600'} w-3 h-3 rounded-full shadow-sm transition-all"></div>
+                    <!-- Telemetry Terminal -->
+                    <div class="lg:col-span-5 glass-panel overflow-hidden flex flex-col shadow-2xl border-emerald-500/10 bg-slate-950/80">
+                        <div class="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-white/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span class="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] font-mono">
+                                    ${t('ai_terminal_title')}
+                                </span>
                             </div>
                         </div>
-                    `).join('')}
+                        <div class="p-8 space-y-3 font-mono">
+                            ${[
+                                ['SOIL_MOISTURE',  `${(zone.moisture_pct || 0).toFixed(1)}%`],
+                                ['AMBIENT_TEMP',   zone.temp_c ? `${zone.temp_c.toFixed(1)}°C` : '— °C'],
+                                ['ACTUATOR_STS',   zone.pump_running ? 'RUNNING' : 'STANDBY'],
+                                ['CROP_STAGE',     (zone.crop_stage || 'GROWTH').toUpperCase()],
+                            ].map(([k, v]) => `
+                                <div class="flex justify-between items-center text-[11px] group py-1 border-b border-white/5 last:border-0">
+                                    <span class="text-slate-500 font-bold group-hover:text-emerald-500 transition-colors">> ${k}</span>
+                                    <span class="text-white font-black">${v}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Decisions Grid -->
+                    <div class="lg:col-span-7 flex flex-col gap-6" id="decisions-panel-${zone.id}">
+                        <!-- Loaded for each zone -->
+                        <div class="flex flex-col items-center justify-center py-10 glass-panel animate-pulse text-slate-600 gap-4">
+                            <div class="w-6 h-6 border-2 border-slate-700 border-t-emerald-500 rounded-full animate-spin"></div>
+                            <span class="text-[9px] font-black uppercase tracking-widest">Compiling History...</span>
+                        </div>
+                    </div>
                 </div>
+            `).join('')}
+        </div>
+
+        <!-- Unified Communication Hub (Standalone) -->
+        <div class="lg:col-span-12 glass-panel p-8 bg-slate-900/20 mt-12 border-emerald-500/5">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-xs font-black uppercase text-white tracking-[0.2em] font-display flex items-center gap-3">
+                    <i data-lucide="satellite" class="w-4 h-4 text-emerald-400"></i>
+                    ${t('channels_title')}
+                </h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                ${[
+                    { id: 'whatsapp', label: 'WhatsApp', icon: 'message-circle', active: true },
+                    { id: 'sms', label: 'SMS/GSM', icon: 'smartphone', active: true },
+                    { id: 'push', label: 'HUD Push', icon: 'bell', active: true },
+                    { id: 'cloud', label: 'Cloud Sync', icon: 'cloud', active: true }
+                ].map(ch => `
+                    <div class="flex items-center justify-between p-4 rounded-2xl glass-panel bg-emerald-500/5 border-emerald-500/10">
+                        <i data-lucide="${ch.icon}" class="w-4 h-4 text-emerald-400"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white">${ch.label}</span>
+                    </div>
+                `).join('')}
             </div>
         </div>
     `;
 
     if (window.lucide) window.lucide.createIcons();
 
+    // Fetch decisions for EACH zone
+    zones.forEach(async (zone) => {
+        const panel = gridEl.querySelector(`#decisions-panel-${zone.id}`);
+        try {
+            const res = await api(`/zones/${zone.id}/ai-decisions/?limit=3`);
+            const decisions = res?.data || [];
+            panel.innerHTML = decisions.length > 0
+                ? decisions.map(d => _decisionCard(d)).join('')
+                : `<div class="glass-panel p-10 text-center border-dashed border-slate-800">
+                    <p class="font-black text-slate-700 uppercase tracking-widest text-[9px]">Neural history empty for this zone</p>
+                  </div>`;
+        } catch { 
+            panel.innerHTML = `<p class="text-[9px] text-red-400 font-black uppercase p-10 text-center">History Retrieval Fault</p>`; 
+        }
+        if (window.lucide) window.lucide.createIcons();
+    });
+
     runBtn.onclick = async () => {
         runBtn.disabled = true;
         const originalHtml = runBtn.innerHTML;
-        runBtn.innerHTML = `<div class="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> <span>${t('ai_calculating')}</span>`;
+        runBtn.innerHTML = `<div class="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> <span>${t('ai_calculating')}...</span>`;
+        
         try {
-            const res = await api(`/zones/${firstZone.id}/ai-decisions/run/`, { 
-                method: 'POST',
-                timeout: 120000 
-            });
-            const panel = gridEl.querySelector('#decisions-panel');
-            if (panel && res?.data) {
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = _decisionCard(res.data);
-                panel.prepend(wrapper.firstElementChild);
-                const empty = panel.querySelector('.text-slate-500');
-                if (empty?.closest('.glass-panel')) empty.closest('.glass-panel').remove();
-                if (window.lucide) window.lucide.createIcons();
-                
-                const type = res.data.type || res.data.decision_type || 'analysis';
-                if (type === 'irrigate' || type === 'alert') showWhatsAppNotification(firstZone.name, res.data.water_volume_l || 14);
-            }
+            // Parallel execution for ALL zones
+            await Promise.all(zones.map(async (zone) => {
+                try {
+                    const res = await api(`/zones/${zone.id}/ai-decisions/run/`, { method: 'POST', timeout: 120000 });
+                    const panel = gridEl.querySelector(`#decisions-panel-${zone.id}`);
+                    if (panel && res?.data) {
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = _decisionCard(res.data);
+                        // Remove empty state if present
+                        if (panel.querySelector('.text-slate-700')) panel.innerHTML = '';
+                        panel.prepend(wrapper.firstElementChild);
+                        
+                        const type = res.data.type || res.data.decision_type || 'analysis';
+                        if (type === 'irrigate') showWhatsAppNotification(zone.name, res.data.water_volume_l || 14);
+                    }
+                } catch (e) {
+                    console.error(`Inference failed for ${zone.name}`, e);
+                }
+            }));
+            showToast('Parallel Neural Audit Complete', 'success');
         } catch (err) {
-            showToast('Neural Audit Fault: Protocol rejected', 'error');
+            showToast('Neural Audit Fault', 'error');
         } finally {
             runBtn.disabled = false;
             runBtn.innerHTML = originalHtml;
+            if (window.lucide) window.lucide.createIcons();
         }
     };
 }

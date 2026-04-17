@@ -239,7 +239,8 @@ async def get_ml_crop_suggestion(
         groq_key = settings.GROQ_KEY.strip("'\"")
         try:
             import httpx
-            prompt = f"Explain in 1 sentence why '{prediction}' is a good crop choice for soil with N:{latest.get('N')}, P:{latest.get('P')}, K:{latest.get('K')} and pH:{zone.ph or 6.5}."
+            # Use the defaulted variables (N, P, K) to ensure no 'None' values reach the prompt
+            prompt = f"Explain in 1 sentence why '{prediction}' is a good crop choice for soil with N:{N}, P:{P}, K:{K} and pH:{ph}."
             async with httpx.AsyncClient() as client:
                 r = await client.post(
                     "https://api.groq.com/openai/v1/chat/completions",
@@ -247,13 +248,17 @@ async def get_ml_crop_suggestion(
                     json={
                         "model": "llama-3-8b-8192",
                         "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.5
+                        "temperature": 0.5,
+                        "max_tokens": 150
                     },
-                    timeout=5.0
+                    timeout=8.0
                 )
                 if r.status_code == 200:
                     rationale = r.json()["choices"][0]["message"]["content"].strip()
-        except: pass
+                else:
+                    logger.error(f"[Groq] API Error: {r.status_code} - {r.text}")
+        except Exception as e:
+            logger.warning(f"[Groq] Reasoning bypass: {e}")
 
     return {
         "success": True,

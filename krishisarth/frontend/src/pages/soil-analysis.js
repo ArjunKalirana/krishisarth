@@ -1,5 +1,6 @@
 import { showToast } from '../components/toast.js';
 import { store } from '../state/store.js';
+import { t } from '../utils/i18n.js';
 
 /**
  * KrishiSarth Soil Quality Analysis v1.0
@@ -35,17 +36,17 @@ export function renderSoilAnalysis() {
 
         // Validation & Element Status
         const check = (key, val) => {
-            const t = THRESHOLDS[key];
-            if (val < (t.min || 0) || val > t.max) {
-                showToast(`IMPOSSIBLE VALUE: ${t.name || key} is outside physical limits!`, 'error');
+            const tParam = THRESHOLDS[key];
+            if (val < (tParam.min || 0) || val > tParam.max) {
+                showToast(`IMPOSSIBLE VALUE: ${tParam.name || key} is outside physical limits!`, 'error');
                 return 'error';
             }
-            if (val < t.low) {
-                state.issues.push(`${t.name || key} is Deficient`);
+            if (val < tParam.low) {
+                state.issues.push(`${tParam.name || key} is Deficient`);
                 return 'low';
             }
-            if (val > t.high) {
-                state.issues.push(`${t.name || key} is Excessive`);
+            if (val > tParam.high) {
+                state.issues.push(`${tParam.name || key} is Excessive`);
                 return 'high';
             }
             return 'optimal';
@@ -67,10 +68,8 @@ export function renderSoilAnalysis() {
     const loadAIRecommendation = async (resEl) => {
         let farm = store.getState('currentFarm');
         
-        // Deep Sync: Wait for bootstrap if navigating directly
         if (!farm || !farm.id) {
             resEl.innerHTML = `<span class="text-[9px] uppercase font-black text-slate-600 animate-pulse">Syncing Farm Identity...</span>`;
-            // Increased to 20 attempts (10 seconds) for ultimate reliability
             for (let i = 0; i < 20; i++) {
                 await new Promise(r => setTimeout(r, 500));
                 farm = store.getState('currentFarm');
@@ -79,14 +78,11 @@ export function renderSoilAnalysis() {
         }
 
         if (!farm || !farm.id) {
-            console.error('[AI] Context recovery failed. Dashboard state might be stale.');
             resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Farm Context Lost</p>`;
             return;
         }
 
         let dash = store.getState('currentFarmDashboard');
-        
-        // Safety Fallback: Discovery sequence for direct navigation
         if (!dash || !dash.zones) {
             try {
                 const { api } = await import('../api/client.js');
@@ -95,64 +91,66 @@ export function renderSoilAnalysis() {
                     dash = farmRes.data;
                     store.setState('currentFarmDashboard', dash);
                 }
-            } catch (err) {
-                console.warn('[AI] Zone discovery failed:', err);
-            }
+            } catch (err) { console.warn('[AI] Zone discovery failed:', err); }
         }
 
-        const zone = dash?.zones?.[0];
-        
-        if (!zone) {
-            resEl.innerHTML = `<p class="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-relaxed">No Active Zones Found.<br/><span class="text-[8px] opacity-60">Register a node in Farm Setup.</span></p>`;
+        const zones = dash?.zones || [];
+        if (zones.length === 0) {
+            resEl.innerHTML = `<p class="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-relaxed">No Active Zones Found.</p>`;
             return;
         }
 
         resEl.innerHTML = `
-            <div class="flex items-center gap-4 animate-pulse">
-                <div class="w-4 h-4 bg-emerald-500 rounded-full"></div>
-                <span class="text-[10px] uppercase font-black tracking-widest text-slate-500">Querying Neural Core...</span>
-            </div>
-        `;
-
-        try {
-            const { api } = await import('../api/client.js');
-            const res = await api(`/zones/${zone.id}/crop-suggestion`, { timeout: 120000 });
-            const data = res.data;
-
-            if (!data || !data.prediction) throw new Error('EMPTY_INFERENCE');
-
-            resEl.innerHTML = `
-            <div class="ks-card glass-panel p-8 md:p-12 relative overflow-hidden bg-emerald-500/5 border-emerald-500/20 shadow-2xl">
-                <div class="flex items-start justify-between mb-10">
-                    <div>
-                        <h3 class="text-3xl font-black text-white font-display tracking-tight">${t('nav_neural_hub')}</h3>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mt-2">${t('ai_auto')}</p>
-                    </div>
-                    <div class="px-6 py-3 rounded-2xl glass-panel bg-white/5 border-white/5">
-                        <span class="text-lg font-black text-emerald-400 font-mono">98%</span>
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-3">${t('ai_confidence')}</span>
-                    </div>
-                </div>
-
-                <div class="space-y-8 mb-12">
-                    <p class="text-slate-200 leading-relaxed text-lg font-medium">
-                        <span class="text-emerald-500 font-black uppercase text-[10px] tracking-[0.2em] block mb-3">${t('decision_chain')}</span>
-                        "${data.prediction}"
-                    </p>
-                    
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
-                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">${t('nav_soil_analysis')}</span>
-                            <p class="text-xs font-bold text-white mt-1">${(zone.moisture_pct || 0).toFixed(1)}%</p>
+            <div class="flex flex-col gap-8">
+                ${zones.map(z => `
+                    <div id="rec-zone-${z.id}" class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">${z.name}</span>
+                        </div>
+                        <div class="zone-rec-content flex items-center gap-4 animate-pulse">
+                            <div class="w-3 h-3 bg-emerald-500/20 rounded-full"></div>
+                            <span class="text-[9px] uppercase font-black tracking-widest text-slate-600">Querying Neural Core...</span>
                         </div>
                     </div>
-                </div>
+                `).join('')}
             </div>
         `;
-        } catch (err) {
-            console.error('[AI] Inference Error:', err);
-            resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Inference Hub Unavailable</p>`;
-        }
+
+        const { api } = await import('../api/client.js');
+        
+        // Parallel Inference for all zones
+        zones.forEach(async (zone) => {
+            const zoneEl = resEl.querySelector(`#rec-zone-${zone.id} .zone-rec-content`);
+            try {
+                const res = await api(`/zones/${zone.id}/crop-suggestion`, { timeout: 120000 });
+                const data = res.data;
+
+                if (!data || !data.prediction) throw new Error('EMPTY_INFERENCE');
+
+                zoneEl.classList.remove('animate-pulse');
+                zoneEl.innerHTML = `
+                    <div class="ks-card glass-panel p-6 relative overflow-hidden bg-emerald-500/5 border-emerald-500/10 transition-all hover:border-emerald-500/30">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">${t('ai_auto')}</span>
+                            <span class="text-[10px] font-black text-white font-mono">${(res.data.confidence * 100).toFixed(0)}% TRUST</span>
+                        </div>
+                        <h4 class="text-xl font-black text-white font-display mb-3 uppercase tracking-tight">${data.prediction}</h4>
+                        <p class="text-[11px] leading-relaxed text-slate-300 font-medium italic border-l-2 border-emerald-500/30 pl-4 py-1 mb-4">
+                            "${data.rationale}"
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">N:${data.inputs?.N ?? '—'}</div>
+                            <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">pH:${data.inputs?.ph ?? '—'}</div>
+                            <div class="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-white/5">Moisture:${(zone.moisture_pct || 0).toFixed(1)}%</div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(`[AI] Inference Error for ${zone.name}:`, err);
+                zoneEl.innerHTML = `<p class="text-[9px] text-red-400 font-black uppercase tracking-widest">Inference Hub Unavailable</p>`;
+            }
+        });
     };
 
     const renderUI = () => {
