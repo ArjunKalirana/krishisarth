@@ -28,7 +28,7 @@ export function initAIAssistant() {
 function _buildWidget() {
     const el = document.createElement('div');
     el.id = 'ks-assistant';
-    el.className = "fixed bottom-6 right-6 z-[9998] font-main antialiased";
+    el.className = "fixed bottom-6 right-6 max-md:bottom-24 z-[9998] font-main antialiased";
 
     el.innerHTML = `
         <!-- Elite Toggle Button -->
@@ -40,9 +40,9 @@ function _buildWidget() {
         </button>
 
         <!-- Neural Chat Panel -->
-        <div id="assistant-panel" class="hidden absolute bottom-20 right-0 w-[420px] max-w-[calc(100vw-3rem)] h-[640px] max-h-[calc(100vh-10rem)] glass-panel bg-slate-900/95 backdrop-blur-3xl flex-col overflow-hidden shadow-[0_10px_50px_rgba(0,0,0,0.8)] border border-white/10 animate-in slide-in-from-bottom-6 duration-500">
+        <div id="assistant-panel" class="hidden absolute bottom-20 right-0 w-[420px] max-md:w-[calc(100vw-2rem)] max-md:right-[-1rem] h-[640px] max-md:h-[70dvh] glass-panel bg-slate-900/95 backdrop-blur-3xl flex flex-col overflow-hidden shadow-[0_10px_50px_rgba(0,0,0,0.8)] border border-white/10 animate-in slide-in-from-bottom-6 duration-500">
             <!-- Header HUD -->
-            <div class="bg-slate-900 border-b border-white/10 px-6 py-5 flex items-center justify-between">
+            <div class="bg-slate-900 border-b border-white/10 px-6 py-5 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                         <i data-lucide="sprout" class="w-5 h-5 text-emerald-400"></i>
@@ -68,11 +68,11 @@ function _buildWidget() {
             <!-- Thread -->
             <div id="assistant-messages" class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scroll-smooth scrollbar-hide"></div>
 
-            <!-- Suggestions Logic -->
-            <div id="assistant-suggestions" class="px-6 pb-6 flex flex-wrap gap-2"></div>
+            <!-- Suggestions -->
+            <div id="assistant-suggestions" class="px-6 pb-6 flex flex-wrap gap-2 shrink-0"></div>
 
             <!-- Neural Input Layer -->
-            <div class="p-6 bg-slate-950/40 border-t border-white/5">
+            <div class="p-6 bg-slate-950/40 border-t border-white/5 shrink-0">
                 <div class="glass-panel p-2 flex items-end gap-2 bg-slate-900/50 border-white/10 focus-within:border-emerald-500/50 transition-all duration-300">
                     <textarea id="assistant-input" rows="1" class="flex-1 bg-transparent border-none text-white text-sm py-3 px-4 resize-none outline-none max-h-32 placeholder:text-slate-600 font-medium leading-relaxed"></textarea>
                     
@@ -114,6 +114,7 @@ function _buildWidget() {
     const panel = el.querySelector('#assistant-panel');
     const messages = el.querySelector('#assistant-messages');
     const input = el.querySelector('#assistant-input');
+    const suggestRoot = el.querySelector('#assistant-suggestions');
     const toggleBtn = el.querySelector('#assistant-toggle');
     const closeBtn = el.querySelector('#assistant-close-btn');
 
@@ -121,7 +122,7 @@ function _buildWidget() {
         _isOpen = !_isOpen;
         panel.classList.toggle('hidden');
         if (_isOpen) {
-            if (_messages.length === 0) _showGreeting(messages, el.querySelector('#assistant-suggestions'));
+            if (_messages.length === 0) _showGreeting(messages, suggestRoot, input);
             setTimeout(() => input.focus(), 200);
         }
     };
@@ -131,15 +132,15 @@ function _buildWidget() {
     el.querySelector('#assistant-clear-btn').onclick = () => {
         _messages = [];
         messages.innerHTML = '';
-        _showGreeting(messages, el.querySelector('#assistant-suggestions'));
+        _showGreeting(messages, suggestRoot, input);
     };
 
-    el.querySelector('#assistant-send-btn').onclick = () => _handleSend(input, messages, el.querySelector('#assistant-suggestions'));
+    el.querySelector('#assistant-send-btn').onclick = () => _handleSend(input, messages, suggestRoot);
 
     input.onkeydown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            _handleSend(input, messages, el.querySelector('#assistant-suggestions'));
+            _handleSend(input, messages, suggestRoot);
         }
     };
 
@@ -165,7 +166,7 @@ function _buildWidget() {
     return el;
 }
 
-function _showGreeting(messagesEl, suggestEl) {
+function _showGreeting(messagesEl, suggestEl, inputEl) {
     _appendMessage(messagesEl, 'assistant', t('assistant_greeting'));
     suggestEl.innerHTML = `
         ${[1, 2, 3, 4].map(i => `
@@ -177,8 +178,8 @@ function _showGreeting(messagesEl, suggestEl) {
 
     suggestEl.querySelectorAll('button').forEach(btn => {
         btn.onclick = () => {
-            input.value = btn.innerText;
-            _handleSend(document.querySelector('#assistant-input'), messagesEl, suggestEl);
+            inputEl.value = btn.innerText.trim();
+            _handleSend(inputEl, messagesEl, suggestEl);
         };
     });
 }
