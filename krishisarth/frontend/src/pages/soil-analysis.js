@@ -116,7 +116,7 @@ export function renderSoilAnalysis() {
 
         try {
             const { api } = await import('../api/client.js');
-            const res = await api(`/zones/${zone.id}/crop-suggestion`);
+            const res = await api(`/zones/${zone.id}/crop-suggestion`, { timeout: 120000 });
             const data = res.data;
 
             if (!data || !data.prediction) throw new Error('EMPTY_INFERENCE');

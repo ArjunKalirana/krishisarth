@@ -198,7 +198,10 @@ async function _loadAI(gridEl, runBtn) {
         const originalHtml = runBtn.innerHTML;
         runBtn.innerHTML = `<div class="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> <span>CALCULATING...</span>`;
         try {
-            const res = await api(`/zones/${firstZone.id}/ai-decisions/run/`, { method: 'POST' });
+            const res = await api(`/zones/${firstZone.id}/ai-decisions/run/`, { 
+                method: 'POST',
+                timeout: 120000 
+            });
             const panel = gridEl.querySelector('#decisions-panel');
             if (panel && res?.data) {
                 const wrapper = document.createElement('div');

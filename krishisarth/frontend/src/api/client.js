@@ -61,8 +61,9 @@ export async function attemptSilentRefresh() {
 import { showToast } from '../components/toast.js';
 
 export async function api(path, options = {}, attempt = 1) {
+    const timeout = options.timeout || 30000; // Default increased to 30s
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     options.signal = controller.signal;
 
     try {
