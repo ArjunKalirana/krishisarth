@@ -259,24 +259,24 @@ function _decisionCard(d) {
                 <div class="flex items-center gap-6 mb-8 p-4 bg-black/20 rounded-2xl border border-white/5">
                     <div class="flex flex-col">
                         <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">NPK Balance</span>
-                        <span class="text-xs font-bold text-white">${snapshot.N}-${snapshot.P}-${snapshot.K}</span>
+                        <span class="text-xs font-bold text-emerald-400">${snapshot.N}-${snapshot.P}-${snapshot.K}</span>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">ML Fertility</span>
-                        <span class="text-xs font-bold text-emerald-400">${snapshot.fertility_label || 'Optimal'}</span>
+                        <span class="text-xs font-bold text-slate-200">${snapshot.fertility_label || 'Analysis Pending'}</span>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col border-l border-white/10 pl-6">
                         <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Snapshot Moisture</span>
-                        <span class="text-xs font-bold text-blue-400">${(snapshot.moisture_pct || 0).toFixed(1)}%</span>
+                        <span class="text-xs font-bold text-blue-400 font-mono">${(snapshot.moisture_pct || 0).toFixed(1)}%</span>
                     </div>
                 </div>
             ` : ''}
             
             <!-- Logic Chain Metadata -->
             <div class="flex flex-wrap gap-3">
-                <span class="badge-elite badge-success text-[9px] uppercase tracking-widest">Model: Llama3-8B</span>
-                <span class="badge-elite badge-info text-[9px] uppercase tracking-widest">Source: MongoDB Telemetry</span>
-                <span class="badge-elite ${conf > 80 ? 'badge-success' : 'badge-warning'} text-[9px] uppercase tracking-widest">${conf > 80 ? 'AUTO_EXECUTE' : 'PENDING_AUDIT'}</span>
+                <span class="badge-elite badge-success text-[9px] uppercase tracking-widest">Model: Llama3-70B via Groq</span>
+                <span class="badge-elite badge-info text-[9px] uppercase tracking-widest">Source: MongoDB Live Shard</span>
+                <span class="badge-elite ${conf > 80 ? 'badge-success' : 'badge-warning'} text-[9px] uppercase tracking-widest font-black">${conf > 80 ? 'AUTO_EXECUTE' : 'PENDING_HUB_AUDIT'}</span>
             </div>
         </div>
     `;
