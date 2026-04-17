@@ -70,7 +70,8 @@ export function renderSoilAnalysis() {
         // Deep Sync: Wait for bootstrap if navigating directly
         if (!farm || !farm.id) {
             resEl.innerHTML = `<span class="text-[9px] uppercase font-black text-slate-600 animate-pulse">Syncing Farm Identity...</span>`;
-            for (let i = 0; i < 10; i++) {
+            // Increased to 20 attempts (10 seconds) for ultimate reliability
+            for (let i = 0; i < 20; i++) {
                 await new Promise(r => setTimeout(r, 500));
                 farm = store.getState('currentFarm');
                 if (farm && farm.id) break;
@@ -78,6 +79,7 @@ export function renderSoilAnalysis() {
         }
 
         if (!farm || !farm.id) {
+            console.error('[AI] Context recovery failed. Dashboard state might be stale.');
             resEl.innerHTML = `<p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Farm Context Lost</p>`;
             return;
         }
@@ -243,8 +245,6 @@ export function renderSoilAnalysis() {
         if (recRoot) loadAIRecommendation(recRoot);
     };
 
-    const store = window.KrishiSarthStore || { getState: () => ({}) };
-    
     updateAnalysis();
     return container;
 }
